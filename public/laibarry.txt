@@ -1,0 +1,13 @@
+composer require spatie/laravel-permission
+php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
+composer require vinkla/hashids
+php artisan vendor:publish --provider="Vinkla\Hashids\HashidsServiceProvider"
+composer require spatie/laravel-activitylog
+php artisan vendor:publish --provider="Spatie\Activitylog\ActivitylogServiceProvider"
+composer require pragmarx/google2fa-laravel
+php artisan vendor:publish --provider="PragmaRX\Google2FALaravel\ServiceProvider"
+composer require laravel/passport
+composer require laravel/socialite
+php artisan migrate
+php artisan passport:install
+composer require "darkaonline/l5-swagger"
