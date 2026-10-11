@@ -1,67 +1,135 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+<div align="center">
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+# SEMAR
 
-## About Laravel
+**Satu portal untuk identitas, akses, dan layanan operasional akademik.**
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Menghubungkan pengelolaan akun dan hak akses dengan proses PKL, kegiatan, presensi, dan kolaborasi dalam satu aplikasi.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+<br>
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php&logoColor=white)
+![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)
+![Status](https://img.shields.io/badge/status-in%20development-blue)
 
-## Modul PKL Lokal
+</div>
 
-Modul PKL memakai master data dosen dan mahasiswa lokal, tanpa ketergantungan pada Feeder. Jalankan migrasi dengan `php artisan migrate`, lalu kelola data melalui menu **Data Dosen** dan **Data Mahasiswa**. Akun pengguna dipasangkan ke master data memakai email yang sama atau `identifier_number` akun yang berisi NIDN/NIM.
+---
 
-Portal tersedia di `/pkl/mahasiswa`, `/pkl/dosen`, dan `/pkl/admin`. Akses admin mengikuti role/permission aplikasi yang sudah ada.
+## Tentang SEMAR
 
-Pada halaman **Data Dosen** dan **Data Mahasiswa**, admin dapat mengimpor `.xlsx` atau `.csv` dengan baris pertama sebagai header, serta mengekspor seluruh data ke `.xlsx`. Gunakan nama kolom seperti pada file ekspor. Impor menambahkan data baru saja; NIDN/NIM atau email yang sudah digunakan dan baris tidak valid akan dilewati. Ringkasan baris yang dilewati ditampilkan setelah impor dan dicatat di `storage/logs/laravel.log`.
+SEMAR adalah aplikasi web internal untuk mendukung pengelolaan identitas dan aktivitas akademik. Aplikasi ini menyediakan autentikasi, pengaturan role dan permission, integrasi OAuth/API, serta modul operasional untuk mahasiswa, dosen, dan pengelola.
 
-## Learning Laravel
+## Fitur utama
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- **Identity & Access Management** — pengelolaan akun, role, permission, klien API, serta alur login dan klaim akun.
+- **Keamanan akun** — verifikasi email, autentikasi dua faktor (2FA), pengaturan profil, dan pengelolaan password.
+- **Integrasi aplikasi** — OAuth 2.0 dengan Laravel Passport, endpoint profil pengguna, dan sinkronisasi role.
+- **Pengelolaan PKL** — alur pengajuan dan berkas, bimbingan dosen, penilaian, serta pengelolaan data mahasiswa dan dosen. Master data mendukung impor CSV/Excel dan ekspor Excel.
+- **Kegiatan dan presensi** — pengelolaan kegiatan dan sesi, presensi melalui QR, input manual, serta ekspor rekap ke Excel/PDF.
+- **Berita acara** — pengelolaan laporan kegiatan, persetujuan digital, dokumen PDF, dan verifikasi tanda tangan melalui QR.
+- **Kolaborasi** — papan Kanban dengan dukungan berbagi board dan tautan singkat.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+> Akses modul dan tindakan tertentu mengikuti autentikasi serta role/permission yang dikonfigurasi pada aplikasi.
 
-## Laravel Sponsors
+## Teknologi
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+| Area | Teknologi |
+| --- | --- |
+| Backend | PHP 8.2+, Laravel 12 |
+| Autentikasi & API | Laravel Passport, Sanctum, Socialite |
+| Hak akses | Spatie Laravel Permission |
+| Frontend assets | Vite 7, Tailwind CSS 4 |
+| Database | SQLite (default) atau database lain yang didukung Laravel |
 
-### Premium Partners
+## Memulai
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Prasyarat
 
-## Contributing
+- PHP **8.2 atau lebih baru**
+- [Composer](https://getcomposer.org/)
+- [Node.js dan npm](https://nodejs.org/)
+- SQLite atau database lain yang didukung Laravel
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Instalasi lokal (Windows PowerShell)
 
-## Code of Conduct
+```powershell
+git clone https://github.com/Dikywahyu/semar.git
+Set-Location semar
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+composer install
+Copy-Item .env.example .env
+php artisan key:generate
 
-## Security Vulnerabilities
+# Buat file SQLite jika belum tersedia
+if (-not (Test-Path database/database.sqlite)) {
+    New-Item -ItemType File database/database.sqlite | Out-Null
+}
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+php artisan migrate
+npm install
+npm run build
+php artisan serve
+```
 
-## License
+Buka alamat yang ditampilkan oleh `php artisan serve` (umumnya `http://127.0.0.1:8000`).
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Konfigurasi
+
+Sesuaikan `.env` dengan lingkungan lokal sebelum menjalankan aplikasi:
+
+- **Database:** konfigurasi bawaan menggunakan SQLite. Untuk MySQL, ubah `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, dan `DB_PASSWORD`.
+- **URL aplikasi:** atur `APP_URL` sesuai alamat lokal atau domain aplikasi.
+- **Integrasi opsional:** isi konfigurasi OAuth/Google, email, dan Passport hanya jika integrasi terkait digunakan.
+
+Jangan memasukkan `.env`, kredensial, atau private key ke repository.
+
+### Mode pengembangan frontend
+
+Jalankan Vite di terminal terpisah agar perubahan aset diproses secara langsung:
+
+```powershell
+npm run dev
+```
+
+Untuk menjalankan seluruh proses pengembangan yang sudah dikonfigurasi pada Composer (server, queue, log, dan Vite):
+
+```powershell
+composer run dev
+```
+
+## Pengujian
+
+Jalankan suite pengujian aplikasi dengan:
+
+```powershell
+composer test
+```
+
+## Struktur aplikasi
+
+```text
+app/                 Logika aplikasi, controller, model, dan layanan
+database/            Migrasi, factory, dan seeder
+resources/            View Blade dan aset sumber
+routes/               Route web, API, dan console
+public/                Front controller dan aset publik
+tests/                 Pengujian aplikasi
+```
+
+## Catatan pengelolaan data PKL
+
+Data dosen dan mahasiswa dikelola secara lokal dan tidak bergantung pada Feeder. Akun pengguna dipasangkan dengan data master menggunakan email yang sama atau `identifier_number` yang berisi NIDN/NIM.
+
+Impor master data menerima berkas `.xlsx` atau `.csv` dengan baris pertama sebagai header. Gunakan format kolom pada file ekspor; impor menambahkan data baru dan melewati baris tidak valid atau identitas yang sudah digunakan.
+
+Portal PKL tersedia pada `/pkl/mahasiswa`, `/pkl/dosen`, dan `/pkl/admin`. Ketiganya memerlukan login; hak akses admin mengikuti konfigurasi role/permission aplikasi.
+
+---
+
+<div align="center">
+
+Dibangun untuk mendukung layanan akademik yang terintegrasi.
+
+</div>
