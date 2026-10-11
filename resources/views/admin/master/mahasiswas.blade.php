@@ -32,7 +32,7 @@
                 <div class="d-flex flex-wrap gap-2">
                     <a href="{{ route('master.mahasiswas.export') }}" class="btn btn-outline-success"><i class="ti ti-file-spreadsheet me-1"></i> Ekspor Excel</a>
                     <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalImportMahasiswa"><i class="ti ti-upload me-1"></i> Impor</button>
-                    <button type="button" class="btn btn-outline-secondary" id="btn-generate-mahasiswa-users"><i class="ti ti-user-plus me-1"></i> Buat Akun</button>
+                    <button type="button" class="btn btn-outline-secondary" id="btn-generate-mahasiswa-users"><i class="ti ti-user-plus me-1"></i> Buat Akun Mahasiswa</button>
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalMahasiswa" id="btn-add-mahasiswa"><i class="ti ti-plus me-1"></i> Tambah Mahasiswa</button>
                     <a href="{{ route('pkl.admin.index') }}" class="btn btn-light"><i class="ti ti-arrow-left me-1"></i> Kembali ke PKL</a>
                 </div>
