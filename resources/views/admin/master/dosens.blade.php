@@ -32,7 +32,7 @@
                 <div class="d-flex flex-wrap gap-2">
                     <a href="{{ route('master.dosens.export') }}" class="btn btn-outline-success"><i class="ti ti-file-spreadsheet me-1"></i> Ekspor Excel</a>
                     <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalImportDosen"><i class="ti ti-upload me-1"></i> Impor</button>
-                    <button type="button" class="btn btn-outline-secondary" id="btn-generate-dosen-users"><i class="ti ti-user-plus me-1"></i> Buat Akun Login</button>
+                    <button type="button" class="btn btn-outline-secondary" id="btn-generate-dosen-users"><i class="ti ti-user-plus me-1"></i> Buat Akun </button>
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalDosen" id="btn-add-dosen"><i class="ti ti-plus me-1"></i> Tambah Dosen</button>
                     <a href="{{ route('pkl.admin.index') }}" class="btn btn-light"><i class="ti ti-arrow-left me-1"></i> Kembali ke PKL</a>
                 </div>
@@ -48,7 +48,16 @@
             <div class="table-responsive">
                 <table id="table-dosens" class="table table-hover align-middle w-100">
                     <thead class="table-light">
-                        <tr><th>NIDN</th><th>NUPTK</th><th>Nama Dosen</th><th>Email</th><th>Telepon</th><th>Program Studi</th><th>Status</th><th class="text-center">Aksi</th></tr>
+                        <tr>
+                            <th>NIDN</th>
+                            <th>NUPTK</th>
+                            <th>Nama Dosen</th>
+                            <th>Email</th>
+                            <th>Telepon</th>
+                            <th>Program Studi</th>
+                            <th>Status</th>
+                            <th class="text-center">Aksi</th>
+                        </tr>
                     </thead>
                 </table>
             </div>
@@ -63,7 +72,9 @@
             <input type="hidden" name="_method" id="dosen-method" value="POST">
             <input type="hidden" name="aktif" value="0">
             <div class="modal-header bg-primary text-white">
-                <div><h5 class="modal-title text-white" id="modalDosenTitle">Tambah Dosen</h5><small class="text-white-50">Lengkapi informasi dosen di bawah ini.</small></div>
+                <div>
+                    <h5 class="modal-title text-white" id="modalDosenTitle">Tambah Dosen</h5><small class="text-white-50">Lengkapi informasi dosen di bawah ini.</small>
+                </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body p-4">
@@ -75,8 +86,12 @@
                     <div class="col-md-6"><label class="form-label">Gelar Belakang</label><input class="form-control" name="gelar_belakang" maxlength="100" placeholder="Contoh: M.Kom."></div>
                     <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" type="email" name="email" maxlength="255"></div>
                     <div class="col-md-6"><label class="form-label">Telepon</label><input class="form-control" name="telepon" maxlength="30"></div>
-                    <div class="col-md-8"><label class="form-label">Program Studi <span class="text-danger">*</span></label><select class="form-select" name="prodi_id" required><option value="">Pilih program studi</option>@foreach($prodis as $prodi)<option value="{{ $prodi->id }}">{{ $prodi->kode_prodi }} - {{ $prodi->nama_prodi }} ({{ $prodi->jenjang }})</option>@endforeach</select></div>
-                    <div class="col-md-4 d-flex align-items-end"><div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" name="aktif" value="1" checked id="dosen-aktif"><label class="form-check-label" for="dosen-aktif">Dosen aktif</label></div></div>
+                    <div class="col-md-8"><label class="form-label">Program Studi <span class="text-danger">*</span></label><select class="form-select" name="prodi_id" required>
+                            <option value="">Pilih program studi</option>@foreach($prodis as $prodi)<option value="{{ $prodi->id }}">{{ $prodi->kode_prodi }} - {{ $prodi->nama_prodi }} ({{ $prodi->jenjang }})</option>@endforeach
+                        </select></div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" name="aktif" value="1" checked id="dosen-aktif"><label class="form-check-label" for="dosen-aktif">Dosen aktif</label></div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer bg-light">
@@ -92,7 +107,9 @@
         <form id="formImportDosen" method="POST" action="{{ route('master.dosens.import') }}" enctype="multipart/form-data" class="modal-content border-0 shadow-lg">
             @csrf
             <div class="modal-header bg-success text-white">
-                <div><h5 class="modal-title text-white">Impor Data Dosen</h5><small class="text-white-50">Pilih file Excel atau CSV untuk ditambahkan.</small></div>
+                <div>
+                    <h5 class="modal-title text-white">Impor Data Dosen</h5><small class="text-white-50">Pilih file Excel atau CSV untuk ditambahkan.</small>
+                </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body p-4">
@@ -110,141 +127,239 @@
 
 @push('scripts')
 <script>
-$(function () {
-    const baseUrl = @json(url('admin/master/dosens'));
-    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDosen'));
-    const importModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalImportDosen'));
-    const table = $('#table-dosens').DataTable({
-        processing: true,
-        serverSide: true,
-        pageLength: 10,
-        ajax: { url: baseUrl, type: 'GET' },
-        ordering: false,
-        language: {
-            search: 'Cari:',
-            lengthMenu: 'Tampilkan _MENU_ data',
-            info: 'Menampilkan _START_–_END_ dari _TOTAL_ dosen',
-            infoEmpty: 'Tidak ada data dosen',
-            zeroRecords: 'Dosen tidak ditemukan',
-            processing: 'Memuat data...',
-            paginate: { previous: 'Sebelumnya', next: 'Berikutnya' }
-        },
-        columns: [
-            { data: 'nidn', defaultContent: '—', render: safe },
-            { data: 'nuptk', defaultContent: '—', render: safe },
-            { data: null, render: (data, type, row) => `<div class="fw-semibold">${safe([row.gelar_depan, row.nama_dosen, row.gelar_belakang].filter(Boolean).join(' '))}</div>` },
-            { data: 'email', defaultContent: '—', render: safe },
-            { data: 'telepon', defaultContent: '—', render: safe },
-            { data: 'prodi.nama_prodi', defaultContent: '—', render: safe },
-            { data: 'aktif', render: value => value ? '<span class="badge bg-success-subtle text-success rounded-pill px-3">Aktif</span>' : '<span class="badge bg-secondary-subtle text-secondary rounded-pill px-3">Nonaktif</span>' },
-            { data: null, orderable: false, searchable: false, className: 'text-center text-nowrap', render: (data, type, row) => `<button type="button" class="btn btn-sm btn-light-primary btn-edit-dosen me-1" data-id="${safe(row.id_dosen)}" title="Edit"><i class="ti ti-edit"></i></button><button type="button" class="btn btn-sm btn-light-danger btn-delete-dosen" data-id="${safe(row.id_dosen)}" title="Hapus"><i class="ti ti-trash"></i></button>` }
-        ],
-        order: []
-    });
+    $(function() {
+        const baseUrl = @json(url('admin/master/dosens'));
+        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDosen'));
+        const importModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalImportDosen'));
+        const table = $('#table-dosens').DataTable({
+            processing: true,
+            serverSide: true,
+            pageLength: 10,
+            ajax: {
+                url: baseUrl,
+                type: 'GET'
+            },
+            ordering: false,
+            language: {
+                search: 'Cari:',
+                lengthMenu: 'Tampilkan _MENU_ data',
+                info: 'Menampilkan _START_–_END_ dari _TOTAL_ dosen',
+                infoEmpty: 'Tidak ada data dosen',
+                zeroRecords: 'Dosen tidak ditemukan',
+                processing: 'Memuat data...',
+                paginate: {
+                    previous: 'Sebelumnya',
+                    next: 'Berikutnya'
+                }
+            },
+            columns: [{
+                    data: 'nidn',
+                    defaultContent: '—',
+                    render: safe
+                },
+                {
+                    data: 'nuptk',
+                    defaultContent: '—',
+                    render: safe
+                },
+                {
+                    data: null,
+                    render: (data, type, row) => `<div class="fw-semibold">${safe([row.gelar_depan, row.nama_dosen, row.gelar_belakang].filter(Boolean).join(' '))}</div>`
+                },
+                {
+                    data: 'email',
+                    defaultContent: '—',
+                    render: safe
+                },
+                {
+                    data: 'telepon',
+                    defaultContent: '—',
+                    render: safe
+                },
+                {
+                    data: 'prodi.nama_prodi',
+                    defaultContent: '—',
+                    render: safe
+                },
+                {
+                    data: 'aktif',
+                    render: value => value ? '<span class="badge bg-success-subtle text-success rounded-pill px-3">Aktif</span>' : '<span class="badge bg-secondary-subtle text-secondary rounded-pill px-3">Nonaktif</span>'
+                },
+                {
+                    data: null,
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-center text-nowrap',
+                    render: (data, type, row) => `<button type="button" class="btn btn-sm btn-light-primary btn-edit-dosen me-1" data-id="${safe(row.id_dosen)}" title="Edit"><i class="ti ti-edit"></i></button><button type="button" class="btn btn-sm btn-light-danger btn-delete-dosen" data-id="${safe(row.id_dosen)}" title="Hapus"><i class="ti ti-trash"></i></button>`
+                }
+            ],
+            order: []
+        });
 
-    function safe(value) {
-        if (value === null || value === undefined || value === '') return '—';
-        return $('<span>').text(String(value)).html();
-    }
-    function showError(xhr) {
-        const errors = xhr.responseJSON?.errors;
-        const message = errors ? Object.values(errors).flat().join('\n') : (xhr.responseJSON?.message || 'Terjadi kesalahan. Silakan coba lagi.');
-        Swal.fire({ icon: 'error', title: 'Gagal', text: message });
-    }
-    $('#btn-generate-dosen-users').on('click', function () {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Buat akun dosen?',
-            html: 'Akun akan dibuat untuk dosen aktif yang belum memiliki akun. Username dan password awal menggunakan NIDN. Akun yang sudah ada tidak akan diubah.',
-            showCancelButton: true,
-            confirmButtonText: 'Ya, buat akun',
-            cancelButtonText: 'Batal'
-        }).then(result => {
-            if (!result.isConfirmed) return;
-            const button = $('#btn-generate-dosen-users').prop('disabled', true).html('<i class="ti ti-loader me-1"></i> Membuat...');
+        function safe(value) {
+            if (value === null || value === undefined || value === '') return '—';
+            return $('<span>').text(String(value)).html();
+        }
+
+        function showError(xhr) {
+            const errors = xhr.responseJSON?.errors;
+            const message = errors ? Object.values(errors).flat().join('\n') : (xhr.responseJSON?.message || 'Terjadi kesalahan. Silakan coba lagi.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal',
+                text: message
+            });
+        }
+        $('#btn-generate-dosen-users').on('click', function() {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Buat akun dosen?',
+                html: 'Akun akan dibuat untuk dosen aktif yang belum memiliki akun. Username dan password awal menggunakan NIDN. Akun yang sudah ada tidak akan diubah.',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, buat akun',
+                cancelButtonText: 'Batal'
+            }).then(result => {
+                if (!result.isConfirmed) return;
+                const button = $('#btn-generate-dosen-users').prop('disabled', true).html('<i class="ti ti-loader me-1"></i> Membuat...');
+                $.ajax({
+                    url: @json(route('master.dosens.generate-users')),
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    }
+                }).done(response => {
+                    table.ajax.reload(null, false);
+                    let details = `<p>${safe(response.created_count)} akun dibuat; ${safe(response.skipped_count)} data dilewati.</p>`;
+                    if (response.skipped?.length) {
+                        details += '<div class="table-responsive text-start"><table class="table table-sm"><thead><tr><th>NIDN</th><th>Alasan</th></tr></thead><tbody>';
+                        response.skipped.forEach(item => {
+                            details += `<tr><td>${safe(item.identifier)}</td><td>${safe(item.reason)}</td></tr>`;
+                        });
+                        details += '</tbody></table></div>';
+                    }
+                    Swal.fire({
+                        icon: response.skipped_count ? 'warning' : 'success',
+                        title: response.message,
+                        html: details,
+                        width: 720
+                    });
+                }).fail(showError).always(() => button.prop('disabled', false).html('<i class="ti ti-user-plus me-1"></i> Buat Akun Login'));
+            });
+        });
+
+        function resetDosenForm() {
+            $('#formDosen')[0].reset();
+            $('#formDosen').attr('action', `${baseUrl}`);
+            $('#dosen-method').val('POST');
+            $('#modalDosenTitle').text('Tambah Dosen');
+            $('#dosen-aktif').prop('checked', true);
+        }
+        $('#btn-add-dosen').on('click', resetDosenForm);
+
+        $('#formDosen').on('submit', function(event) {
+            event.preventDefault();
+            const button = $('#btn-save-dosen').prop('disabled', true).text('Menyimpan...');
             $.ajax({
-                url: @json(route('master.dosens.generate-users')),
+                url: $(this).attr('action'),
                 method: 'POST',
-                headers: { Accept: 'application/json', 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
+                headers: {
+                    Accept: 'application/json'
+                },
+                data: $(this).serialize()
             }).done(response => {
+                modal.hide();
                 table.ajax.reload(null, false);
-                let details = `<p>${safe(response.created_count)} akun dibuat; ${safe(response.skipped_count)} data dilewati.</p>`;
-                if (response.skipped?.length) {
-                    details += '<div class="table-responsive text-start"><table class="table table-sm"><thead><tr><th>NIDN</th><th>Alasan</th></tr></thead><tbody>';
-                    response.skipped.forEach(item => { details += `<tr><td>${safe(item.identifier)}</td><td>${safe(item.reason)}</td></tr>`; });
-                    details += '</tbody></table></div>';
-                }
-                Swal.fire({ icon: response.skipped_count ? 'warning' : 'success', title: response.message, html: details, width: 720 });
-            }).fail(showError).always(() => button.prop('disabled', false).html('<i class="ti ti-user-plus me-1"></i> Buat Akun Login'));
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: response.message,
+                    timer: 1600,
+                    showConfirmButton: false
+                });
+            }).fail(showError).always(() => button.prop('disabled', false).html('<i class="ti ti-device-floppy me-1"></i> Simpan'));
+        });
+
+        $('#table-dosens').on('click', '.btn-edit-dosen', function() {
+            const record = table.row($(this).closest('tr')).data();
+            if (!record) return;
+            resetDosenForm();
+            $('#modalDosenTitle').text('Edit Data Dosen');
+            $('#formDosen').attr('action', `${baseUrl}/${encodeURIComponent(record.id_dosen)}`);
+            $('#dosen-method').val('PUT');
+            Object.entries(record).forEach(([key, value]) => $(`#formDosen [name="${key}"]`).val(value ?? ''));
+            $('#formDosen input[type="hidden"][name="aktif"]').val(0);
+            $('#dosen-aktif').val(1);
+            $('#dosen-aktif').prop('checked', Boolean(record.aktif));
+            modal.show();
+        });
+
+        $('#table-dosens').on('click', '.btn-delete-dosen', function() {
+            const record = table.row($(this).closest('tr')).data();
+            if (!record) return;
+            Swal.fire({
+                title: 'Hapus data dosen?',
+                text: record.nama_dosen,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#fa896b',
+                confirmButtonText: 'Ya, hapus',
+                cancelButtonText: 'Batal'
+            }).then(result => {
+                if (!result.isConfirmed) return;
+                $.ajax({
+                        url: `${baseUrl}/${encodeURIComponent(record.id_dosen)}`,
+                        method: 'POST',
+                        headers: {
+                            Accept: 'application/json'
+                        },
+                        data: {
+                            _method: 'DELETE',
+                            _token: $('meta[name="csrf-token"]').attr('content')
+                        }
+                    })
+                    .done(response => {
+                        table.ajax.reload(null, false);
+                        Swal.fire('Terhapus', response.message, 'success');
+                    })
+                    .fail(showError);
+            });
+        });
+
+        $('#formImportDosen').on('submit', function(event) {
+            event.preventDefault();
+            const button = $('#btn-import-dosen').prop('disabled', true).text('Mengimpor...');
+            $.ajax({
+                    url: $(this).attr('action'),
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json'
+                    },
+                    data: new FormData(this),
+                    processData: false,
+                    contentType: false
+                })
+                .done(response => {
+                    importModal.hide();
+                    this.reset();
+                    table.ajax.reload(null, false);
+                    let details = `<p>${safe(response.imported_count)} data ditambahkan; ${safe(response.skipped_count)} baris dilewati.</p>`;
+                    if (response.skipped?.length) {
+                        details += '<div class="table-responsive text-start"><table class="table table-sm"><thead><tr><th>Baris</th><th>NIDN/NUPTK</th><th>Alasan</th></tr></thead><tbody>';
+                        response.skipped.forEach(item => {
+                            details += `<tr><td>${safe(item.rowNumber)}</td><td>${safe(item.identifier)}</td><td>${safe(item.reason)}</td></tr>`;
+                        });
+                        details += '</tbody></table></div>';
+                    }
+                    Swal.fire({
+                        icon: response.skipped_count ? 'warning' : 'success',
+                        title: 'Impor selesai',
+                        html: details,
+                        width: 720
+                    });
+                }).fail(showError).always(() => button.prop('disabled', false).html('<i class="ti ti-upload me-1"></i> Mulai Impor'));
         });
     });
-    function resetDosenForm() {
-        $('#formDosen')[0].reset();
-        $('#formDosen').attr('action', `${baseUrl}`);
-        $('#dosen-method').val('POST');
-        $('#modalDosenTitle').text('Tambah Dosen');
-        $('#dosen-aktif').prop('checked', true);
-    }
-    $('#btn-add-dosen').on('click', resetDosenForm);
-
-    $('#formDosen').on('submit', function (event) {
-        event.preventDefault();
-        const button = $('#btn-save-dosen').prop('disabled', true).text('Menyimpan...');
-        $.ajax({
-            url: $(this).attr('action'),
-            method: 'POST',
-            headers: { Accept: 'application/json' },
-            data: $(this).serialize()
-        }).done(response => {
-            modal.hide();
-            table.ajax.reload(null, false);
-            Swal.fire({ icon: 'success', title: 'Berhasil', text: response.message, timer: 1600, showConfirmButton: false });
-        }).fail(showError).always(() => button.prop('disabled', false).html('<i class="ti ti-device-floppy me-1"></i> Simpan'));
-    });
-
-    $('#table-dosens').on('click', '.btn-edit-dosen', function () {
-        const record = table.row($(this).closest('tr')).data();
-        if (!record) return;
-        resetDosenForm();
-        $('#modalDosenTitle').text('Edit Data Dosen');
-        $('#formDosen').attr('action', `${baseUrl}/${encodeURIComponent(record.id_dosen)}`);
-        $('#dosen-method').val('PUT');
-        Object.entries(record).forEach(([key, value]) => $(`#formDosen [name="${key}"]`).val(value ?? ''));
-        $('#formDosen input[type="hidden"][name="aktif"]').val(0);
-        $('#dosen-aktif').val(1);
-        $('#dosen-aktif').prop('checked', Boolean(record.aktif));
-        modal.show();
-    });
-
-    $('#table-dosens').on('click', '.btn-delete-dosen', function () {
-        const record = table.row($(this).closest('tr')).data();
-        if (!record) return;
-        Swal.fire({ title: 'Hapus data dosen?', text: record.nama_dosen, icon: 'warning', showCancelButton: true, confirmButtonColor: '#fa896b', confirmButtonText: 'Ya, hapus', cancelButtonText: 'Batal' }).then(result => {
-            if (!result.isConfirmed) return;
-            $.ajax({ url: `${baseUrl}/${encodeURIComponent(record.id_dosen)}`, method: 'POST', headers: { Accept: 'application/json' }, data: { _method: 'DELETE', _token: $('meta[name="csrf-token"]').attr('content') } })
-                .done(response => { table.ajax.reload(null, false); Swal.fire('Terhapus', response.message, 'success'); })
-                .fail(showError);
-        });
-    });
-
-    $('#formImportDosen').on('submit', function (event) {
-        event.preventDefault();
-        const button = $('#btn-import-dosen').prop('disabled', true).text('Mengimpor...');
-        $.ajax({ url: $(this).attr('action'), method: 'POST', headers: { Accept: 'application/json' }, data: new FormData(this), processData: false, contentType: false })
-            .done(response => {
-                importModal.hide();
-                this.reset();
-                table.ajax.reload(null, false);
-                let details = `<p>${safe(response.imported_count)} data ditambahkan; ${safe(response.skipped_count)} baris dilewati.</p>`;
-                if (response.skipped?.length) {
-                    details += '<div class="table-responsive text-start"><table class="table table-sm"><thead><tr><th>Baris</th><th>NIDN/NUPTK</th><th>Alasan</th></tr></thead><tbody>';
-                    response.skipped.forEach(item => { details += `<tr><td>${safe(item.rowNumber)}</td><td>${safe(item.identifier)}</td><td>${safe(item.reason)}</td></tr>`; });
-                    details += '</tbody></table></div>';
-                }
-                Swal.fire({ icon: response.skipped_count ? 'warning' : 'success', title: 'Impor selesai', html: details, width: 720 });
-            }).fail(showError).always(() => button.prop('disabled', false).html('<i class="ti ti-upload me-1"></i> Mulai Impor'));
-    });
-});
 </script>
 @endpush
 @endsection
