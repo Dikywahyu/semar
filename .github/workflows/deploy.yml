@@ -1,0 +1,31 @@
+name: Deploy to cPanel
+
+on:
+  push:
+    branches:
+      - main # Sesuaikan jika branch Anda bernama 'master'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: semarunitri.com
+          username: semm3712
+          port: 2223
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Masuk ke folder repository di cPanel
+            cd /home/semm3712/repositories/semar
+            
+            # Menarik perubahan terbaru dari GitHub
+            git pull origin main
+            
+            # (Opsional) Mengeksekusi file .cpanel.yml jika ada, 
+            # atau langsung salin ke public_html
+            /bin/cp -R * /home/semm3712/public_html/
