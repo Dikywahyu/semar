@@ -32,6 +32,7 @@
                 <div class="d-flex flex-wrap gap-2">
                     <a href="{{ route('master.mahasiswas.export') }}" class="btn btn-outline-success"><i class="ti ti-file-spreadsheet me-1"></i> Ekspor Excel</a>
                     <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalImportMahasiswa"><i class="ti ti-upload me-1"></i> Impor</button>
+                    <button type="button" class="btn btn-outline-secondary" id="btn-generate-mahasiswa-users"><i class="ti ti-user-plus me-1"></i> Buat Akun Login</button>
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalMahasiswa" id="btn-add-mahasiswa"><i class="ti ti-plus me-1"></i> Tambah Mahasiswa</button>
                     <a href="{{ route('pkl.admin.index') }}" class="btn btn-light"><i class="ti ti-arrow-left me-1"></i> Kembali ke PKL</a>
                 </div>
@@ -146,6 +147,33 @@ $(function () {
         const message = errors ? Object.values(errors).flat().join('\n') : (xhr.responseJSON?.message || 'Terjadi kesalahan. Silakan coba lagi.');
         Swal.fire({ icon: 'error', title: 'Gagal', text: message });
     }
+    $('#btn-generate-mahasiswa-users').on('click', function () {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Buat akun mahasiswa?',
+            html: 'Akun akan dibuat untuk mahasiswa aktif yang belum memiliki akun. Username dan password awal menggunakan NIM. Akun yang sudah ada tidak akan diubah.',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, buat akun',
+            cancelButtonText: 'Batal'
+        }).then(result => {
+            if (!result.isConfirmed) return;
+            const button = $('#btn-generate-mahasiswa-users').prop('disabled', true).html('<i class="ti ti-loader me-1"></i> Membuat...');
+            $.ajax({
+                url: @json(route('master.mahasiswas.generate-users')),
+                method: 'POST',
+                headers: { Accept: 'application/json', 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
+            }).done(response => {
+                table.ajax.reload(null, false);
+                let details = `<p>${safe(response.created_count)} akun dibuat; ${safe(response.skipped_count)} data dilewati.</p>`;
+                if (response.skipped?.length) {
+                    details += '<div class="table-responsive text-start"><table class="table table-sm"><thead><tr><th>NIM</th><th>Alasan</th></tr></thead><tbody>';
+                    response.skipped.forEach(item => { details += `<tr><td>${safe(item.identifier)}</td><td>${safe(item.reason)}</td></tr>`; });
+                    details += '</tbody></table></div>';
+                }
+                Swal.fire({ icon: response.skipped_count ? 'warning' : 'success', title: response.message, html: details, width: 720 });
+            }).fail(showError).always(() => button.prop('disabled', false).html('<i class="ti ti-user-plus me-1"></i> Buat Akun Login'));
+        });
+    });
     function resetMahasiswaForm() {
         $('#formMahasiswa')[0].reset();
         $('#formMahasiswa').attr('action', `${baseUrl}`);

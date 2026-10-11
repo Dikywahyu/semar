@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Imports\MahasiswasImport;
 use App\Models\Mahasiswa\MahasiswaRegistrasi;
 use App\Models\Prodi;
+use App\Services\AcademicAccountGenerator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -61,6 +62,28 @@ class MahasiswaController extends Controller
         $this->authorizeManagement();
 
         return Excel::download(new MahasiswasExport, 'data-mahasiswa.xlsx');
+    }
+
+    public function generateUsers(Request $request, AcademicAccountGenerator $generator): RedirectResponse|JsonResponse
+    {
+        $this->authorizeManagement();
+        $result = $generator->generateStudentAccounts();
+
+        Log::info('Student accounts generated from master data.', [
+            'user_id' => auth()->id(),
+            'created_count' => $result['created_count'],
+            'skipped_count' => $result['skipped_count'],
+        ]);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Pembuatan akun mahasiswa selesai.',
+                ...$result,
+            ]);
+        }
+
+        return redirect()->route('master.mahasiswas.index')
+            ->with('success', "Pembuatan akun selesai: {$result['created_count']} akun dibuat, {$result['skipped_count']} data dilewati.");
     }
 
     public function import(Request $request): RedirectResponse|JsonResponse

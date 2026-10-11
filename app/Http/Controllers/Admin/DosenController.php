@@ -7,11 +7,12 @@ use App\Http\Controllers\Controller;
 use App\Imports\DosensImport;
 use App\Models\Dosen\Dosen;
 use App\Models\Prodi;
+use App\Services\AcademicAccountGenerator;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
@@ -63,6 +64,28 @@ class DosenController extends Controller
         $this->authorizeManagement();
 
         return Excel::download(new DosensExport, 'data-dosen.xlsx');
+    }
+
+    public function generateUsers(Request $request, AcademicAccountGenerator $generator): RedirectResponse|JsonResponse
+    {
+        $this->authorizeManagement();
+        $result = $generator->generateLecturerAccounts();
+
+        Log::info('Lecturer accounts generated from master data.', [
+            'user_id' => auth()->id(),
+            'created_count' => $result['created_count'],
+            'skipped_count' => $result['skipped_count'],
+        ]);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Pembuatan akun dosen selesai.',
+                ...$result,
+            ]);
+        }
+
+        return redirect()->route('master.dosens.index')
+            ->with('success', "Pembuatan akun selesai: {$result['created_count']} akun dibuat, {$result['skipped_count']} data dilewati.");
     }
 
     public function import(Request $request): RedirectResponse|JsonResponse

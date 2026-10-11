@@ -40,7 +40,7 @@
 
     <form action="{{ route('login') }}" method="POST" class="login-form">
         @csrf
-        <label for="username">NIM / USERNAME</label>
+        <label for="username">EMAIL / NIM / NIDN</label>
         <input
             id="username"
             class="login-form__input"
