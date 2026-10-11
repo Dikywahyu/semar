@@ -31,7 +31,7 @@
                 </div>
                 <div class="d-flex flex-wrap gap-2">
                     <a href="{{ route('master.dosens.export') }}" class="btn btn-outline-success"><i class="ti ti-file-spreadsheet me-1"></i> Ekspor Excel</a>
-                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalImportDosen"><i class="ti ti-upload me-1"></i> Impor</button>
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalImportDosen"><i class="ti ti-upload me-1"></i> Impor Excel</button>
                     <button type="button" class="btn btn-outline-secondary" id="btn-generate-dosen-users"><i class="ti ti-user-plus me-1"></i> Buat Akun Dosen </button>
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalDosen" id="btn-add-dosen"><i class="ti ti-plus me-1"></i> Tambah Dosen</button>
                     <a href="{{ route('pkl.admin.index') }}" class="btn btn-light"><i class="ti ti-arrow-left me-1"></i> Kembali ke PKL</a>
