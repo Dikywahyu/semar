@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/semm3712/public_html
+    - /bin/cp -R * $DEPLOYPATH
