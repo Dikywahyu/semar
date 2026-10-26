@@ -132,7 +132,7 @@ class AppServiceProvider extends ServiceProvider
                     'url' => route('capstone.admin.index'),
                     'category' => 'Capstone Design',
                     'apps_menu' => true,
-                    'active' => request()->is('capstone/admin*'),
+                    'active' => request()->is('capstone/admin') || request()->is('capstone/admin/'),
                     'roles_or_permission' => [
                         'roles' => ['Super Admin', 'BAAK', 'Akademik', 'Kaprodi', 'Kajur'],
                         'permission' => 'academic-edit',

@@ -63,23 +63,37 @@ Route::post('/approve-report/{token}', [ActivityReportController::class, 'public
 
 
 Route::middleware(['auth'])->prefix('capstone')->name('capstone.')->group(function () {
+    Route::get('file', function (\Illuminate\Http\Request $request) {
+        abort_unless(auth()->check(), 403); // Pastikan user login
+
+        $path = $request->query('path');
+        if (!\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+            abort(404, 'File tidak ditemukan.');
+        }
+
+        return response()->file(storage_path('app/public/' . $path));
+    })->name('file.view');
 
     // --- ROLE: MAHASISWA ---
     Route::prefix('mahasiswa')->name('mahasiswa.')->group(function () {
+        Route::get('reset-profile', [CapstoneStudentController::class, 'resetProfile'])->name('reset_profile');
         Route::get('/', [CapstoneStudentController::class, 'index'])->name('index');
         Route::post('group', [CapstoneStudentController::class, 'storeGroup'])->name('group.store');
         Route::post('member-response/{id}', [CapstoneStudentController::class, 'responseInvitation'])->name('member.response');
         Route::post('execution/{id}', [CapstoneStudentController::class, 'uploadExecution'])->name('execution.upload');
         Route::post('sidang/{id}', [CapstoneStudentController::class, 'uploadSidang'])->name('sidang.upload');
+        Route::post('upload-sidang/{groupId}', [CapstoneStudentController::class, 'uploadSidang'])->name('upload.sidang');
+        Route::post('invitation/{memberId}', [CapstoneStudentController::class, 'responseInvitation'])->name('invitation.response');
+        Route::delete('delete-sidang/{groupId}/{fileType}', [CapstoneStudentController::class, 'deleteSidangFile'])->name('delete.sidang.file');
     });
 
     // --- ROLE: KOORDINATOR KEAHLIAN ---
     Route::prefix('koordinator')->name('koordinator.')->group(function () {
         Route::get('/', [CapstoneCoordinatorController::class, 'index'])->name('index');
-        Route::get('groups-data', [CapstoneCoordinatorController::class, 'getGroupsByExpertise'])->name('groups.data');
-        Route::post('plot/{id}', [CapstoneCoordinatorController::class, 'plotLecturers'])->name('plot');
-        Route::post('kpi/{id}', [CapstoneCoordinatorController::class, 'updateKpiApproval'])->name('kpi');
-        Route::post('acc/{id}', [CapstoneCoordinatorController::class, 'toggleAccCoordinator'])->name('acc');
+
+        Route::post('/plot-lecturers/{groupId}', [CapstoneCoordinatorController::class, 'plotLecturers']);
+        Route::post('/kpi-approval/{groupId}', [CapstoneCoordinatorController::class, 'updateKpiApproval']);
+        Route::post('/toggle-acc/{groupId}', [CapstoneCoordinatorController::class, 'toggleAccCoordinator']);
     });
 
     // --- ROLE: DOSEN (PEMBIMBING & PENGUJI) ---

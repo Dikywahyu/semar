@@ -26,4 +26,16 @@ class CapstoneExpertise extends Model
     {
         return $this->hasMany(CapstoneGroup::class, 'expertise_id');
     }
+
+    public function dosens()
+    {
+        return $this->belongsToMany(
+            \App\Models\Dosen\Dosen::class,
+            'capstone_expertise_lecturers', // Nama tabel pivot
+            'capstone_expertise_id',        // <-- GANTI INI DENGAN NAMA KOLOM ASLI DI DATABASE ANDA
+            'lecturer_id',                  // Foreign key untuk dosen
+            'id',                           // Primary key di tabel keahlian
+            'id_dosen'                      // Primary key di tabel dosen
+        );
+    }
 }

@@ -20,9 +20,8 @@ class CapstoneCoordinatorController extends Controller
 
         // Ambil keahlian yang dikoordinatori oleh dosen yang sedang login
         $expertises = CapstoneExpertise::where('coordinator_id', $dosenId)->get();
-        $dosens = Dosen::all();
 
-        $query = CapstoneGroup::with(['leader', 'members.student', 'supervisor', 'examiner', 'expertise']);
+        $query = CapstoneGroup::with(['leader', 'members.student', 'supervisor', 'examiner', 'expertise.dosens']);
 
         // Jika bukan Super Admin / role global, filter berdasarkan keahlian koordinator
         if ($dosenId && !($user && method_exists($user, 'hasRole') && $user->hasRole(['Super Admin', 'BAAK', 'Akademik', 'KPS']))) {
@@ -37,6 +36,50 @@ class CapstoneCoordinatorController extends Controller
 
         $groups = $query->get();
 
+        // ==========================================
+        // DATA UNTUK GRAFIK (CHART BEBAN BIMBINGAN)
+        // ==========================================
+        $dosenList = [];
+        $pembimbingStats = [];
+        $pengujiStats = [];
+
+        // Kumpulkan semua nama dosen unik terlebih dahulu
+        foreach ($groups as $group) {
+            if ($group->supervisor && $group->supervisor->nama_dosen) {
+                $dosenList[$group->supervisor->nama_dosen] = true;
+            }
+            if ($group->examiner && $group->examiner->nama_dosen) {
+                $dosenList[$group->examiner->nama_dosen] = true;
+            }
+        }
+
+        $chartLabels = array_keys($dosenList);
+
+        // Hitung beban untuk masing-masing dosen
+        foreach ($chartLabels as $namaDosen) {
+            $bebanPembimbing = 0; // <-- Pastikan tanpa spasi setelah tanda $
+            $bebanPenguji = 0;
+
+            foreach ($groups as $group) {
+                $jumlahAnggota = $group->members->where('status', 'accepted')->count();
+                $totalMhs = 1 + $jumlahAnggota;
+
+                // Cek sebagai pembimbing
+                if ($group->supervisor && ($group->supervisor->nama_dosen ?? '') === $namaDosen) {
+                    $bebanPembimbing += $totalMhs;
+                }
+
+                // Cek sebagai penguji
+                if ($group->examiner && ($group->examiner->nama_dosen ?? '') === $namaDosen) {
+                    $bebanPenguji += $totalMhs;
+                }
+            }
+
+            $pembimbingStats[] = $bebanPembimbing;
+            $pengujiStats[] = $bebanPenguji;
+        }
+        // ==========================================
+
         if ($request->ajax()) {
             return response()->json([
                 'status' => 'success',
@@ -45,7 +88,8 @@ class CapstoneCoordinatorController extends Controller
             ]);
         }
 
-        return view('capstone.koordinator.index', compact('groups', 'expertises', 'dosens'));
+        // Jangan lupa kirim $chartLabels dan $chartData ke view
+        return view('capstone.koordinator.index', compact('groups', 'expertises', 'chartLabels', 'pembimbingStats', 'pengujiStats'));
     }
 
     // Endpoint alternatif untuk mengambil data kelompok via AJAX

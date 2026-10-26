@@ -6,17 +6,33 @@ use App\Http\Controllers\Controller;
 use App\Models\Capstone\CapstoneGroup;
 use App\Models\Capstone\CapstoneScoreComponent;
 use App\Models\Capstone\CapstoneStudentScore;
+use App\Models\Dosen\Dosen;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Capstone\Concerns\ResolvesCapstoneProfiles;
 
 class CapstoneScoreController extends Controller
 {
+    use ResolvesCapstoneProfiles;
 
     // Index halaman penilaian dosen (Mendukung View & AJAX)
     public function dosenIndex(Request $request)
     {
-        $user = Auth::user();
-        $dosenId = $user?->id_dosen ?? null;
+        $dosen = $this->capstoneDosen($request);
+
+        if (! $dosen && $this->canChooseCapstoneProfile()) {
+            return view('capstone.profile_selector', [
+                'jenis' => 'dosen',
+                'profiles' => Dosen::query()->where('aktif', true)->orderBy('nama_dosen')->get(),
+                'route' => route('capstone.dosen.index'),
+                'parameter' => 'id_dosen',
+                'title' => 'Pilih Profil Dosen',
+                'description' => 'Akun ini tidak terhubung ke profil dosen. Pilih dosen untuk membuka penilaian Capstone sebagai dosen.',
+                'label' => fn (Dosen $profile) => $profile->nama_dosen . ($profile->nidn ? ' (' . $profile->nidn . ')' : ''),
+            ]);
+        }
+
+        abort_unless($dosen, 403, 'Profil dosen aktif untuk akun ini belum tersedia.');
+        $dosenId = $dosen->id_dosen;
 
         $groups = CapstoneGroup::with(['leader', 'members.student', 'studentScores.component'])
             ->where('supervisor_id', $dosenId)
@@ -106,8 +122,14 @@ class CapstoneScoreController extends Controller
             'scores.*.score' => 'required|numeric|min:0|max:100',
         ]);
 
-        $user = Auth::user();
-        $dosenId = $user?->id_dosen ?? null;
+        $dosen = $this->capstoneDosen($request);
+        abort_unless($dosen, 403);
+        $dosenId = $dosen->id_dosen;
+
+        CapstoneGroup::query()
+            ->whereKey($groupId)
+            ->where(fn ($query) => $query->where('supervisor_id', $dosenId)->orWhere('examiner_id', $dosenId))
+            ->firstOrFail();
 
         foreach ($request->scores as $item) {
             CapstoneStudentScore::updateOrCreate(
