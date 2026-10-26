@@ -64,7 +64,7 @@ class AppServiceProvider extends ServiceProvider
                     'category' => 'PKL',
                     'apps_menu' => true,
                     'active' => request()->is('pkl/mahasiswa*'),
-                    'roles' => ['mahasiswa', 'Mahasiswa'],
+                    'roles' => ['Super Admin', 'mahasiswa', 'Mahasiswa'],
                 ],
                 [
                     'title' => 'PKL Dosen',
@@ -73,7 +73,7 @@ class AppServiceProvider extends ServiceProvider
                     'category' => 'PKL',
                     'apps_menu' => true,
                     'active' => request()->is('pkl/dosen*'),
-                    'roles' => ['dosen_pembimbing', 'dosen_penguji', 'dosen', 'Dosen', 'DosenLB', 'Guru Besar'],
+                    'roles' => ['Super Admin', 'dosen_pembimbing', 'dosen_penguji', 'dosen', 'Dosen', 'DosenLB', 'Guru Besar'],
                 ],
                 [
                     'title' => 'Monitoring PKL',
