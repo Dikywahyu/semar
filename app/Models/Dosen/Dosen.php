@@ -49,6 +49,11 @@ class Dosen extends Model
         return $this->hasMany(PengajuanPkl::class, 'dosen_pembimbing_id', 'id_dosen');
     }
 
+    public function capstoneGroups(): HasMany
+    {
+        return $this->hasMany(\App\Models\Capstone\CapstoneGroup::class, 'supervisor_id', 'id_dosen');
+    }
+
     public function prodi(): BelongsTo
     {
         return $this->belongsTo(Prodi::class);

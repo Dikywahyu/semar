@@ -31,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
             $this->loadMigrationsFrom(database_path('migrations/kanban'));
             $this->loadMigrationsFrom(database_path('migrations/apps'));
             $this->loadMigrationsFrom(database_path('migrations/activity'));
+            $this->loadMigrationsFrom(database_path('migrations/capstone'));
             $this->loadMigrationsFrom(database_path('migrations/Pkl'));
         }
 
@@ -84,6 +85,56 @@ class AppServiceProvider extends ServiceProvider
                     'active' => request()->is('pkl/admin*'),
                     'roles_or_permission' => [
                         'roles' => ['Super Admin', 'BAAK', 'Akademik', 'Kemahasiswaan', 'Kaprodi', 'Kajur'],
+                        'permission' => 'academic-edit',
+                    ],
+                ],
+
+                // --- CATEGORY: CAPSTONE DESIGN ---
+                [
+                    'title' => 'Capstone Mahasiswa',
+                    'icon' => 'solar:laptop-minimalistic-line-duotone',
+                    'url' => route('capstone.mahasiswa.index'),
+                    'category' => 'Capstone Design',
+                    'apps_menu' => true,
+                    'active' => request()->is('capstone/mahasiswa*'),
+                    'roles' => ['Super Admin', 'mahasiswa', 'Mahasiswa'],
+                ],
+                [
+                    'title' => 'Koordinator Capstone',
+                    'icon' => 'solar:user-check-rounded-line-duotone',
+                    'url' => route('capstone.koordinator.index'),
+                    'category' => 'Capstone Design',
+                    'apps_menu' => true,
+                    'active' => request()->is('capstone/koordinator*'),
+                    'roles' => ['Super Admin', 'dosen', 'Dosen', 'Kaprodi', 'Kajur'],
+                ],
+                [
+                    'title' => 'Penilaian Dosen Capstone',
+                    'icon' => 'solar:clipboard-check-line-duotone',
+                    'url' => route('capstone.dosen.index'),
+                    'category' => 'Capstone Design',
+                    'apps_menu' => true,
+                    'active' => request()->is('capstone/dosen*'),
+                    'roles' => ['Super Admin', 'dosen_pembimbing', 'dosen_penguji', 'dosen', 'Dosen', 'DosenLB', 'Guru Besar'],
+                ],
+                [
+                    'title' => 'Master Keahlian Capstone',
+                    'icon' => 'solar:folder-with-files-line-duotone',
+                    'url' => route('capstone.admin.expertises.index'),
+                    'category' => 'Capstone Design',
+                    'apps_menu' => true,
+                    'active' => request()->is('capstone/admin/expertises*'),
+                    'roles' => ['Super Admin', 'BAAK', 'Akademik', 'Kaprodi'],
+                ],
+                [
+                    'title' => 'Monitoring Capstone',
+                    'icon' => 'solar:chart-square-line-duotone',
+                    'url' => route('capstone.admin.index'),
+                    'category' => 'Capstone Design',
+                    'apps_menu' => true,
+                    'active' => request()->is('capstone/admin*'),
+                    'roles_or_permission' => [
+                        'roles' => ['Super Admin', 'BAAK', 'Akademik', 'Kaprodi', 'Kajur'],
                         'permission' => 'academic-edit',
                     ],
                 ],

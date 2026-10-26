@@ -29,6 +29,11 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\Capstone\CapstoneStudentController;
+use App\Http\Controllers\Capstone\CapstoneCoordinatorController;
+use App\Http\Controllers\Capstone\CapstoneScoreController;
+use App\Http\Controllers\Capstone\CapstoneAdminController;
+
 // PENCEGAT DARURAT: Mengintip data yang dilempar dari SIAKAD Lokal
 // Route::get('/oauth/authorize', function(\Illuminate\Http\Request $request) {
 //     dd([
@@ -55,6 +60,56 @@ Route::get('/verify-report/{token}', [ActivityReportController::class, 'verifyDi
 
 Route::get('/approve-report/{token}', [ActivityReportController::class, 'publicApprovalView'])->name('activity_reports.public_approval');
 Route::post('/approve-report/{token}', [ActivityReportController::class, 'publicApprovalSubmit'])->name('activity_reports.public_approval_submit');
+
+
+Route::middleware(['auth'])->prefix('capstone')->name('capstone.')->group(function () {
+
+    // --- ROLE: MAHASISWA ---
+    Route::prefix('mahasiswa')->name('mahasiswa.')->group(function () {
+        Route::get('/', [CapstoneStudentController::class, 'index'])->name('index');
+        Route::post('group', [CapstoneStudentController::class, 'storeGroup'])->name('group.store');
+        Route::post('member-response/{id}', [CapstoneStudentController::class, 'responseInvitation'])->name('member.response');
+        Route::post('execution/{id}', [CapstoneStudentController::class, 'uploadExecution'])->name('execution.upload');
+        Route::post('sidang/{id}', [CapstoneStudentController::class, 'uploadSidang'])->name('sidang.upload');
+    });
+
+    // --- ROLE: KOORDINATOR KEAHLIAN ---
+    Route::prefix('koordinator')->name('koordinator.')->group(function () {
+        Route::get('/', [CapstoneCoordinatorController::class, 'index'])->name('index');
+        Route::get('groups-data', [CapstoneCoordinatorController::class, 'getGroupsByExpertise'])->name('groups.data');
+        Route::post('plot/{id}', [CapstoneCoordinatorController::class, 'plotLecturers'])->name('plot');
+        Route::post('kpi/{id}', [CapstoneCoordinatorController::class, 'updateKpiApproval'])->name('kpi');
+        Route::post('acc/{id}', [CapstoneCoordinatorController::class, 'toggleAccCoordinator'])->name('acc');
+    });
+
+    // --- ROLE: DOSEN (PEMBIMBING & PENGUJI) ---
+    Route::prefix('dosen')->name('dosen.')->group(function () {
+        Route::get('/', [CapstoneScoreController::class, 'dosenIndex'])->name('index');
+        Route::post('student-scores/{groupId}', [CapstoneScoreController::class, 'storeStudentScores'])->name('scores.store');
+    });
+
+    // --- ROLE: ADMIN / KPS (MASTER & RUANGAN) ---
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('/', [CapstoneAdminController::class, 'index'])->name('index');
+        Route::post('room/{id}', [CapstoneAdminController::class, 'setExamRoom'])->name('room');
+
+        // Master Komponen Nilai Routes
+        Route::get('komponen', [CapstoneAdminController::class, 'komponenIndex'])->name('komponen.index');
+        Route::post('komponen', [CapstoneAdminController::class, 'storeKomponen'])->name('komponen.store');
+        Route::put('komponen/{id}', [CapstoneAdminController::class, 'updateKomponen'])->name('komponen.update');
+        Route::delete('komponen/{id}', [CapstoneAdminController::class, 'destroyKomponen'])->name('komponen.destroy');
+
+        Route::get('expertises', [CapstoneAdminController::class, 'expertiseIndex'])->name('expertises.index');
+        Route::post('expertises', [CapstoneAdminController::class, 'storeExpertise'])->name('expertises.store');
+        Route::put('expertises/{id}', [CapstoneAdminController::class, 'updateExpertise'])->name('expertises.update');
+        Route::delete('expertises/{id}', [CapstoneAdminController::class, 'destroyExpertise'])->name('expertises.destroy');
+
+        // Endpoint Pivot Dosen Keahlian
+        Route::get('expertises/{id}/lecturers', [CapstoneAdminController::class, 'getExpertiseLecturers'])->name('expertises.lecturers.get');
+        Route::post('expertises/{id}/lecturers', [CapstoneAdminController::class, 'storeExpertiseLecturer'])->name('expertises.lecturers.store');
+        Route::delete('expertises/{expertiseId}/lecturers/{lecturerId}', [CapstoneAdminController::class, 'destroyExpertiseLecturer'])->name('expertises.lecturers.destroy');
+    });
+});
 
 /*
 |--------------------------------------------------------------------------
