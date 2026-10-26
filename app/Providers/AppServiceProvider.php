@@ -219,27 +219,29 @@ class AppServiceProvider extends ServiceProvider
                 ],
             ];
 
-            // FILTER MENU BERDASARKAN CAN / PERMISSION USER LOGGED IN
-            $menus = array_filter($rawMenus, function ($menu) {
+            /** @var \App\Models\User|null $user */
+            $user = request()->user(); // Bisa juga menggunakan \Illuminate\Support\Facades\Auth::user()
+
+            $menus = array_filter($rawMenus, function ($menu) use ($user) {
                 if (isset($menu['roles_or_permission'])) {
                     $access = $menu['roles_or_permission'];
-                    return auth()->check() && (
-                        auth()->user()->hasAnyRole($access['roles'] ?? [])
-                        || auth()->user()->can($access['permission'] ?? '')
+                    return $user && (
+                        $user->hasAnyRole($access['roles'] ?? [])
+                        || $user->can($access['permission'] ?? '')
                     );
                 }
 
-                if (isset($menu['roles']) && (!auth()->check() || !auth()->user()->hasAnyRole($menu['roles']))) {
+                if (isset($menu['roles']) && (!$user || !$user->hasAnyRole($menu['roles']))) {
                     return false;
                 }
 
-                // Jika menu tidak mendefinisikan key 'permission', tampilkan untuk semua user terautentikasi
+                // Jika menu tidak mendefinisikan key 'permission', tampilkan untuk semua user
                 if (!isset($menu['permission'])) {
                     return true;
                 }
 
                 // Jika user memiliki permission yang sesuai, loloskan menu ini
-                return auth()->check() && auth()->user()->can($menu['permission']);
+                return $user && $user->can($menu['permission']);
             });
 
             // Kirim data menu yang sudah difilter ke view

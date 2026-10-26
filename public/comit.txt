@@ -1,3 +1,3 @@
 git add .
-git commit -m "Revisi Menu"
+git commit -m "Revisi Menu 2"
 git push origin main
