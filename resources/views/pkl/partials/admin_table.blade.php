@@ -88,6 +88,24 @@
                     @else
                         <span class="text-muted small">- Belum Ada Jadwal -</span>
                     @endif
+                    @if(in_array($item->status, ['Pelaksanaan PKL & Bimbingan', 'Verifikasi Berkas Admin', 'Dijadwalkan Ujian'], true))
+                        <button type="button" class="btn btn-sm btn-success btn-terapkan-usulan mt-2" data-id="{{ $item->id }}" data-dosen="{{ $item->dosen_pembimbing_id }}" data-tanggal="{{ $item->usulan_tanggal_seminar ?: $item->tanggal_seminar?->format('Y-m-d\TH:i') }}" data-ruangan="{{ $item->usulan_ruangan_seminar ?: $item->ruangan_seminar }}" data-usulan-pembimbing="{{ $item->usulan_nama_pembimbing }}">Tinjau plotting / jadwal</button>
+                    @endif
+                    @php($aktivitasTerakhir = $item->logAktivitas->sortByDesc('created_at')->take(4))
+                    @if($aktivitasTerakhir->isNotEmpty())
+                        <details class="mt-2 small">
+                            <summary class="text-primary fw-semibold" style="cursor:pointer">Riwayat aktivitas</summary>
+                            <div class="mt-2 border-start border-2 ps-2">
+                                @foreach($aktivitasTerakhir as $aktivitas)
+                                    <div class="mb-2">
+                                        <strong>{{ $aktivitas->aksi }}</strong><br>
+                                        <span class="text-muted">{{ $aktivitas->created_at?->format('d M Y H:i') }} · {{ $aktivitas->aktor?->name ?? 'Pengguna' }}</span>
+                                        @if($aktivitas->deskripsi)<br><span>{{ $aktivitas->deskripsi }}</span>@endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        </details>
+                    @endif
                 </td>
                 <td style="white-space: nowrap;">
                     <div class="d-flex align-items-center gap-1">

@@ -5,7 +5,7 @@
     <div class="row">
         <div class="col-md-12 mb-4">
             <div class="d-flex justify-content-between align-items-center">
-                <h3 class="fw-bold text-slate-800">Master Komponen Penilaian Seminar PKL</h3>
+                <h3 class="fw-bold text-slate-800">Master Komponen Penilaian PKL</h3>
                 <a href="{{ route('pkl.admin.index') }}" class="btn btn-outline-secondary btn-sm">Kembali ke Dashboard</a>
             </div>
         </div>
@@ -38,6 +38,14 @@
                     <input type="hidden" name="semester_master_id" value="{{ $selectedSemesterMasterId }}">
                     
                     <div class="mb-3">
+                        <label class="form-label small fw-semibold">Kategori Penilai</label>
+                        <select name="penilai" class="form-select" required>
+                            <option value="Penguji">Dosen Penguji</option>
+                            <option value="Pembimbing">Dosen Pembimbing</option>
+                            <option value="Instansi">Penanggung Jawab Lapangan</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label small fw-semibold">Nama Komponen</label>
                         <input type="text" name="nama_komponen" class="form-control" placeholder="Cth: Penguasaan Materi / Laporan" required>
                     </div>
@@ -51,55 +59,28 @@
             </div>
         </div>
 
-        <!-- Tabel Daftar Komponen & Cek Total Bobot -->
+        <!-- Tiga daftar komponen berdasarkan pihak penilai -->
         <div class="col-md-8">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold m-0">Daftar Komponen (Semester: {{ $semesters->firstWhere('kode_semester', $selectedSemester)?->nama_semester ?? 'Belum dipilih' }})</h5>
-                    <div>
-                        <span class="badge {{ $totalBobot == 100 ? 'bg-success' : 'bg-warning text-dark' }}">
-                            Total Bobot: {{ $totalBobot }}%
-                        </span>
+            @foreach ([['Penguji', 'Dosen Penguji', 'ti ti-award', 'primary'], ['Pembimbing', 'Dosen Pembimbing', 'ti ti-user-check', 'info'], ['Instansi', 'Penanggung Jawab Lapangan', 'ti ti-building', 'success']] as [$key, $title, $icon, $color])
+                @php $groupComponents = $komponenByPenilai[$key] ?? collect(); $groupTotal = $totalBobotByPenilai[$key] ?? 0; @endphp
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <h5 class="fw-bold m-0 text-{{ $color }}"><i class="{{ $icon }} me-2"></i>{{ $title }}</h5>
+                        <span class="badge {{ $groupTotal == 100 ? 'bg-success' : 'bg-warning text-dark' }}">Total Bobot: {{ $groupTotal }}%</span>
                     </div>
-                </div>
-
-                @if($totalBobot != 100)
-                    <div class="alert alert-warning small py-2">
-                        <i class="ti ti-alert-circle me-1"></i> Peringatan: Total bobot komponen untuk semester ini harus tepat 100% agar perhitungan nilai akhir valid.
-                    </div>
-                @endif
-
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>No</th>
-                                <th>Nama Komponen</th>
-                                <th>Bobot</th>
-                                <th class="text-end">Aksi</th>
-                            </tr>
-                        </thead>
+                    @if($groupTotal != 100)<div class="alert alert-warning small py-2"><i class="ti ti-alert-circle me-1"></i>Total bobot kategori ini harus tepat 100%.</div>@endif
+                    <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+                        <thead class="table-light"><tr><th>No</th><th>Nama Komponen</th><th>Bobot</th><th class="text-end">Aksi</th></tr></thead>
                         <tbody>
-                            @forelse($komponens as $index => $komp)
-                                <tr>
-                                    <td>{{ $index + 1 }}</td>
-                                    <td class="fw-semibold">{{ $komp->nama_komponen }}</td>
-                                    <td>{{ $komp->bobot }}%</td>
-                                    <td class="text-end">
-                                        <button type="button" class="btn btn-sm btn-outline-danger btn-hapus-komponen" data-id="{{ $komp->id }}">
-                                            <i class="ti ti-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
+                            @forelse($groupComponents as $index => $komp)
+                                <tr><td>{{ $index + 1 }}</td><td class="fw-semibold">{{ $komp->nama_komponen }}</td><td>{{ $komp->bobot }}%</td><td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger btn-hapus-komponen" data-id="{{ $komp->id }}"><i class="ti ti-trash"></i></button></td></tr>
                             @empty
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted py-4">Belum ada komponen penilaian untuk semester ini.</td>
-                                </tr>
+                                <tr><td colspan="4" class="text-center text-muted py-4">Belum ada komponen untuk {{ strtolower($title) }}.</td></tr>
                             @endforelse
                         </tbody>
-                    </table>
+                    </table></div>
                 </div>
-            </div>
+            @endforeach
         </div>
     </div>
 </div>

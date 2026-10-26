@@ -21,4 +21,5 @@ class BimbinganPkl extends Model
     {
         return $this->hasMany(TanggapanBimbinganPkl::class, 'bimbingan_pkl_id');
     }
+
 }

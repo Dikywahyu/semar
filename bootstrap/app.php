@@ -26,5 +26,13 @@ return Application::configure(basePath: dirname(__DIR__))
         // JANGAN panggil config() di sini.
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (\Illuminate\Http\Exceptions\PostTooLargeException $exception, \Illuminate\Http\Request $request) {
+            $message = 'Ukuran seluruh data melebihi batas server. Unggah setiap dokumen satu per satu atau naikkan post_max_size di konfigurasi PHP.';
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['message' => $message], 413);
+            }
+
+            return response()->view('errors.413', ['message' => $message], 413);
+        });
     })->create();

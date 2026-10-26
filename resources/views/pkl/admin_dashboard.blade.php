@@ -9,6 +9,31 @@
 @endpush
 
 <div class="container-fluid py-4" style="background: linear-gradient(135deg, #f6f8fd 0%, #f1f5f9 100%); min-height: 100vh;">
+
+    <style>
+        .pkl-pipeline-card { border:0; border-radius:1rem; box-shadow:0 5px 18px rgba(30,50,85,.06); }
+        .pkl-pipeline { display:grid; grid-template-columns:repeat(7,minmax(105px,1fr)); gap:.4rem; overflow-x:auto; padding:1rem .25rem .2rem; }
+        .pkl-pipeline-step { min-width:105px; position:relative; text-align:center; border:0; padding:0 .15rem .45rem; background:transparent; cursor:pointer; border-radius:.8rem; transition:transform .2s ease,background-color .2s ease; }
+        .pkl-pipeline-step:hover,.pkl-pipeline-step:focus-visible { transform:translateY(-4px); background:#f5f8ff; outline:0; }
+        .pkl-pipeline-step:not(:last-child):after { content:""; height:3px; background:#e1e8f1; position:absolute; left:calc(50% + 1.2rem); right:calc(-50% + 1.2rem); top:1rem; }
+        .pkl-pipeline-icon { position:relative; z-index:1; display:grid; place-items:center; margin:auto; width:2.25rem; height:2.25rem; border:2px solid #e1e8f1; border-radius:50%; background:white; color:#8090a6; }
+        .pkl-pipeline-step:nth-child(1) .pkl-pipeline-icon { border-color:#ff9f0a; color:#ee8800; background:#fffaf0; }
+        .pkl-pipeline-step:nth-child(2) .pkl-pipeline-icon { border-color:#5b8def; color:#4d7fe0; background:#f2f6ff; }
+        .pkl-pipeline-step:nth-child(3) .pkl-pipeline-icon { border-color:#ff9f0a; color:#ee8800; background:#fffaf0; }
+        .pkl-pipeline-step:nth-child(4) .pkl-pipeline-icon { border-color:#fb7185; color:#f05268; background:#fff3f4; }
+        .pkl-pipeline-step:nth-child(5) .pkl-pipeline-icon { border-color:#8b72ef; color:#795be0; background:#f7f4ff; }
+        .pkl-pipeline-step:nth-child(6) .pkl-pipeline-icon { border-color:#ff9f0a; color:#ee8800; background:#fffaf0; }
+        .pkl-pipeline-step:nth-child(7) .pkl-pipeline-icon { border-color:#14c9a5; color:#0da987; background:#effdfa; }
+        .pkl-pipeline-step.is-action .pkl-pipeline-icon:after { content:""; position:absolute; width:.62rem; height:.62rem; top:-.15rem; right:-.15rem; border-radius:50%; background:#fb5a65; border:2px solid white; box-shadow:0 0 0 3px rgba(251,90,101,.12); animation:pkl-pulse 1.8s infinite; }
+        .pkl-pipeline-step.is-action .pkl-pipeline-icon { border-color:#f59e0b; color:#ed8b00; }
+        .pkl-pipeline-step.is-done .pkl-pipeline-icon,.pkl-pipeline-step:last-child .pkl-pipeline-icon { border-color:#14c9a5; color:#0da987; }
+        .pkl-pipeline-count { margin:.35rem 0 .15rem; font-size:1.45rem; line-height:1.2; font-weight:800; color:#27364b; }
+        .pkl-pipeline-label { max-width:130px; margin:auto; color:#66758a; font-size:.65rem; font-weight:800; line-height:1.35; text-transform:uppercase; }
+        .pkl-pipeline-step:nth-child(1) .pkl-pipeline-label,.pkl-pipeline-step:nth-child(3) .pkl-pipeline-label,.pkl-pipeline-step:nth-child(4) .pkl-pipeline-label,.pkl-pipeline-step:nth-child(6) .pkl-pipeline-label { color:#e78300; }
+        .pkl-pipeline-step:nth-child(7) .pkl-pipeline-label,.pkl-pipeline-step:nth-child(7) .pkl-pipeline-count { color:#08b99a; }
+        @keyframes pkl-pulse { 0%,100% { box-shadow:0 0 0 2px rgba(251,90,101,.15); } 50% { box-shadow:0 0 0 6px rgba(251,90,101,.04); } }
+        @media(max-width:767px) { .pkl-pipeline { grid-template-columns:repeat(7,105px); } }
+    </style>
     
     <!-- Header Page -->
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -26,100 +51,32 @@
         </div>
     </div>
 
-    <!-- 1. WIDGET RINGKASAN (STATISTIK KARTU - 7 TAHAPAN STATUS) -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-4 col-lg-3">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
-                <div class="d-flex align-items-center">
-                    <div class="rounded-3 bg-secondary-subtle p-3 text-secondary me-3">
-                        <i class="ti ti-file-description fs-2"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-secondary mb-1 small fw-semibold">Pengajuan & Verifikasi</h6>
-                        <h3 class="fw-bold mb-0 text-slate-800" id="stat-pengajuan">{{ $stats['pengajuan'] ?? 0 }}</h3>
-                    </div>
-                </div>
-            </div>
+    @php
+        $pipelineItems = [
+            ['CP 1: Pengajuan Awal', $stats['pengajuan'] ?? 0, 'ti ti-file-plus', 'Pengajuan & Verifikasi Admin'],
+            ['Pelaksanaan PKL', $stats['pelaksanaan'] ?? 0, 'ti ti-briefcase', 'Pelaksanaan PKL & Bimbingan'],
+            ['CP 2: Verifikasi Berkas Ujian', $stats['verifikasi'] ?? 0, 'ti ti-checklist', 'Verifikasi Berkas Admin'],
+            ['Dijadwalkan Ujian', $stats['ujian'] ?? 0, 'ti ti-calendar-event', 'Dijadwalkan Ujian'],
+            ['Ujian Seminar Berlangsung', $stats['seminar'] ?? 0, 'ti ti-award', 'Ujian Seminar & Penilaian'],
+            ['CP 3: Cek Revisi Laporan', $stats['revisi'] ?? 0, 'ti ti-writing', 'Revisi Laporan'],
+            ['Selesai & Lulus', $stats['selesai'] ?? 0, 'ti ti-circle-check', 'Selesai'],
+        ];
+    @endphp
+    <section class="card pkl-pipeline-card mb-4 p-3 p-md-4">
+        <div class="d-flex align-items-center justify-content-between gap-2">
+            <h6 class="fw-bold mb-0 text-slate-800">Pipeline Perjalanan Mahasiswa &amp; Tugas Admin</h6>
+            <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis"><i class="ti ti-bell me-1"></i>Titik kuning = butuh tindakan Anda</span>
         </div>
-        <div class="col-md-4 col-lg-3">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
-                <div class="d-flex align-items-center">
-                    <div class="rounded-3 bg-primary-subtle p-3 text-primary me-3">
-                        <i class="ti ti-briefcase fs-2"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-secondary mb-1 small fw-semibold">Pelaksanaan & Bimbingan</h6>
-                        <h3 class="fw-bold mb-0 text-slate-800" id="stat-pelaksanaan">{{ $stats['pelaksanaan'] ?? 0 }}</h3>
-                    </div>
-                </div>
-            </div>
+        <div class="pkl-pipeline">
+            @foreach($pipelineItems as $index => [$label, $count, $icon, $statusValue])
+                <button type="button" class="pkl-pipeline-step {{ in_array($index, [0, 2, 3, 5], true) && $count > 0 ? 'is-action' : '' }} {{ $index === 6 ? 'is-done' : '' }}" data-pkl-status="{{ $statusValue }}" aria-label="Filter status {{ $statusValue }}">
+                    <div class="pkl-pipeline-icon"><i class="{{ $icon }} fs-5"></i></div>
+                    <div class="pkl-pipeline-count">{{ $count }}</div>
+                    <div class="pkl-pipeline-label">{{ $label }}</div>
+                </button>
+            @endforeach
         </div>
-        <div class="col-md-4 col-lg-3">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
-                <div class="d-flex align-items-center">
-                    <div class="rounded-3 bg-warning-subtle p-3 text-warning me-3">
-                        <i class="ti ti-file-alert fs-2"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-secondary mb-1 small fw-semibold">Verifikasi Berkas Admin</h6>
-                        <h3 class="fw-bold mb-0 text-slate-800" id="stat-verifikasi">{{ $stats['verifikasi'] ?? 0 }}</h3>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 col-lg-3">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
-                <div class="d-flex align-items-center">
-                    <div class="rounded-3 bg-info-subtle p-3 text-info me-3">
-                        <i class="ti ti-calendar-event fs-2"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-secondary mb-1 small fw-semibold">Dijadwalkan Ujian</h6>
-                        <h3 class="fw-bold mb-0 text-slate-800" id="stat-ujian">{{ $stats['ujian'] ?? 0 }}</h3>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 col-lg-4">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
-                <div class="d-flex align-items-center">
-                    <div class="rounded-3 p-3 me-3" style="background-color: #f3e8ff; color: #7e22ce;">
-                        <i class="ti ti-award fs-2"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-secondary mb-1 small fw-semibold">Ujian Seminar & Penilaian</h6>
-                        <h3 class="fw-bold mb-0 text-slate-800" id="stat-seminar">{{ $stats['seminar'] ?? 0 }}</h3>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 col-lg-4">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
-                <div class="d-flex align-items-center">
-                    <div class="rounded-3 bg-danger-subtle p-3 text-danger me-3">
-                        <i class="ti ti-edit-circle fs-2"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-secondary mb-1 small fw-semibold">Revisi Laporan</h6>
-                        <h3 class="fw-bold mb-0 text-slate-800" id="stat-revisi">{{ $stats['revisi'] ?? 0 }}</h3>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 col-lg-4">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
-                <div class="d-flex align-items-center">
-                    <div class="rounded-3 bg-success-subtle p-3 text-success me-3">
-                        <i class="ti ti-circle-check fs-2"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-secondary mb-1 small fw-semibold">Selesai</h6>
-                        <h3 class="fw-bold mb-0 text-slate-800" id="stat-selesai">{{ $stats['selesai'] ?? 0 }}</h3>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    </section>
 
     <!-- 2. SECTION GRAFIK (CHART.JS) & FILTER PENCARIAN -->
     <div class="row g-4 mb-4">
@@ -309,6 +266,17 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+    document.querySelectorAll('.pkl-pipeline-step').forEach(function (step) {
+        step.addEventListener('click', function () {
+            const statusFilter = document.querySelector('#filterForm select[name="status"]');
+            if (!statusFilter) return;
+
+            statusFilter.value = step.dataset.pklStatus;
+            statusFilter.dispatchEvent(new Event('change', { bubbles: true }));
+            document.querySelector('#tableContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+
     let pklStatusChart = null;
 
     document.addEventListener("DOMContentLoaded", function() {
@@ -405,6 +373,40 @@
             $('#inputCatatan').val('');
             
             $('#modalVerifikasiBerkas').modal('show');
+        });
+
+        $(document).on('click', '.btn-terapkan-usulan', function() {
+            const button = $(this);
+            const options = @json(($dosens ?? collect())->map(fn ($dosen) => ['id' => $dosen->id_dosen, 'nama' => $dosen->nama_dosen])->values());
+            const dosenOptions = options.map(dosen => `<option value="${dosen.id}" ${String(dosen.id) === String(button.data('dosen')) ? 'selected' : ''}>${$('<div>').text(dosen.nama).html()}</option>`).join('');
+            const defaultDate = button.data('tanggal') || '';
+            const defaultRoom = $('<div>').text(button.data('ruangan') || '').html();
+            const proposedSupervisor = button.data('usulan-pembimbing');
+            const supervisorHint = proposedSupervisor ? `<div class="alert alert-info text-start mt-2 mb-0">Usulan pembimbing mahasiswa: <strong>${$('<div>').text(proposedSupervisor).html()}</strong></div>` : '';
+            Swal.fire({
+                title: 'Tinjau dan tetapkan usulan',
+                html: `${supervisorHint}<label class="form-label text-start w-100 mt-3">Dosen pembimbing (admin dapat mengubah)</label><select id="admin-usulan-dosen" class="swal2-select w-100 mt-0"><option value="">Pilih dosen</option>${dosenOptions}</select><label class="form-label text-start w-100 mt-3">Tanggal dan waktu</label><input id="admin-usulan-tanggal" type="datetime-local" class="swal2-input w-100 m-0" value="${defaultDate}"><label class="form-label text-start w-100 mt-3">Ruangan</label><input id="admin-usulan-ruangan" class="swal2-input w-100 m-0" value="${defaultRoom}">`,
+                showCancelButton: true,
+                confirmButtonText: 'Tetapkan jadwal',
+                cancelButtonText: 'Batal',
+                preConfirm: () => ({
+                    dosen_pembimbing_id: $('#admin-usulan-dosen').val(),
+                    tanggal_seminar: $('#admin-usulan-tanggal').val(),
+                    ruangan_seminar: $('#admin-usulan-ruangan').val()
+                })
+            }).then(result => {
+                if (!result.isConfirmed) return;
+                $.ajax({
+                    url: "{{ url('pkl/admin/terapkan-usulan-mahasiswa') }}/" + button.data('id'),
+                    type: 'POST', data: result.value,
+                    headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+                    success: function(response) {
+                        Swal.fire({icon: 'success', title: 'Berhasil', text: response.message || 'Jadwal ditetapkan.', timer: 1200, showConfirmButton: false});
+                        fetchTableData();
+                    },
+                    error: function(xhr) { Swal.fire('Belum dapat diterapkan', xhr.responseJSON?.message || 'Periksa berkas verifikasi dan jadwal.', 'warning'); }
+                });
+            });
         });
 
         // 2. SUBMIT FORM VERIFIKASI BERKAS VIA AJAX (MENCEGAH REDIRECT / PINDAH HALAMAN)

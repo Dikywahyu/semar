@@ -21,4 +21,5 @@ class TanggapanBimbinganPkl extends Model
     {
         return $this->belongsTo(User::class, 'pengirim_id');
     }
+
 }

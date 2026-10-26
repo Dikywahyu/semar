@@ -58,7 +58,8 @@
                         listPenilai.push({
                             id: pkl.dosen_pembimbing.id_dosen,
                             nama: pkl.dosen_pembimbing.nama_dosen + ' (Dosen Pembimbing)',
-                            badge: 'bg-primary-subtle text-primary'
+                            badge: 'bg-primary-subtle text-primary',
+                            kategori: 'Pembimbing'
                         });
                     }
 
@@ -67,8 +68,18 @@
                             listPenilai.push({
                                 id: penguji.id_dosen,
                                 nama: penguji.nama_dosen + ' (Dosen Penguji ' + (index + 1) + ')',
-                                badge: 'bg-info-subtle text-info'
+                                badge: 'bg-info-subtle text-info',
+                                kategori: 'Penguji'
                             });
+                        });
+                    }
+
+                    if (komponens.some(function(komp) { return komp.penilai === 'Instansi'; })) {
+                        listPenilai.push({
+                            id: 'PENANGGUNG_LAPANGAN',
+                            nama: 'Penanggung Jawab Lapangan',
+                            badge: 'bg-success-subtle text-success',
+                            kategori: 'Instansi'
                         });
                     }
 
@@ -92,7 +103,7 @@
                         `;
 
                         // Loop komponen penilaian untuk dosen tersebut
-                        komponens.forEach(function(komp) {
+                        komponens.filter(function(komp) { return komp.penilai === dosen.kategori; }).forEach(function(komp) {
                             let val = '';
                             
                             // Cek apakah data nilai untuk dosen dan komponen ini benar-benar ada

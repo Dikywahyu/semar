@@ -165,13 +165,26 @@ Route::prefix('auth')->group(function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::prefix('pkl')->name('pkl.')->group(function () {
+        Route::get('/route-map', [PklController::class, 'routeMap'])->name('route-map');
+        Route::post('/route-map/{pengajuan}/upload/{tahap}', [PklController::class, 'routeMapUpload'])->whereIn('tahap', ['1', '2', '3'])->name('route-map.upload');
+        Route::post('/route-map/{pengajuan}/verify', [PklController::class, 'routeMapVerify'])->name('route-map.verify');
+        Route::post('/route-map/{pengajuan}/acc', [PklController::class, 'routeMapAcc'])->name('route-map.acc');
+        Route::post('/route-map/{pengajuan}/schedule', [PklController::class, 'routeMapSchedule'])->name('route-map.schedule.set');
+        Route::post('/route-map/{pengajuan}/propose-schedule', [PklController::class, 'routeMapProposeSchedule'])->name('route-map.schedule.propose');
+        Route::post('/route-map/{pengajuan}/grade', [PklController::class, 'routeMapGrade'])->name('route-map.grade');
+        Route::post('/route-map/{pengajuan}/revision/validate', [PklController::class, 'routeMapValidateRevision'])->name('route-map.revision.validate');
+        Route::post('/route-map/{pengajuan}/complete', [PklController::class, 'routeMapComplete'])->name('route-map.complete');
+        Route::get('/route-map/documents/{dokumen}', [PklController::class, 'routeMapDocument'])->name('route-map.document');
         Route::get('/mahasiswa', [PklController::class, 'mahasiswaIndex'])->name('mahasiswa.index');
         Route::post('/mahasiswa', [PklController::class, 'mahasiswaStore'])->name('mahasiswa.store');
         Route::put('/mahasiswa/{pengajuan}', [PklController::class, 'mahasiswaUpdate'])->name('mahasiswa.update');
         Route::post('/mahasiswa/{pengajuan}/upload-revisi', [PklController::class, 'uploadRevisi'])->name('mahasiswa.upload-revisi');
+        Route::post('/mahasiswa/{pengajuan}/plot-pembimbing', [PklController::class, 'mahasiswaPlotPembimbing'])->name('mahasiswa.plot-pembimbing');
         Route::post('/mahasiswa/ajukan-ulang-revisi/{pengajuan}', [PklController::class, 'ajukanUlangRevisi'])->name('mahasiswa.ajukan-ulang-revisi');
         Route::post('/mahasiswa/selesai-pelaksanaan/{pengajuan}', [PklController::class, 'selesaiPelaksanaan'])->name('mahasiswa.selesai-pelaksanaan');
         Route::post('/mahasiswa/upload-berkas-satuan/{pengajuan}', [PklController::class, 'uploadBerkasSatuan'])->name('mahasiswa.upload-berkas-satuan');
+        Route::post('/mahasiswa/{pengajuan}/usulkan-jadwal', [PklController::class, 'mahasiswaProposeSchedule'])->name('mahasiswa.usulkan-jadwal');
+        Route::post('/mahasiswa/{pengajuan}/upload-dokumen', [PklController::class, 'uploadTahapDocument'])->name('mahasiswa.upload-dokumen');
 
         Route::get('/dosen', [PklController::class, 'dosenIndex'])->name('dosen.index');
         Route::get('/dosen/bimbingan/{pengajuan}', [PklController::class, 'dosenDetail'])->name('dosen.bimbingan.detail');
@@ -183,6 +196,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/pengajuan/{pengajuan}/edit', [PklController::class, 'adminEdit'])->name('admin.pengajuan.edit');
         Route::post('/admin/pengajuan/{pengajuan}/update', [PklController::class, 'adminUpdate'])->name('admin.pengajuan.update');
         Route::post('/admin/verifikasi-berkas-seminar/{pengajuan}', [PklController::class, 'verifyDocuments'])->name('admin.verifikasi-berkas');
+        Route::post('/admin/terapkan-usulan-mahasiswa/{pengajuan}', [PklController::class, 'adminApplyStudentProposals'])->name('admin.terapkan-usulan-mahasiswa');
         Route::post('/admin/set-jadwal-penguji/{pengajuan}', [PklController::class, 'setSchedule'])->name('admin.jadwal');
         Route::get('/admin/penilaian-seminar/{pengajuan}', [PklController::class, 'adminGrades'])->name('admin.penilaian.show');
         Route::post('/admin/penilaian-seminar/{pengajuan}', [PklController::class, 'saveAdminGrades'])->name('admin.penilaian.store');

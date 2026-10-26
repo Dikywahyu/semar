@@ -64,7 +64,7 @@ class AppServiceProvider extends ServiceProvider
                     'category' => 'PKL',
                     'apps_menu' => true,
                     'active' => request()->is('pkl/mahasiswa*'),
-                    'roles' => ['Mahasiswa'],
+                    'roles' => ['mahasiswa', 'Mahasiswa'],
                 ],
                 [
                     'title' => 'PKL Dosen',
@@ -73,7 +73,7 @@ class AppServiceProvider extends ServiceProvider
                     'category' => 'PKL',
                     'apps_menu' => true,
                     'active' => request()->is('pkl/dosen*'),
-                    'roles' => ['Dosen', 'DosenLB', 'Guru Besar'],
+                    'roles' => ['dosen_pembimbing', 'dosen_penguji', 'dosen', 'Dosen', 'DosenLB', 'Guru Besar'],
                 ],
                 [
                     'title' => 'Monitoring PKL',
@@ -82,7 +82,10 @@ class AppServiceProvider extends ServiceProvider
                     'category' => 'PKL',
                     'apps_menu' => true,
                     'active' => request()->is('pkl/admin*'),
-                    'permission' => 'academic-edit',
+                    'roles_or_permission' => [
+                        'roles' => ['Super Admin', 'BAAK', 'Akademik', 'Kemahasiswaan', 'Kaprodi', 'Kajur'],
+                        'permission' => 'academic-edit',
+                    ],
                 ],
 
                 // --- CATEGORY: PRESENSI & KEGIATAN ---
@@ -122,7 +125,11 @@ class AppServiceProvider extends ServiceProvider
                     'category' => 'Master Data',
                     'apps_menu' => true,
                     'active' => request()->is('admin/master/mahasiswas*'),
-                    'permission' => 'student-edit'
+                    'permission' => 'student-edit',
+                    'roles_or_permission' => [
+                        'roles' => ['Super Admin', 'BAAK', 'Akademik', 'Kemahasiswaan', 'Kaprodi', 'Kajur'],
+                        'permission' => 'academic-edit',
+                    ],
                 ],
                 [
                     'title' => 'Program Studi',
@@ -131,7 +138,11 @@ class AppServiceProvider extends ServiceProvider
                     'category' => 'Master Data',
                     'apps_menu' => true,
                     'active' => request()->is('admin/master/prodis*'),
-                    'permission' => 'academic-edit'
+                    'permission' => 'academic-edit',
+                    'roles_or_permission' => [
+                        'roles' => ['Super Admin', 'BAAK', 'Akademik', 'Kemahasiswaan', 'Kaprodi', 'Kajur'],
+                        'permission' => 'academic-edit',
+                    ],
                 ],
                 [
                     'title' => 'Semester Akademik',
@@ -140,7 +151,11 @@ class AppServiceProvider extends ServiceProvider
                     'category' => 'Master Data',
                     'apps_menu' => true,
                     'active' => request()->is('admin/master/semesters*'),
-                    'permission' => 'academic-edit'
+                    'permission' => 'academic-edit',
+                    'roles_or_permission' => [
+                        'roles' => ['Super Admin', 'BAAK', 'Akademik', 'Kemahasiswaan', 'Kaprodi', 'Kajur'],
+                        'permission' => 'academic-edit',
+                    ],
                 ],
 
                 // --- CATEGORY: ADMINISTRATOR ---
@@ -151,7 +166,11 @@ class AppServiceProvider extends ServiceProvider
                     'category' => 'Administrator',
                     'apps_menu' => true,
                     'active' => request()->is('admin/users/data'),
-                    'permission' => 'user-list' // <-- Nama permission Spatie / Gate Anda
+                    'permission' => 'user-list',
+                    'roles_or_permission' => [
+                        'roles' => ['Super Admin', 'BAAK', 'Akademik', 'Kemahasiswaan', 'Kaprodi', 'Kajur'],
+                        'permission' => 'academic-edit',
+                    ], // <-- Nama permission Spatie / Gate Anda
                 ],
                 [
                     'title' => 'User Roles',
@@ -160,7 +179,11 @@ class AppServiceProvider extends ServiceProvider
                     'category' => 'Administrator',
                     'apps_menu' => false,
                     'active' => request()->is('admin/roles*'),
-                    'permission' => 'role-list' // <-- Hanya user dengan permission ini yang bisa melihat
+                    'permission' => 'role-list',
+                    'roles_or_permission' => [
+                        'roles' => ['Super Admin', 'BAAK', 'Akademik', 'Kemahasiswaan', 'Kaprodi', 'Kajur'],
+                        'permission' => 'academic-edit',
+                    ], // <-- Hanya user dengan permission ini yang bisa melihat
                 ],
                 [
                     'title' => 'Permissions',
@@ -169,7 +192,11 @@ class AppServiceProvider extends ServiceProvider
                     'category' => 'Administrator',
                     'apps_menu' => false,
                     'active' => request()->is('admin/permissions*'),
-                    'permission' => 'role-list'
+                    'permission' => 'role-list',
+                    'roles_or_permission' => [
+                        'roles' => ['Super Admin', 'BAAK', 'Akademik', 'Kemahasiswaan', 'Kaprodi', 'Kajur'],
+                        'permission' => 'academic-edit',
+                    ],
                 ],
                 [
                     'title' => 'API Client',
@@ -194,6 +221,14 @@ class AppServiceProvider extends ServiceProvider
 
             // FILTER MENU BERDASARKAN CAN / PERMISSION USER LOGGED IN
             $menus = array_filter($rawMenus, function ($menu) {
+                if (isset($menu['roles_or_permission'])) {
+                    $access = $menu['roles_or_permission'];
+                    return auth()->check() && (
+                        auth()->user()->hasAnyRole($access['roles'] ?? [])
+                        || auth()->user()->can($access['permission'] ?? '')
+                    );
+                }
+
                 if (isset($menu['roles']) && (!auth()->check() || !auth()->user()->hasAnyRole($menu['roles']))) {
                     return false;
                 }

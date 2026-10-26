@@ -20,12 +20,20 @@ jobs:
           port: 2223
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Masuk ke folder repository di cPanel
+            # 1. Masuk ke folder repository di cPanel
             cd /home/semm3712/repositories/semar
             
-            # Menarik perubahan terbaru dari GitHub
+            # 2. Menarik perubahan terbaru dari GitHub
             git pull origin main
             
-            # (Opsional) Mengeksekusi file .cpanel.yml jika ada, 
-            # atau langsung salin ke public_html
-            /bin/cp -R * /home/semm3712/public_html/
+            # 3. Salin semua perubahan ke folder aplikasi aktif (public_html)
+            /bin/cp -rf * /home/semm3712/public_html/
+            
+            # 4. Masuk ke direktori aplikasi utama tempat file 'artisan' dan '.env' berada
+            cd /home/semm3712/public_html/
+            
+            # 5. Jalankan migrasi baru secara otomatis (--force wajib untuk mode production)
+            php artisan migrate --force
+            
+            # 6. Bersihkan cache agar perubahan kode & view langsung diterapkan
+            php artisan optimize:clear
