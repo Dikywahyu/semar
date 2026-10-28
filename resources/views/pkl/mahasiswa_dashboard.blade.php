@@ -614,7 +614,7 @@
         </div>
         @endif
 
-        @if(in_array($pengajuan->status, [ 'Revisi Laporan'], true))
+        @if(in_array($pengajuan->status, [ 'Revisi Laporan','Revisi Lapora'], true))
         <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-warning">
             <h5 class="fw-bold mb-1"><i class="ti ti-file-check text-warning me-2"></i>Dokumen Akhir PKL</h5>
             <p class="text-muted small">Unggah semua dokumen ujian dan hasil revisi. Kelulusan diterbitkan setelah ACC akhir pembimbing dan nilai pembimbing tersimpan.</p>
@@ -672,31 +672,6 @@
         @endif
 
         <!-- Form Upload Revisi (Muncul otomatis saat tahap Ujian atau Revisi) -->
-        @if(in_array($pengajuan->status, ['Ujian Seminar & Penilaian']))
-        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-warning">
-            <h5 class="fw-bold mb-2 text-warning-emphasis"><i class="ti ti-file-upload me-1"></i> Unggah Berkas Revisi Laporan & Pengesahan</h5>
-            <p class="text-muted small">Unggah dokumen laporan akhir hasil revisi seminar beserta lembar pengesahan bertandatangan.</p>
-
-            <form action="{{ route('pkl.mahasiswa.upload-revisi', $pengajuan->id) }}" method="POST" enctype="multipart/form-data" id="formUploadRevisi">
-                @csrf
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">File Laporan Revisi (PDF, Maks 5MB)</label>
-                    <input type="file" name="berkas_laporan_revisi" class="form-control" accept=".pdf" required>
-                    @if($pengajuan->berkas_laporan_revisi)
-                    <div class="mt-2"><a class="btn btn-sm btn-primary fw-semibold" href="{{ url('pkl/view-file/' . $pengajuan->berkas_laporan_revisi) }}" target="_blank" rel="noopener"><i class="ti ti-eye me-1"></i>Lihat berkas</a></div>
-                    @endif
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">File Lembar Pengesahan (PDF/Gambar, Maks 3MB)</label>
-                    <input type="file" name="berkas_lembar_pengesahan" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                    @if($pengajuan->berkas_lembar_pengesahan)
-                    <div class="mt-2"><a class="btn btn-sm btn-primary fw-semibold" href="{{ url('pkl/view-file/' . $pengajuan->berkas_lembar_pengesahan) }}" target="_blank" rel="noopener"><i class="ti ti-eye me-1"></i>Lihat berkas</a></div>
-                    @endif
-                </div>
-                <button type="submit" class="btn btn-warning fw-semibold text-dark px-4 py-2 rounded-3">Kirim Berkas Revisi</button>
-            </form>
-        </div>
-        @endif
 
         <!-- Verifikasi berkas seminar: dokumen yang diminta sesuai alur terbaru -->
         @if(in_array($pengajuan->status, ['Verifikasi Berkas Admin', 'Dijadwalkan Ujian'], true))
