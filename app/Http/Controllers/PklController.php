@@ -755,7 +755,7 @@ class PklController extends Controller
         } else {
             $statusSebelumnya = $pengajuan->status;
             $pengajuan->update([
-                'status' => self::STATUS_REVISI,
+                // 'status' => self::STATUS_REVISI,
                 'catatan_admin' => $validated['catatan_admin'],
             ]);
             $this->logPklActivity($pengajuan, 'Berkas Perlu Revisi', 'Admin ' . (auth()->user()->name ?? '') . ' meminta perbaikan berkas: ' . $validated['catatan_admin']);

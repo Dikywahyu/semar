@@ -14,6 +14,7 @@
         background: #f5f7fb;
         min-height: 100vh;
     }
+
     .pkl-page .pkl-hero {
         position: relative;
         overflow: hidden;
@@ -23,35 +24,63 @@
         padding: clamp(1.35rem, 3vw, 2.25rem) !important;
         box-shadow: 0 14px 35px rgba(28, 47, 111, .15) !important;
     }
+
     .pkl-page .pkl-hero:after {
         content: "";
         position: absolute;
         width: 270px;
         height: 270px;
-        border: 1px solid rgba(255,255,255,.13);
+        border: 1px solid rgba(255, 255, 255, .13);
         border-radius: 50%;
         right: -75px;
         top: -130px;
-        box-shadow: 0 0 0 28px rgba(255,255,255,.035), 0 0 0 58px rgba(255,255,255,.025);
+        box-shadow: 0 0 0 28px rgba(255, 255, 255, .035), 0 0 0 58px rgba(255, 255, 255, .025);
         z-index: -1;
     }
-    .pkl-page .pkl-hero h2 { font-size: clamp(1.35rem, 2.4vw, 1.9rem); letter-spacing: -.035em; }
-    .pkl-page .pkl-hero p { max-width: 700px; line-height: 1.65; color: rgba(255,255,255,.76) !important; }
+
+    .pkl-page .pkl-hero h2 {
+        font-size: clamp(1.35rem, 2.4vw, 1.9rem);
+        letter-spacing: -.035em;
+    }
+
+    .pkl-page .pkl-hero p {
+        max-width: 700px;
+        line-height: 1.65;
+        color: rgba(255, 255, 255, .76) !important;
+    }
+
     .pkl-page .card {
-        border: 1px solid rgba(226,232,240,.85) !important;
+        border: 1px solid rgba(226, 232, 240, .85) !important;
         border-radius: 18px !important;
         box-shadow: 0 5px 18px rgba(20, 33, 61, .045) !important;
         transition: box-shadow .2s ease, transform .2s ease;
     }
-    .pkl-page .card .card { box-shadow: none !important; }
-    .pkl-page .card h4, .pkl-page .card h5, .pkl-page .card h6 { letter-spacing: -.02em; color: #1e293b; }
-    .pkl-page .form-label { color: #475569 !important; margin-bottom: .5rem; }
-    .pkl-page .form-control, .pkl-page .input-group-text, .pkl-page .form-select {
+
+    .pkl-page .card .card {
+        box-shadow: none !important;
+    }
+
+    .pkl-page .card h4,
+    .pkl-page .card h5,
+    .pkl-page .card h6 {
+        letter-spacing: -.02em;
+        color: #1e293b;
+    }
+
+    .pkl-page .form-label {
+        color: #475569 !important;
+        margin-bottom: .5rem;
+    }
+
+    .pkl-page .form-control,
+    .pkl-page .input-group-text,
+    .pkl-page .form-select {
         border-color: #dce3ed;
         border-radius: 10px;
         min-height: 44px;
         box-shadow: none;
     }
+
     /* File input: make the native chooser compact and visually consistent */
     .pkl-page input[type="file"].form-control {
         height: auto;
@@ -65,6 +94,7 @@
         border-radius: 10px;
         color: #64748b;
     }
+
     .pkl-page input[type="file"].form-control::file-selector-button {
         margin: -.35rem .75rem -.35rem -.35rem;
         padding: .72rem 1rem;
@@ -77,9 +107,11 @@
         cursor: pointer;
         transition: background .18s ease;
     }
+
     .pkl-page input[type="file"].form-control::file-selector-button:hover {
         background: #e2e8f0;
     }
+
     .pkl-page .status-file-logbook,
     .pkl-page .status-file-kartu_bimbingan,
     .pkl-page [class^="status-file-"] {
@@ -87,6 +119,7 @@
         font-size: .85rem;
         line-height: 1.5;
     }
+
     .pkl-page [class^="status-file-"] a {
         display: inline-flex;
         align-items: center;
@@ -98,31 +131,76 @@
         font-weight: 600;
         text-decoration: none;
     }
+
     .pkl-page [class^="status-file-"] a:hover {
         background: #dfe9ff;
         text-decoration: underline;
     }
-    .pkl-page textarea.form-control { min-height: auto; }
-    .pkl-page .form-control:focus, .pkl-page .form-select:focus {
-        border-color: #8ca1ff;
-        box-shadow: 0 0 0 .22rem rgba(55,88,214,.11);
+
+    .pkl-page textarea.form-control {
+        min-height: auto;
     }
-    .pkl-page .input-group > .input-group-text { border-radius: 10px 0 0 10px; }
-    .pkl-page .input-group > .form-control { border-radius: 0 10px 10px 0; }
-    .pkl-page .btn { border-radius: 10px; transition: all .18s ease; }
-    .pkl-page .btn-primary { background: #3758d6; border-color: #3758d6; box-shadow: 0 5px 12px rgba(55,88,214,.15); }
-    .pkl-page .btn-primary:hover { background: #2948bf; border-color: #2948bf; transform: translateY(-1px); }
-    .pkl-page .table > :not(caption) > * > * { padding: .8rem .5rem; }
-    .pkl-page .table td:first-child { color: #718096 !important; font-size: .9rem; }
-    .pkl-page .table td:last-child { overflow-wrap: anywhere; }
-    .pkl-page .list-group-item { border-color: #edf0f5; }
-    .pkl-page .badge { font-weight: 600; letter-spacing: .01em; }
+
+    .pkl-page .form-control:focus,
+    .pkl-page .form-select:focus {
+        border-color: #8ca1ff;
+        box-shadow: 0 0 0 .22rem rgba(55, 88, 214, .11);
+    }
+
+    .pkl-page .input-group>.input-group-text {
+        border-radius: 10px 0 0 10px;
+    }
+
+    .pkl-page .input-group>.form-control {
+        border-radius: 0 10px 10px 0;
+    }
+
+    .pkl-page .btn {
+        border-radius: 10px;
+        transition: all .18s ease;
+    }
+
+    .pkl-page .btn-primary {
+        background: #3758d6;
+        border-color: #3758d6;
+        box-shadow: 0 5px 12px rgba(55, 88, 214, .15);
+    }
+
+    .pkl-page .btn-primary:hover {
+        background: #2948bf;
+        border-color: #2948bf;
+        transform: translateY(-1px);
+    }
+
+    .pkl-page .table> :not(caption)>*>* {
+        padding: .8rem .5rem;
+    }
+
+    .pkl-page .table td:first-child {
+        color: #718096 !important;
+        font-size: .9rem;
+    }
+
+    .pkl-page .table td:last-child {
+        overflow-wrap: anywhere;
+    }
+
+    .pkl-page .list-group-item {
+        border-color: #edf0f5;
+    }
+
+    .pkl-page .badge {
+        font-weight: 600;
+        letter-spacing: .01em;
+    }
+
     .pkl-page .timeline-roadmap {
         gap: 0;
         scrollbar-width: thin;
         scrollbar-color: #cbd5e1 transparent;
         padding-top: .25rem;
     }
+
     .pkl-page .timeline-roadmap:before {
         content: "";
         position: absolute;
@@ -133,7 +211,11 @@
         background: #e7ebf2;
         z-index: 0;
     }
-    .pkl-page .timeline-roadmap > div { flex: 1 0 135px; }
+
+    .pkl-page .timeline-roadmap>div {
+        flex: 1 0 135px;
+    }
+
     .pkl-page .timeline-roadmap .rounded-circle {
         width: 46px !important;
         height: 46px !important;
@@ -141,30 +223,110 @@
         box-sizing: content-box;
         box-shadow: 0 0 0 1px #e7ebf2;
     }
-    .pkl-page .timeline-roadmap .bg-primary { background: #3758d6 !important; box-shadow: 0 0 0 1px #cbd5ff, 0 5px 15px rgba(55,88,214,.2) !important; }
-    .pkl-page .timeline-roadmap .bg-success { background: #159570 !important; }
-    .pkl-page .timeline-roadmap .small { line-height: 1.45; max-width: 145px; margin-left: auto; margin-right: auto; }
-    .pkl-page .border-start.border-4 { border-radius: 14px !important; }
-    .pkl-page .modal-content { border-radius: 18px !important; overflow: hidden; }
-    .pkl-page .modal-header, .pkl-page .modal-footer { background: #f8fafc !important; }
-    @media (max-width: 767.98px) {
-        .pkl-page { padding-left: .75rem; padding-right: .75rem; }
-        .pkl-page .pkl-hero { border-radius: 17px !important; }
-        .pkl-page .pkl-hero .d-flex { align-items: flex-start !important; gap: 1rem; flex-direction: column; }
-        .pkl-page .pkl-hero .btn { align-self: flex-start; }
-        .pkl-page .card.p-4 { padding: 1.15rem !important; }
-        .pkl-page .timeline-roadmap { justify-content: flex-start !important; }
-        .pkl-page .timeline-roadmap:before { left: 25px; right: auto; width: calc(100% - 50px); }
-        .pkl-page .timeline-roadmap > div { flex: 0 0 135px; }
-        .pkl-page .table td { display: block; width: 100% !important; padding: .35rem .25rem !important; }
-        .pkl-page .table tr { display: block; padding: .55rem 0; border-bottom: 1px solid #edf0f5; }
-        .pkl-page .table tr:last-child { border-bottom: 0; }
-        .pkl-page .table td:last-child { padding-top: .15rem !important; }
-        .pkl-page .table td:last-child:before { content: ""; }
-        .pkl-page #btnSelesaiPkl { white-space: normal; }
+
+    .pkl-page .timeline-roadmap .bg-primary {
+        background: #3758d6 !important;
+        box-shadow: 0 0 0 1px #cbd5ff, 0 5px 15px rgba(55, 88, 214, .2) !important;
     }
+
+    .pkl-page .timeline-roadmap .bg-success {
+        background: #159570 !important;
+    }
+
+    .pkl-page .timeline-roadmap .small {
+        line-height: 1.45;
+        max-width: 145px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .pkl-page .border-start.border-4 {
+        border-radius: 14px !important;
+    }
+
+    .pkl-page .modal-content {
+        border-radius: 18px !important;
+        overflow: hidden;
+    }
+
+    .pkl-page .modal-header,
+    .pkl-page .modal-footer {
+        background: #f8fafc !important;
+    }
+
+    @media (max-width: 767.98px) {
+        .pkl-page {
+            padding-left: .75rem;
+            padding-right: .75rem;
+        }
+
+        .pkl-page .pkl-hero {
+            border-radius: 17px !important;
+        }
+
+        .pkl-page .pkl-hero .d-flex {
+            align-items: flex-start !important;
+            gap: 1rem;
+            flex-direction: column;
+        }
+
+        .pkl-page .pkl-hero .btn {
+            align-self: flex-start;
+        }
+
+        .pkl-page .card.p-4 {
+            padding: 1.15rem !important;
+        }
+
+        .pkl-page .timeline-roadmap {
+            justify-content: flex-start !important;
+        }
+
+        .pkl-page .timeline-roadmap:before {
+            left: 25px;
+            right: auto;
+            width: calc(100% - 50px);
+        }
+
+        .pkl-page .timeline-roadmap>div {
+            flex: 0 0 135px;
+        }
+
+        .pkl-page .table td {
+            display: block;
+            width: 100% !important;
+            padding: .35rem .25rem !important;
+        }
+
+        .pkl-page .table tr {
+            display: block;
+            padding: .55rem 0;
+            border-bottom: 1px solid #edf0f5;
+        }
+
+        .pkl-page .table tr:last-child {
+            border-bottom: 0;
+        }
+
+        .pkl-page .table td:last-child {
+            padding-top: .15rem !important;
+        }
+
+        .pkl-page .table td:last-child:before {
+            content: "";
+        }
+
+        .pkl-page #btnSelesaiPkl {
+            white-space: normal;
+        }
+    }
+
     @media (prefers-reduced-motion: reduce) {
-        .pkl-page .card, .pkl-page .btn { transition: none; }
+
+        .pkl-page .card,
+        .pkl-page .btn {
+            transition: none;
+        }
     }
 </style>
 
@@ -178,7 +340,7 @@
                         <h2 class="fw-bold mb-1 text-white"><i class="ti ti-briefcase me-2 text-white"></i>Portal Praktik Kerja Lapangan (PKL)</h2>
                         <p class="text-white-50 mb-0">Kelola tahapan magang, pantau roadmap progres secara real-time, dan unggah berkas dengan mudah.</p>
                     </div>
-                @if($pengajuan &&$pengajuan->status == 'Pengajuan & Verifikasi Admin')
+                    @if($pengajuan &&$pengajuan->status == 'Pengajuan & Verifikasi Admin')
                     <div>
                         <button type="button" class="btn btn-outline-light btn-sm fw-semibold px-3 py-2 rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#modalEditPengajuan">
                             <i class="ti ti-edit me-1"></i> Edit Data Pengajuan
@@ -192,575 +354,556 @@
 
     <div class="row">
         @if(!$pengajuan)
-            <!-- ========================================== -->
-            <!-- KONDISI 1: FORM PENGAJUAN PKL MANDIRI      -->
-            <!-- ========================================== -->
-            <div class="col-md-12">
-                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
-                    <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
-                        <div class="bg-primary-subtle text-primary p-3 rounded-4 me-3 fs-4">
-                            <i class="ti ti-file-text"></i>
-                        </div>
-                        <div>
-                            <h4 class="fw-bold text-slate-800 mb-1">Formulir Pengajuan PKL Mandiri</h4>
-                            <p class="text-muted small mb-0">Silakan isi data instansi tempat Anda melaksanakan PKL beserta dokumen surat balasan/proposal pendukung.</p>
-                        </div>
+        <!-- ========================================== -->
+        <!-- KONDISI 1: FORM PENGAJUAN PKL MANDIRI      -->
+        <!-- ========================================== -->
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+                    <div class="bg-primary-subtle text-primary p-3 rounded-4 me-3 fs-4">
+                        <i class="ti ti-file-text"></i>
                     </div>
+                    <div>
+                        <h4 class="fw-bold text-slate-800 mb-1">Formulir Pengajuan PKL Mandiri</h4>
+                        <p class="text-muted small mb-0">Silakan isi data instansi tempat Anda melaksanakan PKL beserta dokumen surat balasan/proposal pendukung.</p>
+                    </div>
+                </div>
 
-                    <form action="{{ route('pkl.mahasiswa.store') }}" method="POST" enctype="multipart/form-data" id="formPengajuanPkl">
-                        @csrf
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-semibold text-secondary small">Nama Instansi / Perusahaan <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-end-0"><i class="ti ti-building text-muted"></i></span>
-                                    <input type="text" name="nama_instansi" class="form-control border-start-0 ps-0" placeholder="Cth: PT. Telkom Indonesia, Tbk" required>
-                                </div>
+                <form action="{{ route('pkl.mahasiswa.store') }}" method="POST" enctype="multipart/form-data" id="formPengajuanPkl">
+                    @csrf
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold text-secondary small">Nama Instansi / Perusahaan <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="ti ti-building text-muted"></i></span>
+                                <input type="text" name="nama_instansi" class="form-control border-start-0 ps-0" placeholder="Cth: PT. Telkom Indonesia, Tbk" required>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-semibold text-secondary small">Bidang / Unit Kerja <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-end-0"><i class="ti ti-sitemap text-muted"></i></span>
-                                    <input type="text" name="unit_kerja" class="form-control border-start-0 ps-0" placeholder="Cth: Divisi Software Engineering" required>
-                                </div>
-                            </div>
-                            <div class="col-md-12 mb-3">
-                                <label class="form-label fw-semibold text-secondary small">Alamat Lengkap Instansi <span class="text-danger">*</span></label>
-                                <textarea name="alamat_instansi" class="form-control" rows="2" placeholder="Cth: Jl. Raya Gubeng No. 46, Surabaya" required></textarea>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-semibold text-secondary small">Rencana Tanggal Mulai <span class="text-danger">*</span></label>
-                                <input type="date" name="tanggal_mulai" class="form-control" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-semibold text-secondary small">Rencana Tanggal Selesai <span class="text-danger">*</span></label>
-                                <input type="date" name="tanggal_selesai" class="form-control" required>
-                            </div>
-                            @foreach([
-                                'berkas_proposal' => ['Proposal ke Tempat PKL', '.pdf'],
-                                'surat_jalan_pkl' => ['Surat Jalan PKL', '.pdf,.jpg,.jpeg,.png'],
-                                'surat_balasan_instansi' => ['Surat Balasan Instansi', '.pdf,.jpg,.jpeg,.png'],
-                                'acc_pembimbing_awal' => ['ACC Pembimbing', '.pdf,.jpg,.jpeg,.png'],
-                            ] as $field => [$label, $accept])
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-semibold text-secondary small">{{ $label }} <span class="text-danger">*</span></label>
-                                    <input type="file" name="{{ $field }}" class="form-control file-pengajuan-awal" data-field="{{ $field }}" accept="{{ $accept }}" required>
-                                    <small class="text-muted">Maksimum 2MB per berkas.</small>
-                                </div>
-                            @endforeach
                         </div>
-                        <div class="mt-4 text-end">
-                            <button type="submit" id="btnSubmitPengajuan" class="btn btn-primary fw-semibold px-4 py-2 rounded-3 shadow-sm">
-                                <span class="btn-text"><i class="ti ti-send me-1"></i> Kirim Pengajuan PKL</span>
-                                <span class="spinner-border spinner-border-sm d-none" role="status"></span>
-                            </button>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold text-secondary small">Bidang / Unit Kerja <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="ti ti-sitemap text-muted"></i></span>
+                                <input type="text" name="unit_kerja" class="form-control border-start-0 ps-0" placeholder="Cth: Divisi Software Engineering" required>
+                            </div>
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label fw-semibold text-secondary small">Alamat Lengkap Instansi <span class="text-danger">*</span></label>
+                            <textarea name="alamat_instansi" class="form-control" rows="2" placeholder="Cth: Jl. Raya Gubeng No. 46, Surabaya" required></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold text-secondary small">Rencana Tanggal Mulai <span class="text-danger">*</span></label>
+                            <input type="date" name="tanggal_mulai" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold text-secondary small">Rencana Tanggal Selesai <span class="text-danger">*</span></label>
+                            <input type="date" name="tanggal_selesai" class="form-control" required>
+                        </div>
+                        @foreach([
+                        'berkas_proposal' => ['Proposal ke Tempat PKL', '.pdf'],
+                        'surat_jalan_pkl' => ['Surat Jalan PKL', '.pdf,.jpg,.jpeg,.png'],
+                        'surat_balasan_instansi' => ['Surat Balasan Instansi', '.pdf,.jpg,.jpeg,.png'],
+                        'acc_pembimbing_awal' => ['ACC Pembimbing', '.pdf,.jpg,.jpeg,.png'],
+                        ] as $field => [$label, $accept])
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold text-secondary small">{{ $label }} <span class="text-danger">*</span></label>
+                            <input type="file" name="{{ $field }}" class="form-control file-pengajuan-awal" data-field="{{ $field }}" accept="{{ $accept }}" required>
+                            <small class="text-muted">Maksimum 2MB per berkas.</small>
+                        </div>
+                        @endforeach
+                    </div>
+                    <div class="mt-4 text-end">
+                        <button type="submit" id="btnSubmitPengajuan" class="btn btn-primary fw-semibold px-4 py-2 rounded-3 shadow-sm">
+                            <span class="btn-text"><i class="ti ti-send me-1"></i> Kirim Pengajuan PKL</span>
+                            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        @else
+        <!-- ========================================== -->
+        <!-- KONDISI 2: DASHBOARD & ROADMAP PROGRES     -->
+        <!-- ========================================== -->
+
+        @php
+        $statusList = [
+        'Pengajuan & Verifikasi Admin',
+        'Pelaksanaan PKL & Bimbingan',
+        'Verifikasi Berkas Admin',
+        'Dijadwalkan Ujian',
+        'Ujian Seminar & Penilaian',
+        'Revisi Laporan',
+        'Selesai'
+        ];
+
+        $currentStatus =$pengajuan->status;
+        $currentIndex = array_search($currentStatus,$statusList);
+        if ($currentIndex === false)$currentIndex = 0;
+        @endphp
+
+        <!-- Modal Edit Pengajuan -->
+        @if($pengajuan->status == 'Pengajuan & Verifikasi Admin')
+        <div class="modal fade" id="modalEditPengajuan" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content rounded-4 border-0 shadow">
+                    <div class="modal-header border-bottom px-4 bg-light">
+                        <h5 class="modal-title fw-bold text-slate-800">Edit Data Pengajuan PKL</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="{{ route('pkl.mahasiswa.update', $pengajuan->id) }}" method="POST" enctype="multipart/form-data" id="formEditPengajuan">
+                        @csrf
+                        @method('PUT')
+                        <div class="modal-body p-4 text-start">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold small">Nama Instansi / Perusahaan</label>
+                                    <input type="text" name="nama_instansi" class="form-control" value="{{ $pengajuan->nama_instansi }}" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold small">Bidang / Unit Kerja</label>
+                                    <input type="text" name="unit_kerja" class="form-control" value="{{ $pengajuan->unit_kerja }}" required>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label fw-semibold small">Alamat Lengkap Instansi</label>
+                                    <textarea name="alamat_instansi" class="form-control" rows="2" required>{{ $pengajuan->alamat_instansi }}</textarea>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold small">Rencana Tanggal Mulai</label>
+                                    <input type="date" name="tanggal_mulai" class="form-control" value="{{ $pengajuan->tanggal_mulai?->format('Y-m-d') }}" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold small">Rencana Tanggal Selesai</label>
+                                    <input type="date" name="tanggal_selesai" class="form-control" value="{{ $pengajuan->tanggal_selesai?->format('Y-m-d') }}" required>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label fw-semibold small">Ganti Proposal PKL (Opsional, PDF max 5MB)</label>
+                                    <input type="file" name="berkas_proposal" class="form-control" accept=".pdf">
+                                    @if($pengajuan->berkas_proposal)
+                                    <small class="text-muted d-mt-1">Proposal saat ini: <a href="{{ asset('storage/' . $pengajuan->berkas_proposal) }}" target="_blank">Lihat File</a></small>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top px-4 py-3 bg-light">
+                            <button type="button" class="btn btn-light border text-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary fw-semibold px-4">Simpan Perubahan</button>
                         </div>
                     </form>
                 </div>
             </div>
-        @else
-            <!-- ========================================== -->
-            <!-- KONDISI 2: DASHBOARD & ROADMAP PROGRES     -->
-            <!-- ========================================== -->
-            
-            @php
-                $statusList = [
-                    'Pengajuan & Verifikasi Admin',
-                    'Pelaksanaan PKL & Bimbingan',
-                    'Verifikasi Berkas Admin',
-                    'Dijadwalkan Ujian',
-                    'Ujian Seminar & Penilaian',
-                    'Revisi Laporan',
-                    'Selesai'
-                ];
+        </div>
+        @endif
 
-                $currentStatus =$pengajuan->status;
-                $currentIndex = array_search($currentStatus,$statusList);
-                if ($currentIndex === false)$currentIndex = 0;
-            @endphp
-            
-            <!-- Modal Edit Pengajuan -->
-            @if($pengajuan->status == 'Pengajuan & Verifikasi Admin')
-            <div class="modal fade" id="modalEditPengajuan" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content rounded-4 border-0 shadow">
-                        <div class="modal-header border-bottom px-4 bg-light">
-                            <h5 class="modal-title fw-bold text-slate-800">Edit Data Pengajuan PKL</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <!-- Roadmap Progres Visual Modern -->
+        <div class="col-md-12 mb-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                <h5 class="fw-bold text-slate-800 mb-4"><i class="ti ti-map-pins text-primary me-2"></i>Roadmap Progres Tahapan PKL</h5>
+
+                <div class="timeline-roadmap d-flex justify-content-between position-relative overflow-x-auto pb-3 px-2">
+                    @foreach($statusList as $index =>$step)
+                    @php
+                    $isPassed = $index <$currentIndex;
+                        $isCurrent=$index==$currentIndex;
+
+                        $badgeClass='bg-light text-muted border' ;$iconClass='ti ti-circle text-muted' ;
+                        if ($isPassed) {
+                        $badgeClass='bg-success text-white shadow-sm' ;$iconClass='ti ti-check text-white' ;
+                        } elseif ($isCurrent) {
+                        $badgeClass='bg-primary text-white shadow-lg animate-pulse' ;$iconClass='ti ti-loader text-white' ;
+                        }
+                        @endphp
+
+                        <div class="text-center position-relative px-2" style="min-width: 150px; z-index: 2;">
+                        <div class="rounded-circle d-inline-flex align-items-center justify-content-center {{ $badgeClass }}" style="width: 45px; height: 45px; font-size: 1.2rem;">
+                            <i class="{{ $iconClass }}"></i>
                         </div>
-                        <form action="{{ route('pkl.mahasiswa.update', $pengajuan->id) }}" method="POST" enctype="multipart/form-data" id="formEditPengajuan">
+                        <div class="mt-2 small fw-bold {{ $isCurrent ? 'text-primary' : ($isPassed ? 'text-success' : 'text-muted') }}">
+                            {{ $step }}
+                        </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+
+    <!-- Informasi Instansi Card -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+        <h5 class="fw-bold mb-3 text-slate-800"><i class="ti ti-info-circle text-info me-2"></i>Informasi Instansi & Status</h5>
+        <table class="table table-borderless align-middle mb-0">
+            <tr>
+                <td class="text-muted w-25">Nama Instansi</td>
+                <td class="fw-semibold text-dark">: {{ $pengajuan->nama_instansi }}</td>
+            </tr>
+            <tr>
+                <td class="text-muted">Unit / Bidang</td>
+                <td class="fw-semibold text-dark">: {{ $pengajuan->unit_kerja ?? '-' }}</td>
+            </tr>
+            <tr>
+                <td class="text-muted">Alamat</td>
+                <td class="fw-semibold text-dark">: {{ $pengajuan->alamat_instansi ?? '-' }}</td>
+            </tr>
+            <tr>
+                <td class="text-muted">Dosen Pembimbing</td>
+                <td class="fw-semibold text-dark">: <span class="badge bg-info-subtle text-info px-2 py-1">{{ $pengajuan->dosenPembimbing->nama_dosen ?? 'Belum Diploting' }}</span></td>
+            </tr>
+            <tr>
+                <td class="text-muted">Status Saat Ini</td>
+                <td>: <span class="badge bg-primary-subtle text-primary px-3 py-2 fw-bold">{{ $pengajuan->status }}</span></td>
+            </tr>
+            @if($pengajuan->nilai_akhir)
+            <tr>
+                <td class="text-muted">Nilai Akhir</td>
+                <td>: <span class="badge bg-success-subtle text-success fs-6 px-3 py-1">{{ $pengajuan->nilai_akhir }} ({{$pengajuan->nilai_huruf }})</span></td>
+            </tr>
+            @endif
+        </table>
+    </div>
+
+
+    <!-- Detail Informasi PKL & Aksi Interaktif -->
+    <div class="col-md-8">
+        @php
+        $genericDocuments = $pengajuan->berkasSeminar->keyBy('jenis_berkas');
+        $uploadDocument = function ($kind) use ($pengajuan) {
+        return route('pkl.mahasiswa.upload-dokumen', $pengajuan->id);
+        };
+        @endphp
+
+        @if($pengajuan->status === 'Pengajuan & Verifikasi Admin' && !$pengajuan->dosen_pembimbing_id)
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-primary">
+            <h5 class="fw-bold mb-2"><i class="ti ti-user-check text-primary me-2"></i>Pilih Dosen Pembimbing PKL</h5>
+            <p class="text-muted small">Pilih dosen pembimbing untuk memulai pelaksanaan. Admin dapat meninjau dan mengubah penetapan ini.</p>
+            <form action="{{ route('pkl.mahasiswa.plot-pembimbing', $pengajuan->id) }}" method="POST" class="row g-2 align-items-end">@csrf
+                <div class="col-md-8"><label class="form-label small fw-semibold">Dosen Pembimbing</label><select class="form-select" name="dosen_pembimbing_id" required>
+                        <option value="">Pilih dosen pembimbing</option>@foreach(\App\Models\Dosen\Dosen::where('aktif', true)->orderBy('nama_dosen')->get() as $dosenPilihan)<option value="{{ $dosenPilihan->id_dosen }}">{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>@endforeach
+                    </select></div>
+                <div class="col-md-4"><button class="btn btn-primary w-100 fw-semibold" type="submit">Pilih Pembimbing & Mulai PKL</button></div>
+            </form>
+        </div>
+        @endif
+
+        @if(in_array($pengajuan->status, ['Pengajuan & Verifikasi Admin', 'Pelaksanaan PKL & Bimbingan'], true))
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-info">
+            <h5 class="fw-bold mb-1"><i class="ti ti-file-certificate text-info me-2"></i>Dokumen Pendaftaran PKL · Semester 6</h5>
+            <p class="text-muted small mb-3">Lengkapi berkas awal PKL. Proposal yang dikirim saat pengajuan tetap dapat diganti di sini.</p>
+            <div class="row g-3">
+                @foreach([
+                'proposal' => ['Proposal ke Tempat PKL', $pengajuan->berkas_proposal],
+                'surat_jalan_pkl' => ['Surat Jalan PKL', $genericDocuments->get('surat_jalan_pkl')?->path_berkas],
+                'surat_balasan_instansi' => ['Surat Balasan Instansi', $genericDocuments->get('surat_balasan_instansi')?->path_berkas],
+                'acc_pembimbing_awal' => ['ACC Pembimbing', $genericDocuments->get('acc_pembimbing_awal')?->path_berkas],
+                ] as $kind => [$label, $path])
+                <div class="col-md-6">
+                    <form action="{{ route('pkl.mahasiswa.upload-berkas-satuan', $pengajuan->id) }}" method="POST" enctype="multipart/form-data" class="border rounded-3 p-3 h-100 document-upload-form">
+                        @csrf
+                        <input type="hidden" name="field" value="{{ $kind === 'proposal' ? 'berkas_proposal' : $kind }}">
+                        <label class="form-label fw-semibold small">{{ $label }}</label>
+                        <input type="file" name="file" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            @if($path)
+                            <a class="btn btn-sm btn-outline-primary fw-semibold" href="{{ url('pkl/view-file/' . $path) }}" target="_blank"><i class="ti ti-eye me-1"></i>Lihat Berkas</a>
+                            @else
+                            <span class="small text-muted">Belum diunggah</span>
+                            @endif
+                            <button class="btn btn-sm btn-outline-primary" type="submit">Upload</button>
+                        </div>
+                    </form>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
+        @if(in_array($pengajuan->status, ['Dijadwalkan Ujian', 'Ujian Seminar & Penilaian', 'Revisi Laporan'], true))
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-warning">
+            <h5 class="fw-bold mb-1"><i class="ti ti-file-check text-warning me-2"></i>Dokumen Akhir PKL</h5>
+            <p class="text-muted small">Unggah semua dokumen ujian dan hasil revisi. Kelulusan diterbitkan setelah ACC akhir pembimbing dan nilai pembimbing tersimpan.</p>
+            <div class="row g-3">
+                @foreach([
+                'formulir_pendaftaran_ujian' => 'Formulir Pendaftaran Ujian',
+                'berita_acara_ujian' => 'Berita Acara Ujian',
+                'formulir_nilai' => 'Formulir Nilai',
+                'permohonan_revisi' => 'Formulir Permohonan Revisi (Setelah Ujian)',
+                'laporan_final' => 'Laporan Final',
+                'lampiran_teknis' => 'Lampiran Teknis (Gambar AutoCAD / RAB)',
+                'acc_pembimbing_akhir' => 'ACC Pembimbing Akhir',
+                'rekap_nilai' => 'Rekap Nilai',
+                ] as $kind => $label)
+                @php $doc = $genericDocuments->get($kind); @endphp
+                <div class="col-md-6">
+                    <form action="{{ route('pkl.mahasiswa.upload-berkas-satuan', $pengajuan->id) }}" method="POST" enctype="multipart/form-data" class="border rounded-3 p-3 h-100 document-upload-form">
+                        @csrf
+                        <input type="hidden" name="field" value="{{ $kind }}">
+                        <label class="form-label fw-semibold small">{{ $label }}</label>
+                        <input type="file" name="file" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <span class="small {{ $doc ? ($doc->status_verifikasi === 'Valid' ? 'text-success' : ($doc->status_verifikasi === 'Ditolak' ? 'text-danger' : 'text-warning')) : 'text-muted' }}">
+                                {{ $doc ? $doc->status_verifikasi : 'Belum diunggah' }}
+                            </span>
+                            <div class="d-flex gap-2">
+                                @if($doc)<a class="btn btn-sm btn-primary fw-semibold shadow-sm" href="{{ url('pkl/view-file/' . $doc->path_berkas) }}" target="_blank" rel="noopener"><i class="ti ti-eye me-1"></i>Lihat berkas</a>@endif
+                                <button class="btn btn-sm btn-outline-primary" type="submit">Upload</button>
+                            </div>
+                        </div>
+                        @if($doc?->catatan_verifikator)<small class="text-danger d-block mt-1">Catatan: {{ $doc->catatan_verifikator }}</small>@endif
+                    </form>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
+
+        <!-- Aksi: Tandai PKL Selesai -->
+        @if($pengajuan->status == 'Pelaksanaan PKL & Bimbingan')
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-gradient text-white mb-4" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="fw-bold mb-1"><i class="ti ti-clock-check me-1"></i> Pelaksanaan PKL Berlangsung</h5>
+                    <p class="text-white-50 small mb-0">Jika masa magang di instansi sudah selesai, klik tombol di samping untuk lanjut ke pemberkasan seminar.</p>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-light text-success fw-bold px-4 py-2 rounded-pill shadow-sm" id="btnSelesaiPkl" data-id="{{ $pengajuan->id }}">
+                        <i class="ti ti-circle-check me-1"></i> Tandai PKL Selesai
+                    </button>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        <!-- Form Upload Revisi (Muncul otomatis saat tahap Ujian atau Revisi) -->
+        @if(in_array($pengajuan->status, ['Ujian Seminar & Penilaian']))
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-warning">
+            <h5 class="fw-bold mb-2 text-warning-emphasis"><i class="ti ti-file-upload me-1"></i> Unggah Berkas Revisi Laporan & Pengesahan</h5>
+            <p class="text-muted small">Unggah dokumen laporan akhir hasil revisi seminar beserta lembar pengesahan bertandatangan.</p>
+
+            <form action="{{ route('pkl.mahasiswa.upload-revisi', $pengajuan->id) }}" method="POST" enctype="multipart/form-data" id="formUploadRevisi">
+                @csrf
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">File Laporan Revisi (PDF, Maks 5MB)</label>
+                    <input type="file" name="berkas_laporan_revisi" class="form-control" accept=".pdf" required>
+                    @if($pengajuan->berkas_laporan_revisi)
+                    <div class="mt-2"><a class="btn btn-sm btn-primary fw-semibold" href="{{ url('pkl/view-file/' . $pengajuan->berkas_laporan_revisi) }}" target="_blank" rel="noopener"><i class="ti ti-eye me-1"></i>Lihat berkas</a></div>
+                    @endif
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">File Lembar Pengesahan (PDF/Gambar, Maks 3MB)</label>
+                    <input type="file" name="berkas_lembar_pengesahan" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                    @if($pengajuan->berkas_lembar_pengesahan)
+                    <div class="mt-2"><a class="btn btn-sm btn-primary fw-semibold" href="{{ url('pkl/view-file/' . $pengajuan->berkas_lembar_pengesahan) }}" target="_blank" rel="noopener"><i class="ti ti-eye me-1"></i>Lihat berkas</a></div>
+                    @endif
+                </div>
+                <button type="submit" class="btn btn-warning fw-semibold text-dark px-4 py-2 rounded-3">Kirim Berkas Revisi</button>
+            </form>
+        </div>
+        @endif
+
+        <!-- Verifikasi berkas seminar: dokumen yang diminta sesuai alur terbaru -->
+        @if(in_array($pengajuan->status, ['Verifikasi Berkas Admin', 'Dijadwalkan Ujian'], true))
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-primary">
+            <div class="d-flex align-items-center mb-3">
+                <div class="bg-primary-subtle text-primary p-2 rounded-3 me-2">
+                    <i class="ti ti-files fs-4"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold mb-0">Verifikasi Berkas Ujian</h5>
+                    <p class="text-muted small mb-0">Unggah draft laporan, kartu konsultasi, dan transkrip sementara. Admin akan memverifikasi kelengkapannya.</p>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                @php
+                $berkasList = [
+                'berkas_draft_laporan' => ['label' => 'Draft Laporan PKL', 'value' => $pengajuan->berkas_draft_laporan],
+                'berkas_kartu_bimbingan' => ['label' => 'Kartu Konsultasi / Bimbingan', 'value' => $pengajuan->berkas_kartu_bimbingan],
+                'transkrip_sementara' => ['label' => 'Transkrip Sementara', 'value' => $genericDocuments->get('transkrip_sementara')?->path_berkas],
+                ];
+                @endphp
+
+                @foreach($berkasList as $field => $data)
+                <div class="col-md-12 border-bottom pb-3">
+                    <label class="form-label fw-semibold small text-dark">{{ $data['label'] }} <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-sm">
+                        @if($field === 'transkrip_sementara')
+                        <form action="{{ route('pkl.mahasiswa.upload-berkas-satuan', $pengajuan->id) }}" method="POST" enctype="multipart/form-data" class="input-group input-group-sm document-upload-form">
                             @csrf
-                            @method('PUT')
-                            <div class="modal-body p-4 text-start">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-semibold small">Nama Instansi / Perusahaan</label>
-                                        <input type="text" name="nama_instansi" class="form-control" value="{{ $pengajuan->nama_instansi }}" required>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-semibold small">Bidang / Unit Kerja</label>
-                                        <input type="text" name="unit_kerja" class="form-control" value="{{ $pengajuan->unit_kerja }}" required>
-                                    </div>
-                                    <div class="col-md-12 mb-3">
-                                        <label class="form-label fw-semibold small">Alamat Lengkap Instansi</label>
-                                        <textarea name="alamat_instansi" class="form-control" rows="2" required>{{ $pengajuan->alamat_instansi }}</textarea>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-semibold small">Rencana Tanggal Mulai</label>
-                                        <input type="date" name="tanggal_mulai" class="form-control" value="{{ $pengajuan->tanggal_mulai?->format('Y-m-d') }}" required>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-semibold small">Rencana Tanggal Selesai</label>
-                                        <input type="date" name="tanggal_selesai" class="form-control" value="{{ $pengajuan->tanggal_selesai?->format('Y-m-d') }}" required>
-                                    </div>
-                                    <div class="col-md-12 mb-3">
-                                        <label class="form-label fw-semibold small">Ganti Proposal PKL (Opsional, PDF max 5MB)</label>
-                                        <input type="file" name="berkas_proposal" class="form-control" accept=".pdf">
-                                        @if($pengajuan->berkas_proposal)
-                                            <small class="text-muted d-mt-1">Proposal saat ini: <a href="{{ asset('storage/' . $pengajuan->berkas_proposal) }}" target="_blank">Lihat File</a></small>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="modal-footer border-top px-4 py-3 bg-light">
-                                <button type="button" class="btn btn-light border text-secondary" data-bs-dismiss="modal">Batal</button>
-                                <button type="submit" class="btn btn-primary fw-semibold px-4">Simpan Perubahan</button>
-                            </div>
+                            <input type="hidden" name="field" value="{{ $field }}">
+                            <input type="file" name="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                            <button class="btn btn-primary px-3" type="submit"><i class="ti ti-upload me-1"></i> Upload</button>
                         </form>
+                        @else
+                        <form action="{{ route('pkl.mahasiswa.upload-berkas-satuan', $pengajuan->id) }}" method="POST" enctype="multipart/form-data" class="input-group input-group-sm document-upload-form">
+                            @csrf
+                            <input type="hidden" name="field" value="{{ $field }}">
+                            <input type="file" name="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                            <button class="btn btn-primary px-3" type="submit"><i class="ti ti-upload me-1"></i> Upload</button>
+                        </form>
+                        @endif
+                    </div>
+                    <div class="mt-1 status-file-{{ $field }}">
+                        @if($data['value'])
+                        @php
+                        // $data['value'] langsung berisi path dari database: "uploads/pkl/seminar_.../file.jpg"
+                        $fileRouteUrl = $data['value'] ? url('pkl/view-file/' . $data['value']) : '#';
+                        @endphp
+                        <div class="mt-2"><a class="btn btn-sm btn-primary fw-semibold shadow-sm" href="{{ $fileRouteUrl }}" target="_blank" rel="noopener"><i class="ti ti-eye me-1"></i>Lihat berkas</a></div>
+                        @else
+                        <small class="text-muted fst-italic">Belum ada file diunggah.</small>
+                        @endif
                     </div>
                 </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+    </div>
+
+    <!-- Sidebar Informasi Dosen Penguji & Catatan Admin -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+            <h6 class="fw-bold mb-3 text-slate-800"><i class="ti ti-calendar-event text-primary me-2"></i>Jadwal & Dewan Penguji Seminar</h6>
+
+            <!-- Informasi Waktu & Tempat Ujian -->
+            @if($pengajuan->tanggal_seminar)
+            @php
+            // Mapping hari dan bulan ke bahasa Indonesia agar akurat di server manapun
+            $days = [
+            'Sunday' => 'Minggu', 'Monday' => 'Senin', 'Tuesday' => 'Selasa',
+            'Wednesday' => 'Rabu', 'Thursday' => 'Kamis', 'Friday' => 'Jumat', 'Saturday' => 'Sabtu'
+            ];
+            $months = [
+            'January' => 'Januari', 'February' => 'Februari', 'March' => 'Maret',
+            'April' => 'April', 'May' => 'Mei', 'June' => 'Juni',
+            'July' => 'Juli', 'August' => 'Agustus', 'September' => 'September',
+            'October' => 'Oktober', 'November' => 'November', 'December' => 'Desember'
+            ];
+
+            $dt = \Carbon\Carbon::parse($pengajuan->tanggal_seminar);
+            $namaHari = $days[$dt->format('l')] ?? $dt->format('l');
+            $namaBulan = $months[$dt->format('F')] ?? $dt->format('F');
+            $formattedDate = $dt->format('d') . ' ' . $namaBulan . ' ' . $dt->format('Y - H:i');
+            @endphp
+
+            <div class="p-3 mb-3 bg-primary-subtle rounded-3 border border-primary-subtle">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="ti ti-calendar text-primary fs-5 me-2"></i>
+                    <span class="fw-bold text-dark">{{ $namaHari }}<br>{{ $formattedDate }} WIB</span>
+                </div>
+                <div class="d-flex align-items-center text-secondary small">
+                    <i class="ti ti-map-pin fs-5 me-2"></i>
+                    <span class="text-danger">Lokasi / Ruangan: <strong class="text-dark">{{ $pengajuan->ruangan_seminar ?? 'Belum ditentukan' }}</strong></span>
+                </div>
+            </div>
+            @else
+            <div class="alert alert-light border text-muted small py-2 px-3 mb-3">
+                <i class="ti ti-info-circle me-1"></i> Jadwal seminar belum ditentukan oleh admin.
             </div>
             @endif
 
-            <!-- Roadmap Progres Visual Modern -->
-            <div class="col-md-12 mb-4">
-                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
-                    <h5 class="fw-bold text-slate-800 mb-4"><i class="ti ti-map-pins text-primary me-2"></i>Roadmap Progres Tahapan PKL</h5>
-                    
-                    <div class="timeline-roadmap d-flex justify-content-between position-relative overflow-x-auto pb-3 px-2">
-                        @foreach($statusList as $index =>$step)
-                            @php
-                                $isPassed = $index <$currentIndex;
-                                $isCurrent = $index ==$currentIndex;
-                                
-                                $badgeClass = 'bg-light text-muted border';$iconClass = 'ti ti-circle text-muted';
-                                if ($isPassed) {
-                                    $badgeClass = 'bg-success text-white shadow-sm';$iconClass = 'ti ti-check text-white';
-                                } elseif ($isCurrent) {
-                                    $badgeClass = 'bg-primary text-white shadow-lg animate-pulse';$iconClass = 'ti ti-loader text-white';
-                                }
-                            @endphp
+            @if($pengajuan->status === 'Dijadwalkan Ujian')
+            <form action="{{ route('pkl.mahasiswa.usulkan-jadwal', $pengajuan->id) }}" method="POST" class="border rounded-3 p-3 mb-4 bg-light">
+                @csrf
+                <h6 class="fw-bold small mb-3">Atur Jadwal & Dewan Penguji</h6>
+                <label class="form-label small">Tanggal dan waktu ujian</label>
+                <input type="datetime-local" name="tanggal_seminar" value="{{ $pengajuan->tanggal_seminar?->format('Y-m-d\TH:i') }}" class="form-control form-control-sm mb-2" min="{{ now()->addHour()->format('Y-m-d\TH:i') }}" required>
+                <label class="form-label small">Ruang ujian</label>
+                <input type="text" name="ruangan_seminar" value="{{ $pengajuan->ruangan_seminar }}" class="form-control form-control-sm mb-2" placeholder="Contoh: Ruang Sidang 2" required>
+                <label class="form-label small">Daftar dosen penguji</label>
+                <select name="penguji_usulan[]" class="form-select form-select-sm mb-2" multiple size="5" required>
+                    @foreach(\App\Models\Dosen\Dosen::where('aktif', true)->orderBy('nama_dosen')->get() as $dosenPilihan)
+                    <option value="{{ $dosenPilihan->id_dosen }}" @selected($pengajuan->dosenPenguji->contains('id_dosen', $dosenPilihan->id_dosen))>{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>
+                    @endforeach
+                </select>
+                <small class="text-muted d-block mb-2">Admin dapat meninjau dan mengubah jadwal serta daftar penguji.</small>
+                <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">Simpan Jadwal & Penguji</button>
+            </form>
+            @endif
+            <!-- Daftar Dewan Penguji -->
+            <h6 class="fw-bold mb-2 text-slate-700 small text-uppercase tracking-wider">Daftar Penguji</h6>
+            <ul class="list-group list-group-flush">
+                @forelse($pengajuan->dosenPenguji as $penguji)
+                <li class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center border-0">
+                    <div>
+                        <div class="fw-semibold text-dark small">{{ $penguji->gelar_depan }}{{ $penguji->nama_dosen }}{{ $penguji->gelar_belakang }}</div>
+                        <span class="badge bg-light text-secondary border small">{{ $penguji->pivot->peran ?? 'Penguji' }}</span>
+                    </div>
+                </li>
+                @empty
+                <li class="list-group-item px-0 text-muted small fst-italic border-0">Dewan penguji belum ditentukan.</li>
+                @endforelse
+            </ul>
+        </div>
 
-                            <div class="text-center position-relative px-2" style="min-width: 150px; z-index: 2;">
-                                <div class="rounded-circle d-inline-flex align-items-center justify-content-center {{ $badgeClass }}" style="width: 45px; height: 45px; font-size: 1.2rem;">
-                                    <i class="{{ $iconClass }}"></i>
-                                </div>
-                                <div class="mt-2 small fw-bold {{ $isCurrent ? 'text-primary' : ($isPassed ? 'text-success' : 'text-muted') }}">
-                                    {{ $step }}
-                                </div>
-                            </div>
-                        @endforeach
+        @if($pengajuan->catatan_admin)
+        <div class="card border-0 shadow-lg rounded-4 p-4 mb-4 position-relative overflow-hidden" style="background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%); border-left: 6px solid #e53e3e !important;">
+            <div class="position-absolute top-0 end-0 p-3 opacity-10">
+                <i class="ti ti-alert-triangle text-danger" style="font-size: 5rem;"></i>
+            </div>
+            <div class="d-flex align-items-start position-relative z-1">
+
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h5 class="fw-bold text-danger mb-0">Catatan & Penolakan </h5>
+                    </div>
+
+                    <div class="p-3 bg-white rounded-3 border border-danger-subtle shadow-sm mb-3">
+                        <p class="text-dark fw-medium mb-0" style="white-space: pre-line;">{{ $pengajuan->catatan_admin }}</p>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="button" class="btn btn-danger fw-semibold px-4 py-2 rounded-3 shadow-sm btn-ajukan-ulang" data-id="{{ $pengajuan->id }}">
+                            <i class="ti ti-send me-1"></i> Saya Sudah Memperbaiki & Ajukan Ulang
+                        </button>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Detail Informasi PKL & Aksi Interaktif -->
-            <div class="col-md-8">
-                @php
-                    $genericDocuments = $pengajuan->berkasSeminar->keyBy('jenis_berkas');
-                    $uploadDocument = function ($kind) use ($pengajuan) {
-                        return route('pkl.mahasiswa.upload-dokumen', $pengajuan->id);
-                    };
-                @endphp
+        @push('scripts')
+        <script>
+            // Handler Tombol Ajukan Ulang Revisi
+            $(document).on('click', '.btn-ajukan-ulang', function() {
+                let id = $(this).data('id');
 
-                @if($pengajuan->status === 'Pengajuan & Verifikasi Admin' && !$pengajuan->dosen_pembimbing_id)
-                    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-primary">
-                        <h5 class="fw-bold mb-2"><i class="ti ti-user-check text-primary me-2"></i>Pilih Dosen Pembimbing PKL</h5>
-                        <p class="text-muted small">Pilih dosen pembimbing untuk memulai pelaksanaan. Admin dapat meninjau dan mengubah penetapan ini.</p>
-                        <form action="{{ route('pkl.mahasiswa.plot-pembimbing', $pengajuan->id) }}" method="POST" class="row g-2 align-items-end">@csrf
-                            <div class="col-md-8"><label class="form-label small fw-semibold">Dosen Pembimbing</label><select class="form-select" name="dosen_pembimbing_id" required><option value="">Pilih dosen pembimbing</option>@foreach(\App\Models\Dosen\Dosen::where('aktif', true)->orderBy('nama_dosen')->get() as $dosenPilihan)<option value="{{ $dosenPilihan->id_dosen }}">{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>@endforeach</select></div>
-                            <div class="col-md-4"><button class="btn btn-primary w-100 fw-semibold" type="submit">Pilih Pembimbing & Mulai PKL</button></div>
-                        </form>
-                    </div>
-                @endif
-
-                @if(in_array($pengajuan->status, ['Pengajuan & Verifikasi Admin', 'Pelaksanaan PKL & Bimbingan'], true))
-                    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-info">
-                        <h5 class="fw-bold mb-1"><i class="ti ti-file-certificate text-info me-2"></i>Dokumen Pendaftaran PKL · Semester 6</h5>
-                        <p class="text-muted small mb-3">Lengkapi berkas awal PKL. Proposal yang dikirim saat pengajuan tetap dapat diganti di sini.</p>
-                        <div class="row g-3">
-                            @foreach([
-                                'proposal' => ['Proposal ke Tempat PKL', $pengajuan->berkas_proposal],
-                                'surat_jalan_pkl' => ['Surat Jalan PKL', $genericDocuments->get('surat_jalan_pkl')?->path_berkas],
-                                'surat_balasan_instansi' => ['Surat Balasan Instansi', $genericDocuments->get('surat_balasan_instansi')?->path_berkas],
-                                'acc_pembimbing_awal' => ['ACC Pembimbing', $genericDocuments->get('acc_pembimbing_awal')?->path_berkas],
-                            ] as $kind => [$label, $path])
-                                <div class="col-md-6">
-                                    <form action="{{ route('pkl.mahasiswa.upload-berkas-satuan', $pengajuan->id) }}" method="POST" enctype="multipart/form-data" class="border rounded-3 p-3 h-100 document-upload-form">
-                                        @csrf
-                                        <input type="hidden" name="field" value="{{ $kind === 'proposal' ? 'berkas_proposal' : $kind }}">
-                                        <label class="form-label fw-semibold small">{{ $label }}</label>
-                                        <input type="file" name="file" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png" required>
-                                        <div class="d-flex justify-content-between align-items-center mt-2">
-                                            @if($path)
-                                                <a class="btn btn-sm btn-outline-primary fw-semibold" href="{{ url('pkl/view-file/' . $path) }}" target="_blank"><i class="ti ti-eye me-1"></i>Lihat Berkas</a>
-                                            @else
-                                                <span class="small text-muted">Belum diunggah</span>
-                                            @endif
-                                            <button class="btn btn-sm btn-outline-primary" type="submit">Upload</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
-
-                @if(in_array($pengajuan->status, ['Dijadwalkan Ujian', 'Ujian Seminar & Penilaian', 'Revisi Laporan'], true))
-                    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-warning">
-                        <h5 class="fw-bold mb-1"><i class="ti ti-file-check text-warning me-2"></i>Dokumen Akhir PKL</h5>
-                        <p class="text-muted small">Unggah semua dokumen ujian dan hasil revisi. Kelulusan diterbitkan setelah ACC akhir pembimbing dan nilai pembimbing tersimpan.</p>
-                        <div class="row g-3">
-                            @foreach([
-                                'formulir_pendaftaran_ujian' => 'Formulir Pendaftaran Ujian',
-                                'berita_acara_ujian' => 'Berita Acara Ujian',
-                                'formulir_nilai' => 'Formulir Nilai',
-                                'permohonan_revisi' => 'Formulir Permohonan Revisi (Setelah Ujian)',
-                                'laporan_final' => 'Laporan Final',
-                                'lampiran_teknis' => 'Lampiran Teknis (Gambar AutoCAD / RAB)',
-                                'acc_pembimbing_akhir' => 'ACC Pembimbing Akhir',
-                                'rekap_nilai' => 'Rekap Nilai',
-                            ] as $kind => $label)
-                                @php $doc = $genericDocuments->get($kind); @endphp
-                                <div class="col-md-6">
-                                    <form action="{{ route('pkl.mahasiswa.upload-berkas-satuan', $pengajuan->id) }}" method="POST" enctype="multipart/form-data" class="border rounded-3 p-3 h-100 document-upload-form">
-                                        @csrf
-                                        <input type="hidden" name="field" value="{{ $kind }}">
-                                        <label class="form-label fw-semibold small">{{ $label }}</label>
-                                        <input type="file" name="file" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png" required>
-                                        <div class="d-flex justify-content-between align-items-center mt-2">
-                                            <span class="small {{ $doc ? ($doc->status_verifikasi === 'Valid' ? 'text-success' : ($doc->status_verifikasi === 'Ditolak' ? 'text-danger' : 'text-warning')) : 'text-muted' }}">
-                                                {{ $doc ? $doc->status_verifikasi : 'Belum diunggah' }}
-                                            </span>
-                                            <div class="d-flex gap-2">
-                                                @if($doc)<a class="btn btn-sm btn-primary fw-semibold shadow-sm" href="{{ url('pkl/view-file/' . $doc->path_berkas) }}" target="_blank" rel="noopener"><i class="ti ti-eye me-1"></i>Lihat berkas</a>@endif
-                                                <button class="btn btn-sm btn-outline-primary" type="submit">Upload</button>
-                                            </div>
-                                        </div>
-                                        @if($doc?->catatan_verifikator)<small class="text-danger d-block mt-1">Catatan: {{ $doc->catatan_verifikator }}</small>@endif
-                                    </form>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
-
-                <!-- Informasi Instansi Card -->
-                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-                    <h5 class="fw-bold mb-3 text-slate-800"><i class="ti ti-info-circle text-info me-2"></i>Informasi Instansi & Status</h5>
-                    <table class="table table-borderless align-middle mb-0">
-                        <tr>
-                            <td class="text-muted w-25">Nama Instansi</td>
-                            <td class="fw-semibold text-dark">: {{ $pengajuan->nama_instansi }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Unit / Bidang</td>
-                            <td class="fw-semibold text-dark">: {{ $pengajuan->unit_kerja ?? '-' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Alamat</td>
-                            <td class="fw-semibold text-dark">: {{ $pengajuan->alamat_instansi ?? '-' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Dosen Pembimbing</td>
-                            <td class="fw-semibold text-dark">: <span class="badge bg-info-subtle text-info px-2 py-1">{{ $pengajuan->dosenPembimbing->nama_dosen ?? 'Belum Diploting' }}</span></td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Status Saat Ini</td>
-                            <td>: <span class="badge bg-primary-subtle text-primary px-3 py-2 fw-bold">{{ $pengajuan->status }}</span></td>
-                        </tr>
-                        @if($pengajuan->nilai_akhir)
-                        <tr>
-                            <td class="text-muted">Nilai Akhir</td>
-                            <td>: <span class="badge bg-success-subtle text-success fs-6 px-3 py-1">{{ $pengajuan->nilai_akhir }} ({{$pengajuan->nilai_huruf }})</span></td>
-                        </tr>
-                        @endif
-                    </table>
-                </div>
-
-                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-                    <h5 class="fw-bold mb-3"><i class="ti ti-history text-info me-2"></i>Riwayat Logbook & Catatan Bimbingan</h5>
-                    @php
-                        $riwayatMahasiswa = collect();
-                        foreach ($pengajuan->bimbingan as $sesi) {
-                            $riwayatMahasiswa->push((object) ['tanggal' => $sesi->created_at, 'judul' => $sesi->kategori_bimbingan . ' · ' . $sesi->judul_topik, 'catatan' => 'Status: ' . $sesi->status]);
-                            foreach ($sesi->tanggapan as $catatan) {
-                                $riwayatMahasiswa->push((object) ['tanggal' => $catatan->created_at, 'judul' => 'Catatan ' . ($catatan->pengirim?->name ?? 'bimbingan'), 'catatan' => $catatan->pesan]);
-                            }
-                        }
-                        foreach ($pengajuan->logAktivitas as $aktivitas) {
-                            $riwayatMahasiswa->push((object) ['tanggal' => $aktivitas->created_at, 'judul' => $aktivitas->aksi, 'catatan' => trim(($aktivitas->aktor?->name ? $aktivitas->aktor->name . ' · ' : '') . ($aktivitas->deskripsi ?? ''))]);
-                        }
-                        $riwayatMahasiswa = $riwayatMahasiswa->sortByDesc('tanggal')->take(10);
-                    @endphp
-                    @forelse($riwayatMahasiswa as $riwayat)
-                        <div class="border-bottom py-2 small">
-                            <div class="d-flex justify-content-between gap-2"><strong>{{ $riwayat->judul }}</strong><span class="text-muted text-nowrap">{{ $riwayat->tanggal?->format('d M Y H:i') }}</span></div>
-                            <div class="text-muted">{{ $riwayat->catatan ?: 'Tidak ada catatan tambahan.' }}</div>
-                        </div>
-                    @empty
-                        <p class="text-muted small mb-0">Belum ada logbook atau catatan bimbingan.</p>
-                    @endforelse
-                </div>
-
-                <!-- Aksi: Tandai PKL Selesai -->
-                @if($pengajuan->status == 'Pelaksanaan PKL & Bimbingan')
-                <div class="card border-0 shadow-sm rounded-4 p-4 bg-gradient text-white mb-4" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="fw-bold mb-1"><i class="ti ti-clock-check me-1"></i> Pelaksanaan PKL Berlangsung</h5>
-                            <p class="text-white-50 small mb-0">Jika masa magang di instansi sudah selesai, klik tombol di samping untuk lanjut ke pemberkasan seminar.</p>
-                        </div>
-                        <div>
-                            <button type="button" class="btn btn-light text-success fw-bold px-4 py-2 rounded-pill shadow-sm" id="btnSelesaiPkl" data-id="{{ $pengajuan->id }}">
-                                <i class="ti ti-circle-check me-1"></i> Tandai PKL Selesai
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                @endif
-
-                <!-- Form Upload Revisi (Muncul otomatis saat tahap Ujian atau Revisi) -->
-                @if(in_array($pengajuan->status, ['Ujian Seminar & Penilaian', 'Revisi Laporan']))
-                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-warning">
-                    <h5 class="fw-bold mb-2 text-warning-emphasis"><i class="ti ti-file-upload me-1"></i> Unggah Berkas Revisi Laporan & Pengesahan</h5>
-                    <p class="text-muted small">Unggah dokumen laporan akhir hasil revisi seminar beserta lembar pengesahan bertandatangan.</p>
-                    
-                    <form action="{{ route('pkl.mahasiswa.upload-revisi', $pengajuan->id) }}" method="POST" enctype="multipart/form-data" id="formUploadRevisi">
-                        @csrf
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold">File Laporan Revisi (PDF, Maks 5MB)</label>
-                            <input type="file" name="berkas_laporan_revisi" class="form-control" accept=".pdf" required>
-                            @if($pengajuan->berkas_laporan_revisi)
-                                <div class="mt-2"><a class="btn btn-sm btn-primary fw-semibold" href="{{ url('pkl/view-file/' . $pengajuan->berkas_laporan_revisi) }}" target="_blank" rel="noopener"><i class="ti ti-eye me-1"></i>Lihat berkas</a></div>
-                            @endif
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold">File Lembar Pengesahan (PDF/Gambar, Maks 3MB)</label>
-                            <input type="file" name="berkas_lembar_pengesahan" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                            @if($pengajuan->berkas_lembar_pengesahan)
-                                <div class="mt-2"><a class="btn btn-sm btn-primary fw-semibold" href="{{ url('pkl/view-file/' . $pengajuan->berkas_lembar_pengesahan) }}" target="_blank" rel="noopener"><i class="ti ti-eye me-1"></i>Lihat berkas</a></div>
-                            @endif
-                        </div>
-                        <button type="submit" class="btn btn-warning fw-semibold text-dark px-4 py-2 rounded-3">Kirim Berkas Revisi</button>
-                    </form>
-                </div>
-                @endif
-            
-                <!-- Verifikasi berkas seminar: dokumen yang diminta sesuai alur terbaru -->
-                @if(in_array($pengajuan->status, ['Verifikasi Berkas Admin', 'Dijadwalkan Ujian'], true))
-                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-primary">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="bg-primary-subtle text-primary p-2 rounded-3 me-2">
-                            <i class="ti ti-files fs-4"></i>
-                        </div>
-                        <div>
-                            <h5 class="fw-bold mb-0">Verifikasi Berkas Ujian</h5>
-                            <p class="text-muted small mb-0">Unggah draft laporan, kartu konsultasi, dan transkrip sementara. Admin akan memverifikasi kelengkapannya.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="row g-3">
-                        @php
-                            $berkasList = [
-                                'berkas_draft_laporan'      => ['label' => 'Draft Laporan PKL', 'value' => $pengajuan->berkas_draft_laporan],
-                                'berkas_kartu_bimbingan'    => ['label' => 'Kartu Konsultasi / Bimbingan', 'value' => $pengajuan->berkas_kartu_bimbingan],
-                                'transkrip_sementara'       => ['label' => 'Transkrip Sementara', 'value' => $genericDocuments->get('transkrip_sementara')?->path_berkas],
-                            ];
-                        @endphp
-                
-                        @foreach($berkasList as $field => $data)
-                        <div class="col-md-12 border-bottom pb-3">
-                            <label class="form-label fw-semibold small text-dark">{{ $data['label'] }} <span class="text-danger">*</span></label>
-                            <div class="input-group input-group-sm">
-                                @if($field === 'transkrip_sementara')
-                                    <form action="{{ route('pkl.mahasiswa.upload-berkas-satuan', $pengajuan->id) }}" method="POST" enctype="multipart/form-data" class="input-group input-group-sm document-upload-form">
-                                        @csrf
-                                        <input type="hidden" name="field" value="{{ $field }}">
-                                        <input type="file" name="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                                        <button class="btn btn-primary px-3" type="submit"><i class="ti ti-upload me-1"></i> Upload</button>
-                                    </form>
-                                @else
-                                    <form action="{{ route('pkl.mahasiswa.upload-berkas-satuan', $pengajuan->id) }}" method="POST" enctype="multipart/form-data" class="input-group input-group-sm document-upload-form">
-                                        @csrf
-                                        <input type="hidden" name="field" value="{{ $field }}">
-                                        <input type="file" name="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                                        <button class="btn btn-primary px-3" type="submit"><i class="ti ti-upload me-1"></i> Upload</button>
-                                    </form>
-                                @endif
-                            </div>
-                            <div class="mt-1 status-file-{{ $field }}">
-                                @if($data['value'])
-                                    @php
-                                        // $data['value'] langsung berisi path dari database: "uploads/pkl/seminar_.../file.jpg"
-                                        $fileRouteUrl = $data['value'] ? url('pkl/view-file/' . $data['value']) : '#';
-                                    @endphp 
-                                    <div class="mt-2"><a class="btn btn-sm btn-primary fw-semibold shadow-sm" href="{{ $fileRouteUrl }}" target="_blank" rel="noopener"><i class="ti ti-eye me-1"></i>Lihat berkas</a></div>
-                                @else
-                                    <small class="text-muted fst-italic">Belum ada file diunggah.</small>
-                                @endif
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
-            </div>
-
-            <!-- Sidebar Informasi Dosen Penguji & Catatan Admin -->
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-                    <h6 class="fw-bold mb-3 text-slate-800"><i class="ti ti-calendar-event text-primary me-2"></i>Jadwal & Dewan Penguji Seminar</h6>
-                    
-                    <!-- Informasi Waktu & Tempat Ujian -->
-                    @if($pengajuan->tanggal_seminar)
-                        @php
-                            // Mapping hari dan bulan ke bahasa Indonesia agar akurat di server manapun
-                            $days = [
-                                'Sunday' => 'Minggu', 'Monday' => 'Senin', 'Tuesday' => 'Selasa', 
-                                'Wednesday' => 'Rabu', 'Thursday' => 'Kamis', 'Friday' => 'Jumat', 'Saturday' => 'Sabtu'
-                            ];
-                            $months = [
-                                'January' => 'Januari', 'February' => 'Februari', 'March' => 'Maret', 
-                                'April' => 'April', 'May' => 'Mei', 'June' => 'Juni', 
-                                'July' => 'Juli', 'August' => 'Agustus', 'September' => 'September', 
-                                'October' => 'Oktober', 'November' => 'November', 'December' => 'Desember'
-                            ];
-                
-                            $dt = \Carbon\Carbon::parse($pengajuan->tanggal_seminar);
-                            $namaHari = $days[$dt->format('l')] ?? $dt->format('l');
-                            $namaBulan = $months[$dt->format('F')] ?? $dt->format('F');
-                            $formattedDate = $dt->format('d') . ' ' . $namaBulan . ' ' . $dt->format('Y - H:i');
-                        @endphp
-                
-                        <div class="p-3 mb-3 bg-primary-subtle rounded-3 border border-primary-subtle">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="ti ti-calendar text-primary fs-5 me-2"></i>
-                                <span class="fw-bold text-dark">{{ $namaHari }}<br>{{ $formattedDate }} WIB</span>
-                            </div>
-                            <div class="d-flex align-items-center text-secondary small">
-                                <i class="ti ti-map-pin fs-5 me-2"></i>
-                                <span class="text-danger">Lokasi / Ruangan: <strong class="text-dark">{{ $pengajuan->ruangan_seminar ?? 'Belum ditentukan' }}</strong></span>
-                            </div>
-                        </div>
-                    @else
-                        <div class="alert alert-light border text-muted small py-2 px-3 mb-3">
-                            <i class="ti ti-info-circle me-1"></i> Jadwal seminar belum ditentukan oleh admin.
-                        </div>
-                    @endif
-
-                    @if($pengajuan->status === 'Dijadwalkan Ujian')
-                        <form action="{{ route('pkl.mahasiswa.usulkan-jadwal', $pengajuan->id) }}" method="POST" class="border rounded-3 p-3 mb-4 bg-light">
-                            @csrf
-                            <h6 class="fw-bold small mb-3">Atur Jadwal & Dewan Penguji</h6>
-                            <label class="form-label small">Tanggal dan waktu ujian</label>
-                            <input type="datetime-local" name="tanggal_seminar" value="{{ $pengajuan->tanggal_seminar?->format('Y-m-d\TH:i') }}" class="form-control form-control-sm mb-2" min="{{ now()->addHour()->format('Y-m-d\TH:i') }}" required>
-                            <label class="form-label small">Ruang ujian</label>
-                            <input type="text" name="ruangan_seminar" value="{{ $pengajuan->ruangan_seminar }}" class="form-control form-control-sm mb-2" placeholder="Contoh: Ruang Sidang 2" required>
-                            <label class="form-label small">Daftar dosen penguji</label>
-                            <select name="penguji_usulan[]" class="form-select form-select-sm mb-2" multiple size="5" required>
-                                @foreach(\App\Models\Dosen\Dosen::where('aktif', true)->orderBy('nama_dosen')->get() as $dosenPilihan)
-                                    <option value="{{ $dosenPilihan->id_dosen }}" @selected($pengajuan->dosenPenguji->contains('id_dosen', $dosenPilihan->id_dosen))>{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>
-                                @endforeach
-                            </select>
-                            <small class="text-muted d-block mb-2">Admin dapat meninjau dan mengubah jadwal serta daftar penguji.</small>
-                            <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">Simpan Jadwal & Penguji</button>
-                        </form>
-                    @endif
-                    <!-- Daftar Dewan Penguji -->
-                    <h6 class="fw-bold mb-2 text-slate-700 small text-uppercase tracking-wider">Daftar Penguji</h6>
-                    <ul class="list-group list-group-flush">
-                        @forelse($pengajuan->dosenPenguji as $penguji)
-                            <li class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center border-0">
-                                <div>
-                                    <div class="fw-semibold text-dark small">{{ $penguji->gelar_depan }}{{ $penguji->nama_dosen }}{{ $penguji->gelar_belakang }}</div>
-                                    <span class="badge bg-light text-secondary border small">{{ $penguji->pivot->peran ?? 'Penguji' }}</span>
-                                </div>
-                            </li>
-                        @empty
-                            <li class="list-group-item px-0 text-muted small fst-italic border-0">Dewan penguji belum ditentukan.</li>
-                        @endforelse
-                    </ul>
-                </div>
-
-                @if($pengajuan->catatan_admin)
-                <div class="card border-0 shadow-lg rounded-4 p-4 mb-4 position-relative overflow-hidden" style="background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%); border-left: 6px solid #e53e3e !important;">
-                    <div class="position-absolute top-0 end-0 p-3 opacity-10">
-                        <i class="ti ti-alert-triangle text-danger" style="font-size: 5rem;"></i>
-                    </div>
-                    <div class="d-flex align-items-start position-relative z-1">
-                        
-                        <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <h5 class="fw-bold text-danger mb-0">Catatan & Penolakan </h5> 
-                            </div> 
-                            
-                            <div class="p-3 bg-white rounded-3 border border-danger-subtle shadow-sm mb-3">
-                                <p class="text-dark fw-medium mb-0" style="white-space: pre-line;">{{ $pengajuan->catatan_admin }}</p>
-                            </div>
-                
-                            <div class="text-end">
-                                <button type="button" class="btn btn-danger fw-semibold px-4 py-2 rounded-3 shadow-sm btn-ajukan-ulang" data-id="{{ $pengajuan->id }}">
-                                    <i class="ti ti-send me-1"></i> Saya Sudah Memperbaiki & Ajukan Ulang
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                @push('scripts')
-                <script>
-                    // Handler Tombol Ajukan Ulang Revisi
-                    $(document).on('click', '.btn-ajukan-ulang', function() {
-                        let id = $(this).data('id');
-                
-                        Swal.fire({
-                            title: 'Ajukan Ulang Berkas?',
-                            text: "Pastikan Anda telah mengunggah file perbaikan yang sesuai sebelum mengirimkannya kembali ke admin.",
-                            icon: 'warning',
-                            showCancelButton: true,
-                            confirmButtonText: 'Ya, Kirim Sekarang',
-                            cancelButtonText: 'Batal',
-                            confirmButtonColor: '#e53e3e'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                $.ajax({
-                                    url: "{{ url('pkl/mahasiswa/ajukan-ulang-revisi') }}/" + id,
-                                    type: 'POST',
-                                    headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-                                    success: function(res) {
-                                        Swal.fire({
-                                            icon: 'success',
-                                            title: 'Berhasil!',
-                                            text: res.message,
-                                            timer: 1500,
-                                            showConfirmButton: false
-                                        }).then(() => location.reload());
-                                    },
-                                    error: function(xhr) {
-                                        let msg = xhr.responseJSON?.message || 'Terjadi kesalahan.';
-                                        Swal.fire('Gagal', msg, 'error');
-                                    }
-                                });
+                Swal.fire({
+                    title: 'Ajukan Ulang Berkas?',
+                    text: "Pastikan Anda telah mengunggah file perbaikan yang sesuai sebelum mengirimkannya kembali ke admin.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Kirim Sekarang',
+                    cancelButtonText: 'Batal',
+                    confirmButtonColor: '#e53e3e'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: "{{ url('pkl/mahasiswa/ajukan-ulang-revisi') }}/" + id,
+                            type: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                            },
+                            success: function(res) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: res.message,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }).then(() => location.reload());
+                            },
+                            error: function(xhr) {
+                                let msg = xhr.responseJSON?.message || 'Terjadi kesalahan.';
+                                Swal.fire('Gagal', msg, 'error');
                             }
                         });
-                    });
-                </script>
-                @endpush
-                @endif
-            </div>
+                    }
+                });
+            });
+        </script>
+        @endpush
         @endif
     </div>
+    @endif
+</div>
 </div>
 @endsection
 
@@ -769,7 +912,7 @@
     // Tombol Tandai PKL Selesai
     $(document).on('click', '#btnSelesaiPkl', function() {
         let id = $(this).data('id');
-        
+
         Swal.fire({
             title: 'Nyatakan PKL Selesai?',
             text: "Pastikan seluruh kegiatan magang di instansi sudah benar-benar tuntas.",
@@ -783,9 +926,17 @@
                 $.ajax({
                     url: "{{ url('pkl/mahasiswa/selesai-pelaksanaan') }}/" + id,
                     type: 'POST',
-                    headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
                     success: function(res) {
-                        Swal.fire({icon: 'success', title: 'Berhasil!', text: res.message, timer: 1500, showConfirmButton: false})
+                        Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: res.message,
+                                timer: 1500,
+                                showConfirmButton: false
+                            })
                             .then(() => location.reload());
                     },
                     error: function(xhr) {
@@ -824,7 +975,10 @@
         btn.find('.spinner-border').removeClass('d-none');
 
         let formData = new FormData(formElement);
-        const selectedDocuments = selectedFiles.map(input => ({field: input.name, file: input.files[0]}));
+        const selectedDocuments = selectedFiles.map(input => ({
+            field: input.name,
+            file: input.files[0]
+        }));
         selectedFiles.forEach(input => formData.delete(input.name));
 
         $.ajax({
@@ -833,7 +987,9 @@
             data: formData,
             contentType: false,
             processData: false,
-            headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
             success: async function(res) {
                 try {
                     for (const document of selectedDocuments) {
@@ -843,11 +999,22 @@
                         data.append('file', document.file);
                         const uploadResponse = await $.ajax({
                             url: "{{ url('pkl/mahasiswa/upload-berkas-satuan') }}/" + res.data.id,
-                            type: 'POST', data, contentType: false, processData: false,
-                            headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')}
+                            type: 'POST',
+                            data,
+                            contentType: false,
+                            processData: false,
+                            headers: {
+                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                            }
                         });
                     }
-                    Swal.fire({icon: 'success', title: 'Berhasil!', text: 'Pengajuan dan ' + selectedDocuments.length + ' dokumen berhasil dikirim.', timer: 1600, showConfirmButton: false})
+                    Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: 'Pengajuan dan ' + selectedDocuments.length + ' dokumen berhasil dikirim.',
+                            timer: 1600,
+                            showConfirmButton: false
+                        })
                         .then(() => location.reload());
                 } catch (error) {
                     const message = error.responseJSON?.message || 'Pengajuan tersimpan, tetapi salah satu file belum berhasil diunggah. Lanjutkan upload berkas pada dashboard PKL.';
@@ -871,11 +1038,22 @@
         const original = button.html();
         button.prop('disabled', true).text('Mengunggah...');
         $.ajax({
-            url: form.attr('action'), type: 'POST', data: new FormData(this),
-            contentType: false, processData: false,
-            headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+            url: form.attr('action'),
+            type: 'POST',
+            data: new FormData(this),
+            contentType: false,
+            processData: false,
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
             success: function(response) {
-                Swal.fire({icon: 'success', title: 'Berhasil', text: response.message, timer: 1200, showConfirmButton: false})
+                Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil',
+                        text: response.message,
+                        timer: 1200,
+                        showConfirmButton: false
+                    })
                     .then(() => location.reload());
             },
             error: function(xhr) {
@@ -898,10 +1076,18 @@
             data: formData,
             contentType: false,
             processData: false,
-            headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
             success: function(res) {
                 $('#modalEditPengajuan').modal('hide');
-                Swal.fire({icon: 'success', title: 'Berhasil!', text: res.message, timer: 1500, showConfirmButton: false})
+                Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: res.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    })
                     .then(() => location.reload());
             },
             error: function(xhr) {
@@ -937,13 +1123,21 @@
             data: formData,
             contentType: false,
             processData: false,
-            headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
             success: function(res) {
                 btn.prop('disabled', false).html(originalText);
                 $('.status-file-' + field).html(`
                     <small class="text-success fw-semibold"><i class="ti ti-circle-check"></i> Berhasil diunggah! ( <a href="${res.file_url}" target="_blank">Lihat Dokumen</a> )</small>
                 `);
-                Swal.fire({icon: 'success', title: 'Berhasil', text: 'File berhasil diunggah', timer: 1000, showConfirmButton: false});
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: 'File berhasil diunggah',
+                    timer: 1000,
+                    showConfirmButton: false
+                });
             },
             error: function(xhr) {
                 btn.prop('disabled', false).html(originalText);
@@ -964,9 +1158,17 @@
             data: formData,
             contentType: false,
             processData: false,
-            headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
             success: function(res) {
-                Swal.fire({icon: 'success', title: 'Berhasil', text: res.message, timer: 1500, showConfirmButton: false})
+                Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil',
+                        text: res.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    })
                     .then(() => location.reload());
             },
             error: function(xhr) {
