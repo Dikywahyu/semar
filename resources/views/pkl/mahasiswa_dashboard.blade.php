@@ -614,7 +614,7 @@
         </div>
         @endif
 
-        @if(in_array($pengajuan->status, [ 'Revisi Laporan','Revisi Lapora'], true))
+        @if(in_array($pengajuan->status, [ 'Revisi Laporan','Revisi Lapora','Ujian Seminar & Penilaian'], true))
         <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-warning">
             <h5 class="fw-bold mb-1"><i class="ti ti-file-check text-warning me-2"></i>Dokumen Akhir PKL</h5>
             <p class="text-muted small">Unggah semua dokumen ujian dan hasil revisi. Kelulusan diterbitkan setelah ACC akhir pembimbing dan nilai pembimbing tersimpan.</p>
