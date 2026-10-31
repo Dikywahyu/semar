@@ -53,6 +53,7 @@
                             <th>NUPTK</th>
                             <th>Nama Dosen</th>
                             <th>Email</th>
+                            <th>Akun</th>
                             <th>Telepon</th>
                             <th>Program Studi</th>
                             <th>Status</th>
@@ -143,7 +144,7 @@
             language: {
                 search: 'Cari:',
                 lengthMenu: 'Tampilkan _MENU_ data',
-                info: 'Menampilkan _START_â€“_END_ dari _TOTAL_ dosen',
+                info: 'Menampilkan _START_ - _END_ dari _TOTAL_ data',
                 infoEmpty: 'Tidak ada data dosen',
                 zeroRecords: 'Dosen tidak ditemukan',
                 processing: 'Memuat data...',
@@ -154,12 +155,12 @@
             },
             columns: [{
                     data: 'nidn',
-                    defaultContent: 'â€”',
+                    defaultContent: '-',
                     render: safe
                 },
                 {
                     data: 'nuptk',
-                    defaultContent: 'â€”',
+                    defaultContent: '-',
                     render: safe
                 },
                 {
@@ -168,17 +169,20 @@
                 },
                 {
                     data: 'email',
-                    defaultContent: 'â€”',
+                    defaultContent: '-',
                     render: safe
                 },
                 {
+                    data: 'account_connected', orderable: false, searchable: false,
+                    render: connected => connected ? '<span class="badge bg-success-subtle text-success rounded-pill">Terhubung</span>' : '<span class="badge bg-secondary-subtle text-secondary rounded-pill">Belum terhubung</span>'
+                },                {
                     data: 'telepon',
-                    defaultContent: 'â€”',
+                    defaultContent: '-',
                     render: safe
                 },
                 {
                     data: 'prodi.nama_prodi',
-                    defaultContent: 'â€”',
+                    defaultContent: '-',
                     render: safe
                 },
                 {
@@ -197,7 +201,7 @@
         });
 
         function safe(value) {
-            if (value === null || value === undefined || value === '') return 'â€”';
+            if (value === null || value === undefined || value === '') return '-';
             return $('<span>').text(String(value)).html();
         }
 
@@ -278,6 +282,13 @@
                     showConfirmButton: false
                 });
             }).fail(showError).always(() => button.prop('disabled', false).html('<i class="ti ti-device-floppy me-1"></i> Simpan'));
+        });
+        $('#table-dosens').on('click', '.btn-reset-dosen', function() {
+            const record = table.row($(this).closest('tr')).data(); if (!record) return;
+            Swal.fire({ title: 'Reset sambungan akun?', text: 'Peran Dosen dan NIDN pada akun terkait akan dilepas.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, reset', cancelButtonText: 'Batal' }).then(result => {
+                if (!result.isConfirmed) return;
+                $.ajax({ url: `${baseUrl}/${encodeURIComponent(record.id_dosen)}/reset-account-binding`, method: 'POST', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') } }).done(response => { table.ajax.reload(null, false); Swal.fire({ icon: response.reset_count ? 'success' : 'info', title: response.reset_count ? 'Reset berhasil' : 'Tidak ada sambungan', text: response.message }); }).fail(showError);
+            });
         });
 
         $('#table-dosens').on('click', '.btn-edit-dosen', function() {

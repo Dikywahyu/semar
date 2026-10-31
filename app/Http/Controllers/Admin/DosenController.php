@@ -47,6 +47,13 @@ class DosenController extends Controller
                 ->limit($length)
                 ->get();
 
+
+            $dosens->each(function (Dosen $dosen) {
+                $account = User::query()->where('identifier_number', $dosen->nidn)->orWhereRaw('LOWER(email) = ?', [strtolower((string) $dosen->email)])->first();
+                $dosen->setAttribute('account_connected', $account?->hasRole('Dosen') ?? false);
+                $dosen->setAttribute('account_email', $account?->email);
+            });
+
             return response()->json([
                 'draw' => (int) $request->input('draw', 0),
                 'recordsTotal' => $total,
@@ -181,7 +188,7 @@ class DosenController extends Controller
             if ($updates !== []) $user->update($updates);
         }
         activity()->causedBy($request->user())->log("Admin reset account binding for lecturer {$dosen->id_dosen}");
-        return response()->json(['message' => $users->isEmpty() ? 'Tidak ada akun yang terhubung dengan data dosen ini.' : 'Sambungan akun dosen berhasil direset. Data dapat diklaim ulang dengan email baru.']);
+        return response()->json(['reset_count' => $users->count(), 'message' => $users->isEmpty() ? 'Tidak ada akun yang terhubung dengan data dosen ini.' : 'Sambungan akun dosen berhasil direset. Data dapat diklaim ulang dengan email baru.']);
     }
     private function validatedData(Request $request, ?Dosen $dosen = null): array
     {

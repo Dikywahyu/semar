@@ -45,6 +45,13 @@ class MahasiswaController extends Controller
                 ->limit($length)
                 ->get();
 
+
+            $mahasiswas->each(function (MahasiswaRegistrasi $mahasiswa) {
+                $account = User::query()->where('identifier_number', $mahasiswa->nim)->orWhereRaw('LOWER(email) = ?', [strtolower((string) $mahasiswa->email)])->first();
+                $mahasiswa->setAttribute('account_connected', $account?->hasRole('Mahasiswa') ?? false);
+                $mahasiswa->setAttribute('account_email', $account?->email);
+            });
+
             return response()->json([
                 'draw' => (int) $request->input('draw', 0),
                 'recordsTotal' => $total,
@@ -178,7 +185,7 @@ class MahasiswaController extends Controller
             if ($updates !== []) $user->update($updates);
         }
         activity()->causedBy($request->user())->log("Admin reset account binding for student {$mahasiswa->id_registrasi_mahasiswa}");
-        return response()->json(['message' => $users->isEmpty() ? 'Tidak ada akun yang terhubung dengan data mahasiswa ini.' : 'Sambungan akun mahasiswa berhasil direset. Data dapat diklaim ulang dengan email baru.']);
+        return response()->json(['reset_count' => $users->count(), 'message' => $users->isEmpty() ? 'Tidak ada akun yang terhubung dengan data mahasiswa ini.' : 'Sambungan akun mahasiswa berhasil direset. Data dapat diklaim ulang dengan email baru.']);
     }
     private function validatedData(Request $request, ?MahasiswaRegistrasi $mahasiswa = null): array
     {
