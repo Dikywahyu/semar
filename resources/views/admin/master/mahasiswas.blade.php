@@ -141,7 +141,7 @@
             language: {
                 search: 'Cari:',
                 lengthMenu: 'Tampilkan _MENU_ data',
-                info: 'Menampilkan _START_–_END_ dari _TOTAL_ mahasiswa',
+                info: 'Menampilkan _START_â€“_END_ dari _TOTAL_ mahasiswa',
                 infoEmpty: 'Tidak ada data mahasiswa',
                 zeroRecords: 'Mahasiswa tidak ditemukan',
                 processing: 'Memuat data...',
@@ -160,22 +160,22 @@
                 },
                 {
                     data: 'email',
-                    defaultContent: '—',
+                    defaultContent: 'â€”',
                     render: safe
                 },
                 {
                     data: 'prodi.nama_prodi',
-                    defaultContent: '—',
+                    defaultContent: 'â€”',
                     render: safe
                 },
                 {
                     data: 'angkatan',
-                    defaultContent: '—',
+                    defaultContent: 'â€”',
                     render: safe
                 },
                 {
                     data: 'telepon',
-                    defaultContent: '—',
+                    defaultContent: 'â€”',
                     render: safe
                 },
                 {
@@ -187,14 +187,14 @@
                     orderable: false,
                     searchable: false,
                     className: 'text-center text-nowrap',
-                    render: (data, type, row) => `<button type="button" class="btn btn-sm btn-light-primary btn-edit-mahasiswa me-1" data-id="${safe(row.id_registrasi_mahasiswa)}" title="Edit"><i class="ti ti-edit"></i></button><button type="button" class="btn btn-sm btn-light-danger btn-delete-mahasiswa" data-id="${safe(row.id_registrasi_mahasiswa)}" title="Hapus"><i class="ti ti-trash"></i></button>`
+                    render: (data, type, row) => `<button type="button" class="btn btn-sm btn-light-warning btn-reset-mahasiswa me-1" data-id="${safe(row.id_registrasi_mahasiswa)}" title="Reset sambungan akun"><i class="ti ti-link-off"></i></button><button type="button" class="btn btn-sm btn-light-primary btn-edit-mahasiswa me-1" data-id="${safe(row.id_registrasi_mahasiswa)}" title="Edit"><i class="ti ti-edit"></i></button><button type="button" class="btn btn-sm btn-light-danger btn-delete-mahasiswa" data-id="${safe(row.id_registrasi_mahasiswa)}" title="Hapus"><i class="ti ti-trash"></i></button>`
                 }
             ],
             order: []
         });
 
         function safe(value) {
-            if (value === null || value === undefined || value === '') return '—';
+            if (value === null || value === undefined || value === '') return 'â€”';
             return $('<span>').text(String(value)).html();
         }
 

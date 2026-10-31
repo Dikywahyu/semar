@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Imports\DosensImport;
 use App\Models\Dosen\Dosen;
 use App\Models\Prodi;
+use App\Models\User;
 use App\Services\AcademicAccountGenerator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -163,6 +164,25 @@ class DosenController extends Controller
         return back()->with('success', 'Data dosen berhasil dihapus.');
     }
 
+    public function resetAccountBinding(Request $request, Dosen $dosen): JsonResponse
+    {
+        $this->authorizeManagement();
+        $identifier = trim((string) $dosen->nidn);
+        $email = strtolower(trim((string) $dosen->email));
+        $users = User::query()->where(function ($query) use ($identifier, $email) {
+            if ($identifier !== '') $query->where('identifier_number', $identifier);
+            if ($email !== '') $identifier !== '' ? $query->orWhereRaw('LOWER(email) = ?', [$email]) : $query->whereRaw('LOWER(email) = ?', [$email]);
+        })->get();
+        foreach ($users as $user) {
+            if ($user->hasRole('Dosen')) $user->removeRole('Dosen');
+            $updates = [];
+            if ($identifier !== '' && $user->identifier_number === $identifier) $updates['identifier_number'] = null;
+            if (($updates['identifier_number'] ?? null) === null && $user->position_title === 'Dosen') $updates['position_title'] = null;
+            if ($updates !== []) $user->update($updates);
+        }
+        activity()->causedBy($request->user())->log("Admin reset account binding for lecturer {$dosen->id_dosen}");
+        return response()->json(['message' => $users->isEmpty() ? 'Tidak ada akun yang terhubung dengan data dosen ini.' : 'Sambungan akun dosen berhasil direset. Data dapat diklaim ulang dengan email baru.']);
+    }
     private function validatedData(Request $request, ?Dosen $dosen = null): array
     {
         $validated = $request->validate([

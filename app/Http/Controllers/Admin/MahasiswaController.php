@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Imports\MahasiswasImport;
 use App\Models\Mahasiswa\MahasiswaRegistrasi;
 use App\Models\Prodi;
+use App\Models\User;
 use App\Services\AcademicAccountGenerator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -160,6 +161,25 @@ class MahasiswaController extends Controller
         return back()->with('success', 'Data mahasiswa berhasil dihapus.');
     }
 
+    public function resetAccountBinding(Request $request, MahasiswaRegistrasi $mahasiswa): JsonResponse
+    {
+        $this->authorizeManagement();
+        $identifier = trim((string) $mahasiswa->nim);
+        $email = strtolower(trim((string) $mahasiswa->email));
+        $users = User::query()->where(function ($query) use ($identifier, $email) {
+            $query->where('identifier_number', $identifier);
+            if ($email !== '') $query->orWhereRaw('LOWER(email) = ?', [$email]);
+        })->get();
+        foreach ($users as $user) {
+            if ($user->hasRole('Mahasiswa')) $user->removeRole('Mahasiswa');
+            $updates = [];
+            if ($user->identifier_number === $identifier) $updates['identifier_number'] = null;
+            if (($updates['identifier_number'] ?? null) === null && $user->position_title === 'Mahasiswa') $updates['position_title'] = null;
+            if ($updates !== []) $user->update($updates);
+        }
+        activity()->causedBy($request->user())->log("Admin reset account binding for student {$mahasiswa->id_registrasi_mahasiswa}");
+        return response()->json(['message' => $users->isEmpty() ? 'Tidak ada akun yang terhubung dengan data mahasiswa ini.' : 'Sambungan akun mahasiswa berhasil direset. Data dapat diklaim ulang dengan email baru.']);
+    }
     private function validatedData(Request $request, ?MahasiswaRegistrasi $mahasiswa = null): array
     {
         $validated = $request->validate([

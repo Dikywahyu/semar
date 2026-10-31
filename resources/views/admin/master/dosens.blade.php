@@ -143,7 +143,7 @@
             language: {
                 search: 'Cari:',
                 lengthMenu: 'Tampilkan _MENU_ data',
-                info: 'Menampilkan _START_–_END_ dari _TOTAL_ dosen',
+                info: 'Menampilkan _START_â€“_END_ dari _TOTAL_ dosen',
                 infoEmpty: 'Tidak ada data dosen',
                 zeroRecords: 'Dosen tidak ditemukan',
                 processing: 'Memuat data...',
@@ -154,12 +154,12 @@
             },
             columns: [{
                     data: 'nidn',
-                    defaultContent: '—',
+                    defaultContent: 'â€”',
                     render: safe
                 },
                 {
                     data: 'nuptk',
-                    defaultContent: '—',
+                    defaultContent: 'â€”',
                     render: safe
                 },
                 {
@@ -168,17 +168,17 @@
                 },
                 {
                     data: 'email',
-                    defaultContent: '—',
+                    defaultContent: 'â€”',
                     render: safe
                 },
                 {
                     data: 'telepon',
-                    defaultContent: '—',
+                    defaultContent: 'â€”',
                     render: safe
                 },
                 {
                     data: 'prodi.nama_prodi',
-                    defaultContent: '—',
+                    defaultContent: 'â€”',
                     render: safe
                 },
                 {
@@ -190,14 +190,14 @@
                     orderable: false,
                     searchable: false,
                     className: 'text-center text-nowrap',
-                    render: (data, type, row) => `<button type="button" class="btn btn-sm btn-light-primary btn-edit-dosen me-1" data-id="${safe(row.id_dosen)}" title="Edit"><i class="ti ti-edit"></i></button><button type="button" class="btn btn-sm btn-light-danger btn-delete-dosen" data-id="${safe(row.id_dosen)}" title="Hapus"><i class="ti ti-trash"></i></button>`
+                    render: (data, type, row) => `<button type="button" class="btn btn-sm btn-light-warning btn-reset-dosen me-1" data-id="${safe(row.id_dosen)}" title="Reset sambungan akun"><i class="ti ti-link-off"></i></button><button type="button" class="btn btn-sm btn-light-primary btn-edit-dosen me-1" data-id="${safe(row.id_dosen)}" title="Edit"><i class="ti ti-edit"></i></button><button type="button" class="btn btn-sm btn-light-danger btn-delete-dosen" data-id="${safe(row.id_dosen)}" title="Hapus"><i class="ti ti-trash"></i></button>`
                 }
             ],
             order: []
         });
 
         function safe(value) {
-            if (value === null || value === undefined || value === '') return '—';
+            if (value === null || value === undefined || value === '') return 'â€”';
             return $('<span>').text(String(value)).html();
         }
 

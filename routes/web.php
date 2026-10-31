@@ -280,12 +280,14 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('admin/master/dosens/export', [DosenController::class, 'export'])->name('master.dosens.export');
     Route::post('admin/master/dosens/generate-users', [DosenController::class, 'generateUsers'])->name('master.dosens.generate-users');
+    Route::post('admin/master/dosens/{dosen}/reset-account-binding', [DosenController::class, 'resetAccountBinding'])->name('master.dosens.reset-account-binding');
     Route::post('admin/master/dosens/import', [DosenController::class, 'import'])->name('master.dosens.import');
     Route::resource('admin/master/dosens', DosenController::class)
         ->only(['index', 'store', 'update', 'destroy'])
         ->names('master.dosens');
     Route::get('admin/master/mahasiswas/export', [MahasiswaController::class, 'export'])->name('master.mahasiswas.export');
     Route::post('admin/master/mahasiswas/generate-users', [MahasiswaController::class, 'generateUsers'])->name('master.mahasiswas.generate-users');
+    Route::post('admin/master/mahasiswas/{mahasiswa}/reset-account-binding', [MahasiswaController::class, 'resetAccountBinding'])->name('master.mahasiswas.reset-account-binding');
     Route::post('admin/master/mahasiswas/import', [MahasiswaController::class, 'import'])->name('master.mahasiswas.import');
     Route::resource('admin/master/mahasiswas', MahasiswaController::class)
         ->only(['index', 'store', 'update', 'destroy'])
