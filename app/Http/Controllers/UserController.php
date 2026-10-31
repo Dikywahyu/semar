@@ -231,6 +231,21 @@ class UserController extends Controller
         ]);
     }
 
+    public function destroy(Request $request, $hashid)
+    {
+        abort_unless($request->user()?->hasRole('Super Admin'), 403);
+        $user = User::findByHashid($hashid);
+        if (! $user) return response()->json(['message' => 'User tidak ditemukan.'], 404);
+        if ($user->is($request->user())) return response()->json(['message' => 'Akun yang sedang digunakan tidak dapat dihapus.'], 422);
+        if ($user->hasRole('Super Admin')) return response()->json(['message' => 'Akun Super Admin tidak dapat dihapus dari menu ini.'], 422);
+        $name = $user->name;
+        $user->permissions()->detach();
+        $user->roles()->detach();
+        UserCredential::where('user_id', $user->id)->delete();
+        $user->delete();
+        activity()->causedBy($request->user())->log("Menghapus user: {$name}");
+        return response()->json(['message' => "User {$name} berhasil dihapus."]);
+    }
     public function resetPassword(Request $request, $hashid)
     {
         $user = User::findByHashid($hashid)->first();

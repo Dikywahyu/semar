@@ -380,6 +380,7 @@ Route::prefix('admin')->middleware(['auth', 'verified', '2fa'])->group(function 
     // Modul Kredensial (Brankas Password)
     Route::get('/users/{hashid}/credential', [UserController::class, 'showCredential'])->name('admin.user.credential');
     Route::post('/users/{hashid}/reset-password', [UserController::class, 'resetPassword'])->name('admin.users.reset');
+    Route::delete('/users/{hashid}', [UserController::class, 'destroy'])->name('admin.users.destroy');
 
     // Modul Role (Spatie)
     Route::get('/users/{hashid}/roles', [UserController::class, 'getRoles'])->name('admin.users.get_roles');

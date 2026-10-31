@@ -194,7 +194,7 @@
                                     </button>
                                 </li>
                                 <li><button class="dropdown-item d-flex align-items-center gap-3 btn-show-credential" data-id="${data.hashid}" data-name="${data.name}"><i class="fs-4 ti ti-eye"></i> Password</button></li>
-                                <li><button class="dropdown-item d-flex align-items-center gap-3 btn-reset-password" data-id="${data.hashid}"><i class="fs-4 ti ti-key"></i> Reset</button></li>
+                                <li><button class="dropdown-item d-flex align-items-center gap-3 btn-reset-password" data-id="${data.hashid}"><i class="fs-4 ti ti-key"></i> Reset</button></li><li><hr class="dropdown-divider"></li><li><button class="dropdown-item d-flex align-items-center gap-3 text-danger btn-delete-user" data-id="${data.hashid}" data-name="${data.name}"><i class="fs-4 ti ti-trash"></i> Hapus User</button></li>
                             </ul>
                         </div>`;
                     }
@@ -207,6 +207,13 @@
             }
         });
 
+        $(document).on('click', '.btn-delete-user', function() {
+            const hashid = $(this).data('id'); const name = $(this).data('name');
+            Swal.fire({ title: 'Hapus user?', text: `User ${name} akan dihapus permanen.`, icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, hapus', cancelButtonText: 'Batal', confirmButtonColor: '#d33' }).then(result => {
+                if (!result.isConfirmed) return;
+                $.ajax({ url: `/admin/users/${hashid}`, method: 'POST', data: { _method: 'DELETE', _token: '{{ csrf_token() }}' } }).done(response => { table.ajax.reload(null, false); Swal.fire('Terhapus', response.message, 'success'); }).fail(xhr => Swal.fire('Gagal', xhr.responseJSON?.message || 'User tidak dapat dihapus.', 'error'));
+            });
+        });
         $(document).on('click', '.btn-show-logs', function() {
             let hashid = $(this).data('id');
             let name = $(this).data('name');
