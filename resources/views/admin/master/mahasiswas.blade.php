@@ -212,43 +212,22 @@
             });
         }
         $('#btn-generate-mahasiswa-users').on('click', function() {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Buat akun mahasiswa?',
-                html: 'Akun akan dibuat untuk mahasiswa aktif yang belum memiliki akun. Username dan password awal menggunakan NIM. Akun yang sudah ada tidak akan diubah.',
-                showCancelButton: true,
-                confirmButtonText: 'Ya, buat akun',
-                cancelButtonText: 'Batal'
-            }).then(result => {
+            Swal.fire({ icon: 'warning', title: 'Buat akun mahasiswa?', html: 'Akun dibuat bertahap, <b>10 mahasiswa per request</b>.', showCancelButton: true, confirmButtonText: 'Ya, mulai', cancelButtonText: 'Batal' }).then(result => {
                 if (!result.isConfirmed) return;
-                const button = $('#btn-generate-mahasiswa-users').prop('disabled', true).html('<i class="ti ti-loader me-1"></i> Membuat...');
-                $.ajax({
-                    url: @json(route('master.mahasiswas.generate-users')),
-                    method: 'POST',
-                    headers: {
-                        Accept: 'application/json',
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    }
-                }).done(response => {
-                    table.ajax.reload(null, false);
-                    let details = `<p>${safe(response.created_count)} akun dibuat; ${safe(response.skipped_count)} data dilewati.</p>`;
-                    if (response.skipped?.length) {
-                        details += '<div class="table-responsive text-start"><table class="table table-sm"><thead><tr><th>NIM</th><th>Alasan</th></tr></thead><tbody>';
-                        response.skipped.forEach(item => {
-                            details += `<tr><td>${safe(item.identifier)}</td><td>${safe(item.reason)}</td></tr>`;
-                        });
-                        details += '</tbody></table></div>';
-                    }
-                    Swal.fire({
-                        icon: response.skipped_count ? 'warning' : 'success',
-                        title: response.message,
-                        html: details,
-                        width: 720
-                    });
-                }).fail(showError).always(() => button.prop('disabled', false).html('<i class="ti ti-user-plus me-1"></i> Buat Akun Login'));
+                const button = $('#btn-generate-mahasiswa-users').prop('disabled', true).html('<i class="ti ti-loader me-1"></i> Memproses...');
+                let offset = 0, total = 0, created = 0, skipped = 0;
+                Swal.fire({ title: 'Membuat akun mahasiswa', html: '<div class="progress"><div id="student-account-progress" class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%">0%</div></div><p class="mt-3 mb-0" id="student-account-progress-text">Menyiapkan batch...</p>', allowOutsideClick: false, showConfirmButton: false });
+                const processBatch = () => $.ajax({ url: @json(route('master.mahasiswas.generate-users')), method: 'POST', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }, data: { offset, limit: 10 } }).done(response => {
+                    total = response.total; offset = response.next_offset; created += response.created_count; skipped += response.skipped_count;
+                    const percent = total ? Math.round((response.processed / total) * 100) : 100;
+                    $('#student-account-progress').css('width', `${percent}%`).text(`${percent}%`);
+                    $('#student-account-progress-text').text(`${response.processed} dari ${total} data diproses. ${created} akun dibuat, ${skipped} dilewati.`);
+                    if (response.finished) { table.ajax.reload(null, false); Swal.fire({ icon: skipped ? 'warning' : 'success', title: 'Pembuatan akun selesai', text: `${created} akun dibuat, ${skipped} data dilewati.` }); button.prop('disabled', false).html('<i class="ti ti-user-plus me-1"></i> Buat Akun Mahasiswa'); return; }
+                    processBatch();
+                }).fail(xhr => { Swal.fire('Gagal', xhr.responseJSON?.message || 'Batch gagal diproses. Batch sebelumnya tetap tersimpan.', 'error'); button.prop('disabled', false).html('<i class="ti ti-user-plus me-1"></i> Buat Akun Mahasiswa'); });
+                processBatch();
             });
         });
-
         function resetMahasiswaForm() {
             $('#formMahasiswa')[0].reset();
             $('#formMahasiswa').attr('action', `${baseUrl}`);

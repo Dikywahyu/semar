@@ -13,21 +13,17 @@ use Spatie\Permission\Models\Role;
 
 class AcademicAccountGenerator
 {
-    public function generateStudentAccounts(): array
+    public function generateStudentAccounts(int $offset = 0, int $limit = 10): array
     {
-        return $this->generate(
-            MahasiswaRegistrasi::query()->where('aktif', true)->orderBy('nim')->get(),
-            'Mahasiswa',
-            fn (MahasiswaRegistrasi $student): array => [
-                'identifier' => $student->nim,
-                'name' => $student->nama_mahasiswa,
-                'email' => $student->email,
-                'phone' => $student->telepon,
-                'position_title' => 'Mahasiswa',
-            ],
-        );
+        $baseQuery = MahasiswaRegistrasi::query()->where('aktif', true)->orderBy('nim');
+        $total = (clone $baseQuery)->count();
+        $records = $baseQuery->offset(max($offset, 0))->limit(min(max($limit, 1), 25))->get();
+        $result = $this->generate($records, 'Mahasiswa', fn (MahasiswaRegistrasi $student): array => [
+            'identifier' => $student->nim, 'name' => $student->nama_mahasiswa, 'email' => $student->email,
+            'phone' => $student->telepon, 'position_title' => 'Mahasiswa',
+        ]);
+        return [...$result, 'total' => $total, 'processed' => min($offset + $records->count(), $total), 'next_offset' => $offset + $records->count(), 'finished' => $offset + $records->count() >= $total];
     }
-
     public function generateLecturerAccounts(): array
     {
         return $this->generate(

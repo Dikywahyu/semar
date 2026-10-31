@@ -203,6 +203,7 @@ class UserController extends Controller
                 
                 'avatar'    => $user->avatar,
                 'is_online' => $user->last_seen && $user->last_seen->diffInMinutes(now()) < 5,
+                'active' => $user->active,
                 'last_seen' => $user->last_seen
                     ? ($user->last_seen->diffInSeconds(now()) < 5 ? 'Baru saja' : $user->last_seen->diffForHumans())
                     : 'Belum Pernah Login',
@@ -231,6 +232,15 @@ class UserController extends Controller
         ]);
     }
 
+    public function toggleActive(Request $request, $hashid)
+    {
+        abort_unless($request->user()?->hasRole('Super Admin'), 403);
+        $user = User::findByHashid($hashid);
+        if (! $user) return response()->json(['message' => 'User tidak ditemukan.'], 404);
+        if ($user->is($request->user()) || $user->hasRole('Super Admin')) return response()->json(['message' => 'Akun ini tidak dapat dinonaktifkan dari menu ini.'], 422);
+        $user->update(['active' => ! $user->active]);
+        return response()->json(['active' => $user->active, 'message' => $user->active ? 'User berhasil diaktifkan.' : 'User berhasil dinonaktifkan.']);
+    }
     public function destroy(Request $request, $hashid)
     {
         abort_unless($request->user()?->hasRole('Super Admin'), 403);

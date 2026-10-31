@@ -24,7 +24,7 @@ class LoginController extends Controller
     }
 
     /**
-     * 🟢 FUNGSI BARU: Memproses input form login manual Email & Password
+     * ðŸŸ¢ FUNGSI BARU: Memproses input form login manual Email & Password
      */
     public function login(Request $request)
     {
@@ -41,6 +41,8 @@ class LoginController extends Controller
             ->whereRaw('LOWER(email) = ?', [Str::lower($identifier)])
             ->orWhere('identifier_number', $identifier)
             ->first();
+        if ($user && ! $user->active) { return back()->withInput()->withErrors(['username' => 'Akun ini telah dinonaktifkan oleh administrator.']); }
+
         $remember = $request->filled('remember');
 
         // 3. Lakukan percobaan login (Attempt)
@@ -54,7 +56,7 @@ class LoginController extends Controller
                 ->causedBy($user)
                 ->log('User logged in via manual form');
 
-            // 🟢 JIKA USER MENGAKTIFKAN 2FA:
+            // ðŸŸ¢ JIKA USER MENGAKTIFKAN 2FA:
             // Buat intended mengarah ke dashboard, lalu biarkan Google2FAMiddleware yang mencegatnya!
             if ($user->two_factor_enabled) {
                 if (! $user->roles()->exists()) {

@@ -38,6 +38,7 @@ class User extends Authenticatable
         'position_title',
         'institution',
         'role',
+        'active',
     ];
 
     protected $appends = ['hashid'];

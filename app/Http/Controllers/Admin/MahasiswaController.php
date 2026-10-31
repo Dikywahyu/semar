@@ -75,7 +75,7 @@ class MahasiswaController extends Controller
     public function generateUsers(Request $request, AcademicAccountGenerator $generator): RedirectResponse|JsonResponse
     {
         $this->authorizeManagement();
-        $result = $generator->generateStudentAccounts();
+        $result = $generator->generateStudentAccounts((int) $request->input('offset', 0), (int) $request->input('limit', 10));
 
         Log::info('Student accounts generated from master data.', [
             'user_id' => auth()->id(),
@@ -85,7 +85,7 @@ class MahasiswaController extends Controller
 
         if ($request->expectsJson()) {
             return response()->json([
-                'message' => 'Pembuatan akun mahasiswa selesai.',
+                'message' => $result['finished'] ? 'Pembuatan akun mahasiswa selesai.' : 'Batch akun mahasiswa diproses.',
                 ...$result,
             ]);
         }

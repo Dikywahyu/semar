@@ -194,7 +194,7 @@
                                     </button>
                                 </li>
                                 <li><button class="dropdown-item d-flex align-items-center gap-3 btn-show-credential" data-id="${data.hashid}" data-name="${data.name}"><i class="fs-4 ti ti-eye"></i> Password</button></li>
-                                <li><button class="dropdown-item d-flex align-items-center gap-3 btn-reset-password" data-id="${data.hashid}"><i class="fs-4 ti ti-key"></i> Reset</button></li><li><hr class="dropdown-divider"></li><li><button class="dropdown-item d-flex align-items-center gap-3 text-danger btn-delete-user" data-id="${data.hashid}" data-name="${data.name}"><i class="fs-4 ti ti-trash"></i> Hapus User</button></li>
+                                <li><button class="dropdown-item d-flex align-items-center gap-3 btn-reset-password" data-id="${data.hashid}"><i class="fs-4 ti ti-key"></i> Reset</button></li><li><hr class="dropdown-divider"></li><li><button class="dropdown-item d-flex align-items-center gap-3 btn-toggle-user" data-id="${data.hashid}" data-name="${data.name}" data-active="${data.active}"><i class="fs-4 ti ti-user-off"></i> ${data.active ? 'Nonaktifkan' : 'Aktifkan'}</button></li><li><button class="dropdown-item d-flex align-items-center gap-3 text-danger btn-delete-user" data-id="${data.hashid}" data-name="${data.name}"><i class="fs-4 ti ti-trash"></i> Hapus User</button></li>
                             </ul>
                         </div>`;
                     }
@@ -207,6 +207,13 @@
             }
         });
 
+        $(document).on('click', '.btn-toggle-user', function() {
+            const hashid = $(this).data('id'), name = $(this).data('name'), active = String($(this).data('active')) === 'true';
+            Swal.fire({ title: active ? 'Nonaktifkan user?' : 'Aktifkan user?', text: name, icon: 'warning', showCancelButton: true, confirmButtonText: active ? 'Ya, nonaktifkan' : 'Ya, aktifkan', cancelButtonText: 'Batal' }).then(result => {
+                if (!result.isConfirmed) return;
+                $.post(`/admin/users/${hashid}/toggle-active`, { _token: '{{ csrf_token() }}' }).done(response => { table.ajax.reload(null, false); Swal.fire('Berhasil', response.message, 'success'); }).fail(xhr => Swal.fire('Gagal', xhr.responseJSON?.message || 'Status user gagal diubah.', 'error'));
+            });
+        });
         $(document).on('click', '.btn-delete-user', function() {
             const hashid = $(this).data('id'); const name = $(this).data('name');
             Swal.fire({ title: 'Hapus user?', text: `User ${name} akan dihapus permanen.`, icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, hapus', cancelButtonText: 'Batal', confirmButtonColor: '#d33' }).then(result => {
