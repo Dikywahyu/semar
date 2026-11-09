@@ -142,7 +142,7 @@ class AppServiceProvider extends ServiceProvider
 
                 // --- CATEGORY: TUGAS AKHIR ---
                 [
-                    'title' => 'Tugas Akhir Mahasiswa',
+                    'title' => 'Sempro / Semhas / Sidang TA',
                     'icon' => 'solar:document-text-line-duotone',
                     'url' => route('thesis.student.index'),
                     'category' => 'Tugas Akhir',
@@ -151,7 +151,7 @@ class AppServiceProvider extends ServiceProvider
                     'roles' => ['Super Admin', 'mahasiswa', 'Mahasiswa'],
                 ],
                 [
-                    'title' => 'Penilaian Tugas Akhir',
+                    'title' => 'Input Nilai Tugas Akhir',
                     'icon' => 'solar:clipboard-check-line-duotone',
                     'url' => route('thesis.dosen.index'),
                     'category' => 'Tugas Akhir',
@@ -160,7 +160,7 @@ class AppServiceProvider extends ServiceProvider
                     'roles' => ['Super Admin', 'dosen_pembimbing', 'dosen_penguji', 'dosen', 'Dosen', 'DosenLB', 'Guru Besar'],
                 ],
                 [
-                    'title' => 'Verifikasi Tugas Akhir',
+                    'title' => 'Verifikasi Berkas TA',
                     'icon' => 'solar:verified-check-line-duotone',
                     'url' => route('thesis.verify.index'),
                     'category' => 'Tugas Akhir',
@@ -169,7 +169,7 @@ class AppServiceProvider extends ServiceProvider
                     'roles' => ['Super Admin', 'KPS', 'Kaprodi', 'Koordinator Skripsi', 'Koordinator TA', 'Koordinator Skripsi/TA'],
                 ],
                 [
-                    'title' => 'Monitoring Tugas Akhir',
+                    'title' => 'Pengelolaan Tugas Akhir',
                     'icon' => 'solar:chart-square-line-duotone',
                     'url' => route('thesis.admin.index'),
                     'category' => 'Tugas Akhir',
