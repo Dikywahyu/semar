@@ -23,7 +23,7 @@
 <div class="container-fluid py-4 px-3 px-md-4">
     <div class="mb-4">
         <h3 class="fw-bold text-slate-800 mb-1">Panel Koordinator Keahlian</h3>
-        <p class="text-secondary mb-0">Plotting dosen pembimbing/penguji dan validasi menu KPI setuju/belum untuk ujian.</p>
+        <p class="text-secondary mb-0">Plotting dosen, menu KPI Setujui untuk Ujian, dan ACC kelulusan Capstone sesuai bidang keahlian.</p>
     </div>
 
     <!-- Grafik Beban Bimbingan -->
@@ -61,6 +61,11 @@
                             <span class="badge bg-info-subtle text-info border border-info-subtle">
                                 {{ optional($group->expertise)->name ?? 'Tanpa Keahlian' }}
                             </span>
+                            @if($group->draft_report_file)
+                            <a class="d-block small mt-2" href="{{ route('capstone.file.view', ['path' => $group->draft_report_file]) }}" target="_blank" rel="noopener">Lihat Draft Laporan</a>
+                            @else
+                            <span class="d-block text-muted small mt-2">Draft belum diunggah</span>
+                            @endif
                         </td>
 
                         <!-- Kolom Mahasiswa -->
@@ -91,6 +96,10 @@
                         <td>
                             <form class="form-plotting-dosen" data-id="{{ $group->id }}">
                                 @csrf
+                                <div class="mb-2">
+                                    <label class="form-label small mb-0 text-muted">Tempat / Lokasi Proyek:</label>
+                                    <input type="text" name="project_location" value="{{ $group->project_location }}" maxlength="255" class="form-control form-control-sm" placeholder="Tempat pelaksanaan CD">
+                                </div>
                                 <div class="mb-2">
                                     <label class="form-label small mb-0 text-muted">Pembimbing:</label>
                                     <select name="supervisor_id" class="form-select select2-dosen" style="width: 100%;">
@@ -141,6 +150,9 @@
                                     <i class="ti ti-check"></i> Update KPI
                                 </button>
                             </form>
+                            @if($group->kpi_approval === 'approved')
+                            <small class="text-muted">{{ $group->kpi_approved_by_role }}{{ $group->kpiApprover ? ' — '.$group->kpiApprover->name : '' }}</small>
+                            @endif
                         </td>
 
                         <!-- Kolom Aksi Koordinator (ACC Sidang) -->
@@ -153,6 +165,9 @@
                                 <i class="ti ti-clock me-1"></i> Belum ACC
                                 @endif
                             </button>
+                            @if($group->acc_coordinator)
+                            <small class="d-block mt-2">{{ $group->coordinator_approved_by_role }}{{ $group->coordinatorApprover ? ' — '.$group->coordinatorApprover->name : '' }}</small>
+                            @endif
                         </td>
                     </tr>
                     @empty

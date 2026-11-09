@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Capstone\Concerns\ResolvesCapstoneProfiles;
 
 class CapstoneStudentController extends Controller
@@ -35,10 +36,10 @@ class CapstoneStudentController extends Controller
 
         abort_unless($student, 403, 'Profil mahasiswa aktif untuk akun ini belum tersedia.');
         $userId = $student->id;
-        $group = CapstoneGroup::with(['expertise', 'supervisor', 'examiner', 'members.student'])
-            ->where('leader_id', $userId)
-            ->orWhereHas('members', function ($q) use ($userId) {
-                $q->where('student_id', $userId);
+        $group = CapstoneGroup::with(['expertise', 'supervisor', 'examiner', 'members.student', 'approver', 'coordinatorApprover', 'supervisorApprover', 'kpsApprover', 'kpiApprover'])
+            ->where(function ($query) use ($userId) {
+                $query->where('leader_id', $userId)
+                    ->orWhereHas('members', fn ($memberQuery) => $memberQuery->where('student_id', $userId)->where('status', 'accepted'));
             })->first();
 
         $invitations = CapstoneGroupMember::with(['group.leader', 'group.expertise'])
@@ -66,69 +67,77 @@ class CapstoneStudentController extends Controller
         $student = $this->capstoneStudent($request);
         abort_unless($student, 403);
 
-        $request->validate([
-            'title' => 'required|string|max:255',
+        $validated = $request->validate([
+            'title' => 'nullable|string|max:255',
             'expertise_id' => 'required|exists:capstone_expertises,id',
-            'members' => 'nullable|array|max:2', // Jadikan nullable agar bisa submit tanpa anggota tambahan
-            'members.*' => 'exists:users,id',
+            'members' => 'nullable|array|max:1',
+            'members.*' => 'distinct|exists:users,id',
             'group_id' => 'nullable|exists:capstone_groups,id' // Validasi group_id untuk proses update
         ]);
 
-        DB::beginTransaction();
-        try {
-            // CEK APAKAH INI PROSES UPDATE ATAU BUAT BARU
-            if ($request->filled('group_id')) {
-                // Proses Update
-                $group = CapstoneGroup::where('id', $request->group_id)
+        $memberIds = $validated['members'] ?? [];
+        abort_if(in_array((string) $student->id, array_map('strval', $memberIds), true), 422, 'Ketua tidak dapat menjadi anggota tambahan.');
+        $group = DB::transaction(function () use ($validated, $memberIds, $student) {
+            $group = null;
+            if (! empty($validated['group_id'])) {
+                $group = CapstoneGroup::where('id', $validated['group_id'])
                     ->where('leader_id', $student->id)
+                    ->whereIn('status_pendaftaran', ['draft', 'submitted'])
+                    ->where('kpi_approval', 'pending')
+                    ->where('acc_coordinator', false)
+                    ->where('acc_supervisor', false)
+                    ->where('acc_kps', false)
+                    ->whereNull('exam_date')
+                    ->whereDoesntHave('members', fn ($query) => $query->where('status', 'accepted'))
                     ->firstOrFail();
-
-                $group->update([
-                    'title' => $request->title,
-                    'expertise_id' => $request->expertise_id,
-                ]);
-
-                $message = 'Ajuan kelompok berhasil diperbarui!';
             } else {
-                // Proses Buat Baru
-                $group = CapstoneGroup::create([
-                    'leader_id' => $student->id,
-                    'title' => $request->title,
-                    'expertise_id' => $request->expertise_id,
-                    'status_pendaftaran' => 'submitted'
-                ]);
-
-                $message = 'Kelompok dan keahlian berhasil didaftarkan!';
+                abort_if(
+                    CapstoneGroup::where('leader_id', $student->id)
+                        ->orWhereHas('members', fn ($query) => $query->where('student_id', $student->id)->where('status', 'accepted'))
+                        ->exists(),
+                    409,
+                    'Anda sudah terdaftar dalam kelompok Capstone.'
+                );
             }
 
-            // SINKRONISASI ANGGOTA KELOMPOK
-            // Hapus anggota lama terlebih dahulu untuk memastikan data selalu sinkron dengan form
+            foreach ($memberIds as $memberId) {
+                abort_if(
+                    CapstoneGroup::where('leader_id', $memberId)
+                        ->orWhereHas('members', fn ($query) => $query->where('student_id', $memberId)->where('status', 'accepted'))
+                        ->exists(),
+                    409,
+                    'Salah satu mahasiswa sudah tergabung di kelompok lain.'
+                );
+            }
+
+            $attributes = [
+                'title' => $validated['title'] ?? null,
+                'expertise_id' => $validated['expertise_id'],
+                'status_pendaftaran' => 'submitted',
+            ];
+            if ($group) {
+                $group->update($attributes);
+            } else {
+                $group = CapstoneGroup::create($attributes + ['leader_id' => $student->id]);
+            }
+
             CapstoneGroupMember::where('capstone_group_id', $group->id)->delete();
-
-            // Masukkan anggota baru (jika ada yang dipilih)
-            if ($request->has('members') && is_array($request->members)) {
-                foreach ($request->members as $memberId) {
-                    CapstoneGroupMember::create([
-                        'capstone_group_id' => $group->id,
-                        'student_id' => $memberId,
-                        'status' => 'pending'
-                    ]);
-                }
+            foreach ($memberIds as $memberId) {
+                CapstoneGroupMember::create([
+                    'capstone_group_id' => $group->id,
+                    'student_id' => $memberId,
+                    'status' => 'pending',
+                ]);
             }
 
-            DB::commit();
-            return response()->json([
-                'status' => 'success',
-                'message' => $message,
-                'data' => $group
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage()
-            ], 500);
-        }
+            return $group;
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'message' => ! empty($validated['group_id']) ? 'Ajuan kelompok berhasil diperbarui.' : 'Kelompok berhasil didaftarkan.',
+            'data' => $group,
+        ]);
     }
 
     // 2. Respon Undangan Anggota (Setuju / Tolak)
@@ -141,6 +150,18 @@ class CapstoneStudentController extends Controller
         $member = CapstoneGroupMember::where('id', $memberId)
             ->where('student_id', $student->id)
             ->firstOrFail();
+
+        abort_unless($member->status === 'pending', 409, 'Undangan ini sudah pernah direspons.');
+        if ($request->input('status') === 'accepted') {
+            abort_if(
+                CapstoneGroup::where('leader_id', $student->id)
+                    ->orWhereHas('members', fn ($query) => $query->where('student_id', $student->id)->where('status', 'accepted'))
+                    ->exists(),
+                409,
+                'Anda sudah menjadi anggota kelompok lain.'
+            );
+            abort_if($member->group()->withCount(['members' => fn ($query) => $query->where('status', 'accepted')])->firstOrFail()->members_count >= 1, 409, 'Kelompok sudah mencapai batas dua mahasiswa.');
+        }
 
         $member->update(['status' => $request->status]);
 
@@ -158,7 +179,7 @@ class CapstoneStudentController extends Controller
         abort_unless($student, 403);
         $group = CapstoneGroup::where('id', $groupId)->where('leader_id', $student->id)->firstOrFail();
 
-        $request->validate([
+        $validated = $request->validate([
             'consultation_card' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
             'draft_report' => 'nullable|file|mimes:pdf|max:5120',
             'exam_date' => 'nullable|date',
@@ -166,16 +187,32 @@ class CapstoneStudentController extends Controller
 
         $data = [];
         if ($request->hasFile('consultation_card')) {
+            if ($group->consultation_card_file) {
+                Storage::disk('public')->delete($group->consultation_card_file);
+            }
             $data['consultation_card_file'] = $request->file('consultation_card')->store('capstone/consultation', 'public');
         }
         if ($request->hasFile('draft_report')) {
+            if ($group->draft_report_file) {
+                Storage::disk('public')->delete($group->draft_report_file);
+            }
             $data['draft_report_file'] = $request->file('draft_report')->store('capstone/drafts', 'public');
         }
         if ($request->filled('exam_date')) {
-            $data['exam_date'] = $request->exam_date;
+            $data['proposed_exam_date'] = $validated['exam_date'];
+            $data['exam_date'] = null;
+            $data['exam_time'] = null;
+            $data['exam_room'] = null;
+            $data['exam_invitation_sent_at'] = null;
         }
 
         $group->update($data);
+        if ($request->hasFile('consultation_card')) {
+            $this->invalidateApprovalsForDocument($group, 'consultation_card');
+        }
+        if ($request->hasFile('draft_report')) {
+            $this->invalidateApprovalsForDocument($group, 'draft_report');
+        }
 
         return response()->json([
             'status' => 'success',
@@ -202,8 +239,8 @@ class CapstoneStudentController extends Controller
 
         // Validasi format file_type dari dropdown yang ada di blade
         $request->validate([
-            'file_type' => 'required|in:consultation_card,draft_report,berita_acara,lembar_revisi,final_report,recap_score',
-            'document_file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'file_type' => 'required|in:consultation_card,draft_report,berita_acara,lembar_revisi,final_report,recap_score,agreement,drawings,rab,structural_calculation',
+            'document_file' => 'required|file|mimes:pdf,jpg,jpeg,png,dwg,dxf,xlsx,xls,csv,zip|max:20480',
         ]);
 
         $file = $request->file('document_file');
@@ -217,6 +254,10 @@ class CapstoneStudentController extends Controller
             'lembar_revisi'     => 'lembar_revisi_file',
             'final_report'      => 'final_report_file',
             'recap_score'       => 'recap_score_file',
+            'agreement' => 'agreement_file',
+            'drawings' => 'drawings_file',
+            'rab' => 'rab_file',
+            'structural_calculation' => 'structural_calculation_file',
         ];
 
         $folderMap = [
@@ -226,20 +267,21 @@ class CapstoneStudentController extends Controller
             'lembar_revisi'     => 'capstone/revisi',
             'final_report'      => 'capstone/final',
             'recap_score'       => 'capstone/recap',
+            'agreement' => 'capstone/agreement',
+            'drawings' => 'capstone/drawings',
+            'rab' => 'capstone/rab',
+            'structural_calculation' => 'capstone/structural-calculation',
         ];
 
         $column = $columnMap[$type];
         $folder = $folderMap[$type];
 
         // Update path file ke dalam database kelompok
-        $group->update([
-            $column => $file->store($folder, 'public')
-        ]);
-
-        // Otomatis ubah status final menjadi selesai jika semua pihak telah ACC
-        if ($group->acc_coordinator && $group->acc_supervisor && $group->acc_kps) {
-            $group->update(['final_status' => 'selesai']);
+        if ($group->$column) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($group->$column);
         }
+        $group->update([$column => $file->store($folder, 'public')]);
+        $this->invalidateApprovalsForDocument($group, $type);
 
         return response()->json([
             'status' => 'success',
@@ -251,6 +293,57 @@ class CapstoneStudentController extends Controller
                 'final_status' => $group->final_status
             ]
         ]);
+    }
+
+    public function proposeExamSchedule(Request $request, $groupId)
+    {
+        $student = $this->capstoneStudent($request);
+        abort_unless($student, 403);
+        $validated = $request->validate([
+            'exam_date' => 'required|date|after:today',
+            'exam_time' => 'required|date_format:H:i',
+        ]);
+        $group = CapstoneGroup::whereKey($groupId)
+            ->where(function ($query) use ($student) {
+                $query->where('leader_id', $student->id)
+                    ->orWhereHas('members', fn ($memberQuery) => $memberQuery->where('student_id', $student->id)->where('status', 'accepted'));
+            })->firstOrFail();
+        abort_unless($group->supervisor_id && $group->kpi_approval === 'approved', 409, 'Usulan jadwal memerlukan dosen pembimbing dan persetujuan KPI.');
+        $group->update([
+            'proposed_exam_date' => $validated['exam_date'],
+            'proposed_exam_time' => $validated['exam_time'],
+            'exam_date' => null,
+            'exam_time' => null,
+            'exam_room' => null,
+            'exam_invitation_sent_at' => null,
+        ]);
+
+        return response()->json(['status' => 'success', 'message' => 'Usulan jadwal ujian berhasil dikirim ke Admin.']);
+    }
+
+    public function deletePendingGroup(Request $request, $groupId)
+    {
+        $student = $this->capstoneStudent($request);
+        abort_unless($student, 403);
+        $group = CapstoneGroup::whereKey($groupId)
+            ->where('leader_id', $student->id)
+            ->whereIn('status_pendaftaran', ['draft', 'submitted'])
+            ->where('kpi_approval', 'pending')
+            ->where('acc_coordinator', false)
+            ->where('acc_supervisor', false)
+            ->where('acc_kps', false)
+            ->where('final_status', '!=', 'selesai')
+            ->whereDoesntHave('members', fn ($query) => $query->where('status', 'accepted'))
+            ->firstOrFail();
+        abort_if($group->exam_date || $group->exam_room, 409, 'Ajuan yang sudah dijadwalkan tidak dapat dihapus oleh mahasiswa.');
+        foreach (['consultation_card_file', 'draft_report_file', 'berita_acara_file', 'lembar_revisi_file', 'final_report_file', 'recap_score_file', 'agreement_file', 'drawings_file', 'rab_file', 'structural_calculation_file'] as $field) {
+            if ($group->$field) {
+                Storage::disk('public')->delete($group->$field);
+            }
+        }
+        $group->delete();
+
+        return response()->json(['status' => 'success', 'message' => 'Ajuan Capstone berhasil dihapus.']);
     }
 
     // 5. Reset / Pilih Ulang Profil Mahasiswa (Untuk Super Admin)
@@ -286,6 +379,10 @@ class CapstoneStudentController extends Controller
             'lembar_revisi'     => 'lembar_revisi_file',
             'final_report'      => 'final_report_file',
             'recap_score'       => 'recap_score_file',
+            'agreement' => 'agreement_file',
+            'drawings' => 'drawings_file',
+            'rab' => 'rab_file',
+            'structural_calculation' => 'structural_calculation_file',
         ];
 
         if (!array_key_exists($fileType, $columnMap)) {
@@ -300,11 +397,36 @@ class CapstoneStudentController extends Controller
 
             // Hapus path dari database
             $group->update([$column => null]);
+            $this->invalidateApprovalsForDocument($group, $fileType);
         }
 
         return response()->json([
             'status' => 'success',
             'message' => 'Berkas berhasil dihapus.'
         ]);
+    }
+
+    private function invalidateApprovalsForDocument(CapstoneGroup $group, string $fileType): void
+    {
+        if (in_array($fileType, ['draft_report', 'consultation_card'], true)) {
+            $group->update([
+                'kpi_approval' => 'pending',
+                'proposed_exam_date' => null,
+                'proposed_exam_time' => null,
+                'exam_date' => null,
+                'exam_time' => null,
+                'exam_room' => null,
+                'exam_invitation_sent_at' => null,
+            ]);
+        }
+
+        if ($fileType === 'final_report') {
+            $group->update([
+                'acc_coordinator' => false,
+                'acc_supervisor' => false,
+                'acc_kps' => false,
+                'final_status' => 'proses',
+            ]);
+        }
     }
 }

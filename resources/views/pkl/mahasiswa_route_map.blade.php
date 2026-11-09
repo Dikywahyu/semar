@@ -9,9 +9,9 @@
     $canActAsMahasiswa = auth()->user()?->hasAnyRole(['mahasiswa', 'Mahasiswa']) ?? false;
     $canActAsPembimbing = auth()->user()?->hasAnyRole(['dosen_pembimbing', 'Dosen']) ?? false;
     $canActAsPenguji = auth()->user()?->hasAnyRole(['dosen_penguji', 'Dosen']) ?? false;
-    $showMahasiswa = $selectedView === 'mahasiswa' && ($canActAsMahasiswa || $isAcademicViewer);
-    $showPembimbing = $selectedView === 'dosen_pembimbing' && ($canActAsPembimbing || $isAcademicViewer);
-    $showPenguji = $selectedView === 'dosen_penguji' && ($canActAsPenguji || $isAcademicViewer);
+    $showMahasiswa = $pkl && $selectedView === 'mahasiswa' && ($canActAsMahasiswa || $isAcademicViewer);
+    $showPembimbing = $pkl && $selectedView === 'dosen_pembimbing' && ($canActAsPembimbing || $isAcademicViewer);
+    $showPenguji = $pkl && $selectedView === 'dosen_penguji' && ($canActAsPenguji || $isAcademicViewer);
     $canPerformPembimbingActions = $showPembimbing && $canActAsPembimbing;
     $canPerformPengujiActions = $showPenguji && $canActAsPenguji;
     $viewOptions = [
@@ -85,6 +85,12 @@
 </style>
 
 <div class="route-map col-12">
+    @if (! $pkl)
+        <div class="rmap-card mb-6 border border-dashed p-6 text-center">
+            <h2 class="mb-2 text-lg font-bold">Belum ada data pengajuan PKL</h2>
+            <p class="mb-0 text-sm text-slate-500">Pilih pengajuan dari daftar atau buat pengajuan PKL untuk melihat alur, jadwal, dokumen, dan nilai.</p>
+        </div>
+    @endif
     @if ($isAcademicViewer)
         <section class="rmap-card mb-6 p-5 sm:p-6">
             <div class="mb-4">
@@ -232,6 +238,11 @@
                                     <button class="rmap-btn rmap-btn-primary" name="status" value="Valid" type="submit" {{ $berkas ? '' : 'disabled' }}>Validasi</button>
                                     <button class="rmap-btn rmap-btn-secondary" name="status" value="Ditolak" type="submit" {{ $berkas ? '' : 'disabled' }}>Minta perbaikan</button>
                                 </form>
+                                @if($berkas->verified_at)
+                                    <p class="mt-2 mb-0 text-xs text-slate-500">Verifikasi oleh {{ $berkas->verifier?->name ?? 'Pengguna' }} ({{ $berkas->verifier?->getRoleNames()->implode(', ') ?: 'Admin' }}) · {{ $berkas->verified_at->format('d M Y H:i') }}
+                                        @if($berkas->approved_at) · Disetujui oleh {{ $berkas->approver?->name ?? 'Pengguna' }} ({{ $berkas->approver?->getRoleNames()->implode(', ') ?: 'Admin' }}) @endif
+                                    </p>
+                                @endif
                                 @endif
                             @endif
                         </div>
@@ -265,7 +276,7 @@
                     @endphp
                     <div class="mb-4 rounded-xl border border-slate-200 p-4"><div class="mb-3 flex items-center justify-between gap-2"><h3 class="mb-0 text-sm font-bold">{{ $label }}</h3><span class="rmap-badge {{ $badgeClass(data_get($pkl, 'verifikasi.' . $key, 'Pending')) }}">{{ data_get($pkl, 'verifikasi.' . $key, 'Pending') }}</span></div>
                         @if ($showMahasiswa)
-                        <form action="{{ $routeMapUpload2 }}" method="POST" enctype="multipart/form-data" class="flex gap-2">@csrf<input type="hidden" name="jenis_dokumen" value="{{ $key }}"><input class="rmap-input" type="file" name="{{ $key }}" required><button class="rmap-btn rmap-btn-primary" type="submit">Unggah</button></form>
+                        <form action="{{ $routeMapUpload2 }}" method="POST" enctype="multipart/form-data" class="flex gap-2">@csrf<input type="hidden" name="jenis_dokumen" value="{{ $key }}"><input class="rmap-input" type="file" name="file" required><button class="rmap-btn rmap-btn-primary" type="submit">Unggah</button></form>
                         @else
                             @if ($doc)<a class="rmap-btn rmap-btn-primary text-sm shadow-sm hover:-translate-y-0.5 hover:shadow-md transition" href="{{ route('pkl.file', ['path' => $doc]) }}" target="_blank" rel="noopener"><i class="ti ti-eye mr-1"></i>Lihat berkas</a>@else<span class="text-sm text-slate-500">Berkas belum tersedia</span>@endif
                         @endif
@@ -277,29 +288,37 @@
                     @if ($canPerformPembimbingActions)
                         <form action="{{ route('pkl.route-map.acc', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="mb-4">@csrf<input type="hidden" name="is_acc_seminar" value="1"><button class="rmap-btn rmap-btn-primary" type="submit">Berikan ACC Ujian Seminar</button></form>
                     @endif
-                    @if ($showMahasiswa && $pkl)
+                    @if ($showMahasiswa && $pkl && $pkl->status === 'Dijadwalkan Ujian')
                         <form action="{{ route('pkl.route-map.schedule.propose', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="space-y-3">@csrf
-                            <label class="block text-xs font-semibold text-slate-600">Usulan dosen pembimbing</label><select class="rmap-input" name="dosen_pembimbing_id"><option value="">Pertahankan dosen sekarang</option>@foreach(\App\Models\Dosen\Dosen::where('aktif', true)->orderBy('nama_dosen')->get() as $dosenPilihan)<option value="{{ $dosenPilihan->id_dosen }}" @selected($pkl->dosen_pembimbing_id === $dosenPilihan->id_dosen)>{{ $dosenPilihan->nama_dosen }}</option>@endforeach</select>
-                            <label class="block text-xs font-semibold text-slate-600">Usulan tanggal & waktu ujian</label><input class="rmap-input" type="datetime-local" name="tanggal_seminar" value="{{ $pkl->tanggal_seminar?->format('Y-m-d\TH:i') }}" required>
-                            <label class="block text-xs font-semibold text-slate-600">Usulan ruangan</label><input class="rmap-input" name="ruangan_seminar" value="{{ $pkl->ruangan_seminar }}" placeholder="Contoh: Ruang Sidang 2" required>
-                            <button class="rmap-btn rmap-btn-primary" type="submit">Ajukan usulan untuk admin</button>
-                            <p class="mb-0 text-xs text-slate-500">Jadwal resmi ditetapkan admin.</p>
+                            <label class="block text-xs font-semibold text-slate-600">Usulan tanggal & waktu ujian</label><input class="rmap-input" type="datetime-local" name="tanggal_seminar" value="{{ $pkl->usulan_tanggal_seminar?->format('Y-m-d\TH:i') ?? $pkl->tanggal_seminar?->format('Y-m-d\TH:i') }}" min="{{ now()->addHour()->format('Y-m-d\TH:i') }}" required>
+                            <label class="block text-xs font-semibold text-slate-600">Catatan (opsional)</label><textarea class="rmap-input" name="catatan_usulan_jadwal" rows="2">{{ $pkl->catatan_usulan_jadwal }}</textarea>
+                            <button class="rmap-btn rmap-btn-primary" type="submit">Ajukan / Revisi Usulan Jadwal</button>
+                            <p class="mb-0 text-xs text-slate-500">Mahasiswa mengusulkan tanggal dan waktu. Admin menetapkan jadwal resmi serta ruangan.</p>
                         </form>
                     @elseif ($showMahasiswa)
                         <p class="mb-0 text-xs text-slate-500">Ajukan PKL terlebih dahulu untuk mengusulkan jadwal seminar.</p>
                     @endif
-                    @if ($showPembimbing || $showPenguji || auth()->user()?->hasAnyRole(['admin', 'Admin', 'Super Admin', 'Kaprodi']))<p class="mb-0 text-sm text-slate-600">ACC seminar: <strong>{{ ($pkl->is_acc_seminar ?? false) ? 'Sudah' : 'Belum' }}</strong></p>@endif
+                    @if ($showPembimbing || $showPenguji || auth()->user()?->hasAnyRole(['admin', 'Admin', 'Super Admin', 'Kaprodi']))
+                        <p class="mb-0 text-sm text-slate-600">ACC seminar: <strong>{{ ($pkl->is_acc_seminar ?? false) ? 'Sudah' : 'Belum' }}</strong></p>
+                        @if($pkl?->acc_seminar_at)<p class="mt-1 mb-0 text-xs text-slate-500">Di-ACC oleh {{ $pkl->seminarApprover?->name ?? 'Dosen Pembimbing' }} ({{ $pkl->seminarApprover?->getRoleNames()->implode(', ') ?: 'Dosen' }}) · {{ $pkl->acc_seminar_at->format('d M Y H:i') }}</p>@endif
+                    @endif
                 </div>
                 @if ($pkl && auth()->user()?->hasAnyRole(['admin', 'Admin', 'Super Admin', 'Kaprodi']))
                     <div class="rounded-xl bg-indigo-50/70 p-4"><h3 class="mb-3 text-sm font-bold">Penetapan Jadwal & Ruangan</h3>
                         <form action="{{ route('pkl.route-map.schedule.set', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="space-y-3">@csrf
-                            <input class="rmap-input" type="datetime-local" name="tanggal_seminar" value="{{ $pkl->tanggal_seminar ?? '' }}" required><input class="rmap-input" name="ruangan_seminar" value="{{ $pkl->ruangan_seminar ?? '' }}" placeholder="Ruangan seminar" required>
-                            <button class="rmap-btn rmap-btn-primary" type="submit">Tetapkan & kirim undangan</button>
+                            <input class="rmap-input" type="datetime-local" name="tanggal_seminar" value="{{ $pkl->tanggal_seminar?->format('Y-m-d\TH:i') ?? $pkl->usulan_tanggal_seminar?->format('Y-m-d\TH:i') ?? '' }}" required><input class="rmap-input" name="ruangan_seminar" value="{{ $pkl->ruangan_seminar ?? '' }}" placeholder="Ruangan seminar" required>
+                            <button class="rmap-btn rmap-btn-primary" type="submit">Tetapkan Jadwal & Ruangan</button>
                         </form>
                         <div class="my-4 border-t border-indigo-100"></div><h4 class="mb-2 text-xs font-bold uppercase text-slate-600">Revisi / Penjadwalan Ulang</h4>
                         <form action="{{ route('pkl.route-map.schedule.set', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="space-y-3">@csrf<input type="hidden" name="penjadwalan_ulang" value="1">
                             <input class="rmap-input" type="datetime-local" name="tanggal_seminar_baru" required><input class="rmap-input" name="ruangan_seminar_baru" placeholder="Ruangan baru" required><textarea class="rmap-input" name="alasan" rows="2" placeholder="Catatan perubahan"></textarea><button class="rmap-btn rmap-btn-secondary" type="submit">Simpan jadwal baru & kirim undangan</button>
                         </form>
+                        @if($pkl->tanggal_seminar && $pkl->ruangan_seminar)
+                            <a class="rmap-btn rmap-btn-secondary mt-3 w-full" href="{{ route('pkl.invitation', $pkl->id) }}" target="_blank" rel="noopener">Cetak Undangan Ujian</a>
+                            @if($pkl->schedule_approved_at)
+                                <p class="mt-2 mb-0 text-xs text-slate-500">Jadwal disetujui {{ $pkl->scheduleApprover?->name ?? 'Admin' }} ({{ $pkl->scheduleApprover?->getRoleNames()->implode(', ') ?: 'Admin' }}) · {{ $pkl->schedule_approved_at->format('d M Y H:i') }}</p>
+                            @endif
+                        @endif
                     </div>
                 @endif
                 @if ($showPenguji && $pkl)
@@ -322,7 +341,7 @@
                     @foreach ([['formulir_pendaftaran_ujian','Formulir Pendaftaran Ujian'],['berita_acara_ujian','Berita Acara Ujian'],['formulir_nilai','Formulir Nilai'],['permohonan_revisi','Formulir Permohonan Revisi'],['laporan_final','Laporan Final'],['lampiran_teknis','Lampiran Teknis (AutoCAD / RAB)'],['acc_pembimbing_akhir','ACC Pembimbing Akhir'],['rekap_nilai','Rekap Nilai']] as [$key,$label])
                         @php $doc = $pkl?->berkasSeminar?->firstWhere('jenis_berkas', $key); @endphp
                         <form action="{{ $routeMapUpload3 }}" method="POST" enctype="multipart/form-data" class="mb-3 rounded-lg border border-slate-200 p-3">@csrf<input type="hidden" name="jenis_dokumen" value="{{ $key }}">
-                            <label class="mb-2 block text-xs font-semibold text-slate-600">{{ $label }}<input class="rmap-input mt-1" type="file" name="{{ $key }}" accept=".pdf,.jpg,.jpeg,.png" required></label>
+                            <label class="mb-2 block text-xs font-semibold text-slate-600">{{ $label }}<input class="rmap-input mt-1" type="file" name="file" accept="{{ $key === 'lampiran_teknis' ? '.pdf,.jpg,.jpeg,.png,.dwg,.dxf,.xls,.xlsx,.csv,.zip' : '.pdf,.jpg,.jpeg,.png' }}" required></label>
                             <div class="flex items-center justify-between gap-2"><span class="text-xs text-slate-500">{{ $doc?->status_verifikasi ?? 'Belum diunggah' }}</span><div class="flex gap-2">@if($doc)<a class="rmap-btn rmap-btn-secondary py-2" href="{{ route('pkl.file', ['path' => $doc->path_berkas]) }}" target="_blank">Lihat</a>@endif<button class="rmap-btn rmap-btn-primary py-2" type="submit">Unggah</button></div></div>
                         </form>
                     @endforeach
@@ -343,12 +362,22 @@
                     </form>
                     @if($showPembimbing)<form action="{{ route('pkl.route-map.revision.validate', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="mt-3">@csrf<button class="rmap-btn rmap-btn-secondary" type="submit">Validasi revisi pasca-ujian</button></form>@endif
                 @else
-                    <p class="mb-0 text-sm text-slate-600">Nilai akhir: <strong>{{ $pkl->nilai_akhir ?? '—' }}</strong> · Nilai huruf: <strong>{{ $pkl->nilai_huruf ?? '—' }}</strong></p>
+                    <p class="mb-0 text-sm text-slate-600">Nilai akhir: <strong>{{ data_get($pkl, 'nilai_akhir', '—') }}</strong> · Nilai huruf: <strong>{{ data_get($pkl, 'nilai_huruf', '—') }}</strong></p>
+                @endif
+                @if($pkl && $canPerformPembimbingActions && !$pkl->final_approved_at)
+                    <form action="{{ route('pkl.route-map.final-approval', ['pengajuan' => $pkl->getKey()]) }}" method="POST" class="mt-3">@csrf
+                        <button class="rmap-btn rmap-btn-primary" type="submit">ACC Final & Tetapkan Lulus</button>
+                    </form>
+                @elseif($pkl?->final_approved_at)
+                    <p class="mt-3 text-xs text-emerald-700">ACC Final oleh {{ $pkl->finalApprover?->name ?? 'Dosen Pembimbing' }} ({{ $pkl->finalApprover?->getRoleNames()->implode(', ') ?: 'Dosen Pembimbing' }}) · {{ $pkl->final_approved_at->format('d M Y H:i') }}</p>
                 @endif
             </div>
         </div>
-        @if ($pkl && (auth()->user()?->hasAnyRole(['admin', 'Admin', 'Super Admin', 'Kaprodi']) || $canPerformPembimbingActions || $showMahasiswa))
-            <form action="{{ route('pkl.route-map.complete', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-emerald-50 p-4">@csrf<input type="hidden" name="status_pkl" value="Lulus"><div><h3 class="mb-1 text-sm font-bold text-emerald-900">Kelulusan Akhir</h3><p class="mb-0 text-xs text-emerald-800">Tandai proses PKL mahasiswa sebagai Lulus / Selesai.</p></div><button class="rmap-btn" style="background:#059669;color:#fff" type="submit">Tetapkan Lulus</button></form>
+        @if($pkl?->final_approved_at)
+            <div class="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-emerald-50 p-4">
+                <div><h3 class="mb-1 text-sm font-bold text-emerald-900">Kelulusan Akhir</h3><p class="mb-0 text-xs text-emerald-800">ACC oleh {{ $pkl->finalApprover?->name ?? 'Dosen Pembimbing' }} ({{ $pkl->finalApprover?->getRoleNames()->implode(', ') ?: 'Dosen Pembimbing' }}) pada {{ $pkl->final_approved_at->format('d M Y H:i') }}.</p></div>
+                <span class="rmap-badge {{ $badgeClass($pkl->status) }}">{{ $pkl->status }}</span>
+            </div>
         @endif
     </section>
 </div>

@@ -95,7 +95,7 @@
             <p class="text-secondary mb-0">Memantau aktivitas harian dan progres bimbingan Praktik Kerja Lapangan mahasiswa.</p>
         </div>
         <div>
-            <a href="{{ route('pkl.dosen.index') }}" class="btn btn-light border text-secondary fw-semibold">
+            <a href="{{ $isAdmin ? route('pkl.admin.index') : route('pkl.dosen.index') }}" class="btn btn-light border text-secondary fw-semibold">
                 <i class="ti ti-arrow-left me-1"></i> Kembali ke Dashboard
             </a>
         </div>
@@ -308,4 +308,34 @@
     });
 </script>
 @endpush
+@if($pengajuan->tanggal_seminar && $pengajuan->ruangan_seminar)
+    <section class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <h5 class="fw-bold mb-1">Undangan Ujian PKL</h5>
+                <p class="text-muted mb-0">{{ $pengajuan->tanggal_seminar->format('d M Y, H:i') }} · {{ $pengajuan->ruangan_seminar }}</p>
+            </div>
+            <a href="{{ route('pkl.invitation', $pengajuan->id) }}" target="_blank" rel="noopener" class="btn btn-outline-primary">
+                <i class="ti ti-printer me-1"></i> Cetak Undangan
+            </a>
+        </div>
+    </section>
+@endif
+
+@if($canApproveFinal && !$pengajuan->final_approved_at)
+    <section class="card border-0 shadow-sm rounded-4 p-4 mb-4 border-start border-4 border-success">
+        <h5 class="fw-bold mb-1">ACC Final Kelulusan PKL</h5>
+        <p class="text-muted small">ACC final hanya dapat diproses setelah seluruh dokumen akhir tersedia dan nilai pembimbing sudah tersimpan.</p>
+        <form action="{{ route('pkl.dosen.final-approval', $pengajuan->id) }}" method="POST">
+            @csrf
+            <button type="submit" class="btn btn-success fw-semibold">ACC Final & Tetapkan Lulus</button>
+        </form>
+    </section>
+@elseif($pengajuan->final_approved_at)
+    <div class="alert alert-success">
+        ACC Final oleh {{ $pengajuan->finalApprover?->name ?? 'Dosen Pembimbing' }} ({{ $pengajuan->finalApprover?->getRoleNames()->implode(', ') ?: 'Dosen Pembimbing' }})
+        pada {{ $pengajuan->final_approved_at->format('d M Y H:i') }}.
+    </div>
+@endif
+
 @endsection

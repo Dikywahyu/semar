@@ -17,6 +17,31 @@ class CapstoneGroup extends Model
         return $this->belongsTo(User::class, 'leader_id');
     }
 
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by_user_id');
+    }
+
+    public function coordinatorApprover(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'coordinator_approved_by_user_id');
+    }
+
+    public function supervisorApprover(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'supervisor_approved_by_user_id');
+    }
+
+    public function kpsApprover(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'kps_approved_by_user_id');
+    }
+
+    public function kpiApprover(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'kpi_approved_by_user_id');
+    }
+
     public function expertise(): BelongsTo
     {
         return $this->belongsTo(CapstoneExpertise::class, 'expertise_id');

@@ -335,7 +335,7 @@
                         loadKomponenData();
                     },
                     error: function(err) {
-                        Swal.fire('Gagal', 'Terjadi kesalahan saat menghapus data.', 'error');
+                        Swal.fire('Gagal', err.responseJSON?.message || 'Terjadi kesalahan saat menghapus data.', 'error');
                     }
                 });
             }

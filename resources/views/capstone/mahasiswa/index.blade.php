@@ -230,7 +230,7 @@
                 <form id="formPendaftaranCapstone">
                     @csrf
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">Judul Capstone Design</label>
+                        <label class="form-label small fw-semibold">Usulan Judul Capstone Design</label>
                         <input type="text" name="title" id="inputTitle" class="form-control" required placeholder="Masukkan judul proyek capstone...">
                     </div>
                     <div class="mb-3">
@@ -244,14 +244,14 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">Tambah Anggota Kelompok (Maksimal 2 Orang)</label>
+                        <label class="form-label small fw-semibold">Tambah 1 Anggota Kelompok (maksimal 2 mahasiswa termasuk ketua)</label>
                         <!-- HAPUS form-select -->
                         <select name="members[]" class="select2-members w-100" multiple data-placeholder="-- Cari mahasiswa anggota --">
                             @foreach($availableStudents ?? [] as $student)
                             <option value="{{ $student->id }}">{{ $student->name }} ({{ $student->email }})</option>
                             @endforeach
                         </select>
-                        <div class="form-text small text-muted mt-1">Pilih rekan mahasiswa yang akan bergabung ke dalam kelompok Anda.</div>
+                        <div class="form-text small text-muted mt-1">Anggota harus menyetujui undangan sebelum resmi bergabung.</div>
                     </div>
                     <button type="submit" class="btn btn-primary w-100 fw-semibold mt-2"><i class="ti ti-device-floppy me-1"></i> Simpan Ajuan Kelompok</button>
                 </form>
@@ -261,9 +261,16 @@
             <div class="card border-0 shadow-sm rounded-4 p-3 p-md-4 bg-white h-100">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="fw-bold mb-0 fs-6 fs-md-5"><i class="ti ti-users me-2 text-primary"></i>Informasi Kelompok Anda</h5>
-                    <button type="button" class="btn btn-outline-warning btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#modalEditGroup">
-                        <i class="ti ti-edit me-1"></i> Edit Ajuan
-                    </button>
+                    <div class="d-flex gap-2">
+                        @if(in_array($group->status_pendaftaran, ['draft', 'submitted']) && $group->kpi_approval === 'pending' && !$group->acc_coordinator && !$group->acc_supervisor && !$group->acc_kps && !$group->members->contains('status', 'accepted'))
+                        <button type="button" class="btn btn-outline-warning btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#modalEditGroup">
+                            <i class="ti ti-edit me-1"></i> Edit Ajuan
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm fw-semibold" id="btnDeleteGroup" data-id="{{ $group->id }}">
+                            <i class="ti ti-trash me-1"></i> Hapus Ajuan
+                        </button>
+                        @endif
+                    </div>
                 </div>
 
                 <div class="mb-3">
@@ -331,7 +338,28 @@
                             </span>
                         </div>
                     </div>
+                    <div class="small mt-3">
+                        <div>Koordinator: {{ $group?->acc_coordinator ? $group->coordinator_approved_by_role : ($group?->coordinator_approved_by_role ? 'Riwayat ACC: '.$group->coordinator_approved_by_role : 'Belum ACC') }}{{ $group?->coordinatorApprover ? ' — '.$group->coordinatorApprover->name : '' }}</div>
+                        <div>Pembimbing: {{ $group?->acc_supervisor ? $group->supervisor_approved_by_role : ($group?->supervisor_approved_by_role ? 'Riwayat ACC: '.$group->supervisor_approved_by_role : 'Belum ACC') }}{{ $group?->supervisorApprover ? ' — '.$group->supervisorApprover->name : '' }}</div>
+                        <div>KPS: {{ $group?->acc_kps ? $group->kps_approved_by_role : ($group?->kps_approved_by_role ? 'Riwayat ACC: '.$group->kps_approved_by_role : 'Belum ACC') }}{{ $group?->kpsApprover ? ' — '.$group->kpsApprover->name : '' }}</div>
+                    </div>
                 </div>
+
+                @if($hasGroup)
+                <form id="formProposeSchedule" class="border rounded-3 p-3 mb-4">
+                    @csrf
+                    <h6 class="fw-semibold">Usulan Jadwal Ujian</h6>
+                    <div class="row g-2">
+                        <div class="col-md-6"><label class="form-label small">Tanggal</label><input type="date" name="exam_date" class="form-control" min="{{ now()->addDay()->toDateString() }}" value="{{ $group->proposed_exam_date }}" required></div>
+                        <div class="col-md-6"><label class="form-label small">Waktu</label><input type="time" name="exam_time" class="form-control" value="{{ $group->proposed_exam_time }}" required></div>
+                    </div>
+                    <p class="small text-muted mt-2 mb-2">Jadwal resmi dan ruangan ditetapkan Admin setelah koordinasi dengan dosen pembimbing.</p>
+                    <button class="btn btn-outline-primary btn-sm" type="submit">Kirim / Revisi Usulan</button>
+                    @if($group->exam_date && $group->exam_room)
+                    <span class="badge bg-success ms-2">Jadwal: {{ $group->exam_date }} {{ $group->exam_time }} — {{ $group->exam_room }}</span>
+                    @endif
+                </form>
+                @endif
 
                 <form id="formUploadSidang" enctype="multipart/form-data">
                     @csrf
@@ -344,12 +372,16 @@
                             <option value="berita_acara">Berita Acara Ujian (PDF/Gambar)</option>
                             <option value="lembar_revisi">Lembar Pengesahan Revisi (PDF)</option>
                             <option value="final_report">Laporan Final / Buku Capstone (PDF)</option>
+                            <option value="agreement">Kesepakatan Bersama CD (PDF)</option>
+                            <option value="drawings">Gambar (PDF/DWG/DXF/ZIP)</option>
+                            <option value="rab">RAB (PDF/Excel/CSV)</option>
+                            <option value="structural_calculation">Perhitungan Struktural (opsional)</option>
                             <option value="recap_score">Rekapitulasi Nilai (PDF)</option>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-semibold">Pilih File Berkas</label>
-                        <input type="file" name="document_file" id="inputDocumentFile" class="form-control" required accept=".pdf,.jpg,.jpeg,.png">
+                        <input type="file" name="document_file" id="inputDocumentFile" class="form-control" required accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf,.xlsx,.xls,.csv,.zip">
                         <div class="form-text small text-muted">Pastikan format file sesuai dengan ketentuan.</div>
                     </div>
                     <button type="submit" class="btn btn-success w-100 fw-semibold"><i class="ti ti-upload me-1"></i> Unggah Berkas Pilihan</button>
@@ -367,6 +399,10 @@
                 'lembar_revisi' => ['label' => 'Lembar Revisi', 'file' => $group->lembar_revisi_file ?? null],
                 'final_report' => ['label' => 'Laporan Final', 'file' => $group->final_report_file ?? null],
                 'recap_score' => ['label' => 'Rekapitulasi Nilai', 'file' => $group->recap_score_file ?? null],
+                'agreement' => ['label' => 'Kesepakatan Bersama CD', 'file' => $group->agreement_file ?? null],
+                'drawings' => ['label' => 'Gambar', 'file' => $group->drawings_file ?? null],
+                'rab' => ['label' => 'RAB', 'file' => $group->rab_file ?? null],
+                'structural_calculation' => ['label' => 'Perhitungan Struktural (Opsional)', 'file' => $group->structural_calculation_file ?? null],
                 ];
                 @endphp
                 <ul class="list-group mb-4 small shadow-sm">
@@ -417,7 +453,7 @@
 
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">Judul Capstone Design</label>
+                        <label class="form-label small fw-semibold">Usulan Judul Capstone Design</label>
                         <input type="text" name="title" id="inputTitleModal" class="form-control" value="{{ $group->title }}" required placeholder="Masukkan judul proyek capstone...">
                     </div>
                     <div class="mb-3">
@@ -432,7 +468,7 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">Ubah Anggota Kelompok (Maksimal 2 Orang)</label>
+                        <label class="form-label small fw-semibold">Ubah Anggota Kelompok (maksimal 1 anggota tambahan)</label>
                         <select name="members[]" class="select2-members-modal w-100" multiple data-placeholder="-- Cari mahasiswa anggota --">
                             @php
                             // Ambil ID mahasiswa yang sudah tergabung selain ketua
@@ -550,7 +586,7 @@
         if ($('.select2-members').length) {
             $('.select2-members').select2({
                 theme: 'bootstrap-5',
-                maximumSelectionLength: 2,
+                maximumSelectionLength: 1,
                 width: '100%'
             });
         }
@@ -571,7 +607,7 @@
             });
             $('.select2-members-modal').select2({
                 theme: 'bootstrap-5',
-                maximumSelectionLength: 2,
+                maximumSelectionLength: 1,
                 width: '100%',
                 dropdownParent: $('#modalEditGroup')
             });
@@ -588,6 +624,46 @@
     $(document).on('submit', '#formEditPendaftaranCapstone', function(e) {
         e.preventDefault();
         submitGroupData($(this).serialize());
+    });
+
+    $(document).on('submit', '#formProposeSchedule', function(e) {
+        e.preventDefault();
+        $.ajax({
+            url: "{{ route('capstone.mahasiswa.schedule.propose', ['groupId' => $group->id ?? 0]) }}",
+            type: 'POST',
+            data: $(this).serialize(),
+            success: function(res) {
+                Swal.fire('Berhasil', res.message, 'success').then(() => location.reload());
+            },
+            error: function(err) {
+                Swal.fire('Gagal', err.responseJSON?.message || 'Usulan jadwal gagal disimpan.', 'error');
+            }
+        });
+    });
+
+    $(document).on('click', '#btnDeleteGroup', function() {
+        const groupId = $(this).data('id');
+        Swal.fire({
+            title: 'Hapus ajuan Capstone?',
+            text: 'Penghapusan hanya tersedia selama ajuan masih menunggu proses.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, hapus',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+            $.ajax({
+                url: "{{ url('capstone/mahasiswa/group') }}/" + groupId,
+                type: 'DELETE',
+                data: {_token: '{{ csrf_token() }}'},
+                success: function(res) {
+                    Swal.fire('Berhasil', res.message, 'success').then(() => location.reload());
+                },
+                error: function(err) {
+                    Swal.fire('Gagal', err.responseJSON?.message || 'Ajuan tidak dapat dihapus.', 'error');
+                }
+            });
+        });
     });
 
     function submitGroupData(formData) {

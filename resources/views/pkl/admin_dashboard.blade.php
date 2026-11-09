@@ -45,6 +45,9 @@
             <a href="{{ route('pkl.admin.komponen.index') }}" class="btn btn-outline-primary fw-semibold me-2">
                 <i class="ti ti-adjustments me-1"></i> Master Komponen Nilai
             </a>
+            <a href="{{ route('pkl.admin.rekap-nilai') }}" class="btn btn-outline-success fw-semibold me-2">
+                <i class="ti ti-file-spreadsheet me-1"></i> Rekap Nilai
+            </a>
             <button type="button" class="btn btn-primary fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalTambahPkl">
                 <i class="ti ti-plus me-2"></i> Pengajuan PKL Baru
             </button>
@@ -197,38 +200,24 @@
                     
                     <div class="list-group mb-4">
                         <div class="list-group-item d-flex justify-content-between align-items-center py-3">
-                            <span><i class="ti ti-file-text me-2 text-secondary"></i>1. Logbook Kegiatan Selama PKL</span>
+                            <span><i class="ti ti-file-text me-2 text-secondary"></i>1. Draft Laporan PKL</span>
                             <div>
-                                <a href="#" id="link-logbook" target="_blank" class="btn btn-sm btn-outline-primary d-none"><i class="ti ti-eye me-1"></i> Lihat Dokumen</a>
-                                <span id="empty-logbook" class="badge bg-secondary-subtle text-secondary small">Belum diunggah</span>
+                                <a href="#" id="link-draft" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary d-none"><i class="ti ti-eye me-1"></i> Lihat Dokumen</a>
+                                <span id="empty-draft" class="badge bg-secondary-subtle text-secondary small">Belum diunggah</span>
                             </div>
                         </div>
                         <div class="list-group-item d-flex justify-content-between align-items-center py-3">
-                            <span><i class="ti ti-file-text me-2 text-secondary"></i>2. Kartu Bimbingan (Min. 6 Kali)</span>
+                            <span><i class="ti ti-file-text me-2 text-secondary"></i>2. Kartu Konsultasi</span>
                             <div>
-                                <a href="#" id="link-bimbingan" target="_blank" class="btn btn-sm btn-outline-primary d-none"><i class="ti ti-eye me-1"></i> Lihat Dokumen</a>
-                                <span id="empty-bimbingan" class="badge bg-secondary-subtle text-secondary small">Belum diunggah</span>
+                                <a href="#" id="link-konsultasi" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary d-none"><i class="ti ti-eye me-1"></i> Lihat Dokumen</a>
+                                <span id="empty-konsultasi" class="badge bg-secondary-subtle text-secondary small">Belum diunggah</span>
                             </div>
                         </div>
                         <div class="list-group-item d-flex justify-content-between align-items-center py-3">
-                            <span><i class="ti ti-file-text me-2 text-secondary"></i>3. Draft Laporan PKL</span>
+                            <span><i class="ti ti-file-text me-2 text-secondary"></i>3. Transkrip Sementara</span>
                             <div>
-                                <a href="#" id="link-laporan" target="_blank" class="btn btn-sm btn-outline-primary d-none"><i class="ti ti-eye me-1"></i> Lihat Dokumen</a>
-                                <span id="empty-laporan" class="badge bg-secondary-subtle text-secondary small">Belum diunggah</span>
-                            </div>
-                        </div>
-                        <div class="list-group-item d-flex justify-content-between align-items-center py-3">
-                            <span><i class="ti ti-file-text me-2 text-secondary"></i>4. Lembar Penilaian Dosen Pamong</span>
-                            <div>
-                                <a href="#" id="link-pamong" target="_blank" class="btn btn-sm btn-outline-primary d-none"><i class="ti ti-eye me-1"></i> Lihat Dokumen</a>
-                                <span id="empty-pamong" class="badge bg-secondary-subtle text-secondary small">Belum diunggah</span>
-                            </div>
-                        </div>
-                        <div class="list-group-item d-flex justify-content-between align-items-center py-3">
-                            <span><i class="ti ti-file-text me-2 text-secondary"></i>5. Surat Persetujuan Semhas Pamong</span>
-                            <div>
-                                <a href="#" id="link-persetujuan" target="_blank" class="btn btn-sm btn-outline-primary d-none"><i class="ti ti-eye me-1"></i> Lihat Dokumen</a>
-                                <span id="empty-persetujuan" class="badge bg-secondary-subtle text-secondary small">Belum diunggah</span>
+                                <a href="#" id="link-transkrip" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary d-none"><i class="ti ti-eye me-1"></i> Lihat Dokumen</a>
+                                <span id="empty-transkrip" class="badge bg-secondary-subtle text-secondary small">Belum diunggah</span>
                             </div>
                         </div>
                     </div>
@@ -363,11 +352,9 @@
                 }
             }
         
-            setFileLink($(this).data('logbook'), '#link-logbook', '#empty-logbook');
-            setFileLink($(this).data('bimbingan'), '#link-bimbingan', '#empty-bimbingan');
-            setFileLink($(this).data('laporan'), '#link-laporan', '#empty-laporan');
-            setFileLink($(this).data('pamong'), '#link-pamong', '#empty-pamong');
-            setFileLink($(this).data('persetujuan'), '#link-persetujuan', '#empty-persetujuan');
+            setFileLink($(this).data('draft'), '#link-draft', '#empty-draft');
+            setFileLink($(this).data('konsultasi'), '#link-konsultasi', '#empty-konsultasi');
+            setFileLink($(this).data('transkrip'), '#link-transkrip', '#empty-transkrip');
         
             $('#selectKeputusan').val('disetujui').trigger('change');
             $('#inputCatatan').val('');

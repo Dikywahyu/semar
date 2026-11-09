@@ -33,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
             $this->loadMigrationsFrom(database_path('migrations/activity'));
             $this->loadMigrationsFrom(database_path('migrations/capstone'));
             $this->loadMigrationsFrom(database_path('migrations/Pkl'));
+            $this->loadMigrationsFrom(database_path('migrations/TA'));
         }
 
         $passportViewsPath = base_path('vendor/laravel/passport/resources/views');
@@ -137,6 +138,44 @@ class AppServiceProvider extends ServiceProvider
                         'roles' => ['Super Admin', 'BAAK', 'Akademik', 'Kaprodi', 'Kajur'],
                         'permission' => 'academic-edit',
                     ],
+                ],
+
+                // --- CATEGORY: TUGAS AKHIR ---
+                [
+                    'title' => 'Tugas Akhir Mahasiswa',
+                    'icon' => 'solar:document-text-line-duotone',
+                    'url' => route('thesis.student.index'),
+                    'category' => 'Tugas Akhir',
+                    'apps_menu' => true,
+                    'active' => request()->is('tugas-akhir/mahasiswa*'),
+                    'roles' => ['Super Admin', 'mahasiswa', 'Mahasiswa'],
+                ],
+                [
+                    'title' => 'Penilaian Tugas Akhir',
+                    'icon' => 'solar:clipboard-check-line-duotone',
+                    'url' => route('thesis.dosen.index'),
+                    'category' => 'Tugas Akhir',
+                    'apps_menu' => true,
+                    'active' => request()->is('tugas-akhir/dosen*'),
+                    'roles' => ['Super Admin', 'dosen_pembimbing', 'dosen_penguji', 'dosen', 'Dosen', 'DosenLB', 'Guru Besar'],
+                ],
+                [
+                    'title' => 'Verifikasi Tugas Akhir',
+                    'icon' => 'solar:verified-check-line-duotone',
+                    'url' => route('thesis.verify.index'),
+                    'category' => 'Tugas Akhir',
+                    'apps_menu' => true,
+                    'active' => request()->is('tugas-akhir/verifikasi*'),
+                    'roles' => ['Super Admin', 'KPS', 'Kaprodi', 'Koordinator Skripsi', 'Koordinator TA', 'Koordinator Skripsi/TA'],
+                ],
+                [
+                    'title' => 'Monitoring Tugas Akhir',
+                    'icon' => 'solar:chart-square-line-duotone',
+                    'url' => route('thesis.admin.index'),
+                    'category' => 'Tugas Akhir',
+                    'apps_menu' => true,
+                    'active' => request()->is('tugas-akhir/admin*'),
+                    'roles' => ['Super Admin', 'Admin', 'BAAK', 'Akademik', 'KPS', 'Kaprodi'],
                 ],
 
                 // --- CATEGORY: PRESENSI & KEGIATAN ---

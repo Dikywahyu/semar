@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\Mahasiswa\MahasiswaRegistrasi;
 use App\Models\Dosen\Dosen;
 use App\Models\Semester;
+use App\Models\User;
 
 class PengajuanPkl extends Model
 {
@@ -19,6 +20,10 @@ class PengajuanPkl extends Model
     protected $casts = [
         'is_acc_seminar' => 'boolean',
         'tanggal_seminar' => 'datetime',
+        'usulan_tanggal_seminar' => 'datetime',
+        'schedule_approved_at' => 'datetime',
+        'acc_seminar_at' => 'datetime',
+        'final_approved_at' => 'datetime',
         'nilai_akhir' => 'decimal:2',
         'tanggal_mulai' => 'date',
         'tanggal_selesai' => 'date',
@@ -38,6 +43,21 @@ class PengajuanPkl extends Model
     public function semesterMaster(): BelongsTo
     {
         return $this->belongsTo(Semester::class, 'semester_master_id');
+    }
+
+    public function seminarApprover(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'acc_seminar_by');
+    }
+
+    public function finalApprover(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'final_approved_by');
+    }
+
+    public function scheduleApprover(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'schedule_approved_by');
     }
 
     public function mahasiswa(): BelongsTo

@@ -340,6 +340,9 @@
                         <h2 class="fw-bold mb-1 text-white"><i class="ti ti-briefcase me-2 text-white"></i>Portal Praktik Kerja Lapangan (PKL)</h2>
                         <p class="text-white-50 mb-0">Kelola tahapan magang, pantau roadmap progres secara real-time, dan unggah berkas dengan mudah.</p>
                     </div>
+                    @if($pengajuan->schedule_approved_at)
+                    <p class="small text-muted">Jadwal ditetapkan oleh {{ $pengajuan->scheduleApprover?->name ?? 'Admin' }} ({{ $pengajuan->scheduleApprover?->getRoleNames()->implode(', ') ?: 'Admin' }}) pada {{ $pengajuan->schedule_approved_at->format('d M Y H:i') }}.</p>
+                    @endif
                     @if($pengajuan &&$pengajuan->status == 'Pengajuan & Verifikasi Admin')
                     <div>
                         <button type="button" class="btn btn-outline-light btn-sm fw-semibold px-3 py-2 rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#modalEditPengajuan">
@@ -614,7 +617,7 @@
         </div>
         @endif
 
-        @if(in_array($pengajuan->status, [ 'Revisi Laporan','Revisi Lapora','Ujian Seminar & Penilaian'], true))
+        @if(in_array($pengajuan->status, ['Dijadwalkan Ujian', 'Ujian Seminar & Penilaian', 'Revisi Laporan'], true))
         <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-warning">
             <h5 class="fw-bold mb-1"><i class="ti ti-file-check text-warning me-2"></i>Dokumen Akhir PKL</h5>
             <p class="text-muted small">Unggah semua dokumen ujian dan hasil revisi. Kelulusan diterbitkan setelah ACC akhir pembimbing dan nilai pembimbing tersimpan.</p>
@@ -635,7 +638,7 @@
                         @csrf
                         <input type="hidden" name="field" value="{{ $kind }}">
                         <label class="form-label fw-semibold small">{{ $label }}</label>
-                        <input type="file" name="file" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <input type="file" name="file" class="form-control form-control-sm" accept="{{ $kind === 'lampiran_teknis' ? '.pdf,.jpg,.jpeg,.png,.dwg,.dxf,.xls,.xlsx,.csv,.zip' : '.pdf,.jpg,.jpeg,.png' }}" required>
                         <div class="d-flex justify-content-between align-items-center mt-2">
                             <span class="small {{ $doc ? ($doc->status_verifikasi === 'Valid' ? 'text-success' : ($doc->status_verifikasi === 'Ditolak' ? 'text-danger' : 'text-warning')) : 'text-muted' }}">
                                 {{ $doc ? $doc->status_verifikasi : 'Belum diunggah' }}
@@ -650,6 +653,12 @@
                 </div>
                 @endforeach
             </div>
+            @if($pengajuan->final_approved_at)
+            <div class="alert alert-success mt-3 mb-0">
+                ACC Final oleh {{ $pengajuan->finalApprover?->name ?? 'Dosen Pembimbing' }} ({{ $pengajuan->finalApprover?->getRoleNames()->implode(', ') ?: 'Dosen Pembimbing' }})
+                @if($pengajuan->final_approved_at) pada {{ $pengajuan->final_approved_at->format('d M Y H:i') }} @endif.
+            </div>
+            @endif
         </div>
         @endif
 
@@ -778,20 +787,19 @@
             @if($pengajuan->status === 'Dijadwalkan Ujian')
             <form action="{{ route('pkl.mahasiswa.usulkan-jadwal', $pengajuan->id) }}" method="POST" class="border rounded-3 p-3 mb-4 bg-light">
                 @csrf
-                <h6 class="fw-bold small mb-3">Atur Jadwal & Dewan Penguji</h6>
+                <h6 class="fw-bold small mb-3">{{ $pengajuan->tanggal_seminar ? 'Usulkan Revisi Tanggal' : 'Usulkan Tanggal Ujian' }}</h6>
                 <label class="form-label small">Tanggal dan waktu ujian</label>
-                <input type="datetime-local" name="tanggal_seminar" value="{{ $pengajuan->tanggal_seminar?->format('Y-m-d\TH:i') }}" class="form-control form-control-sm mb-2" min="{{ now()->addHour()->format('Y-m-d\TH:i') }}" required>
-                <label class="form-label small">Ruang ujian</label>
-                <input type="text" name="ruangan_seminar" value="{{ $pengajuan->ruangan_seminar }}" class="form-control form-control-sm mb-2" placeholder="Contoh: Ruang Sidang 2" required>
-                <label class="form-label small">Daftar dosen penguji</label>
-                <select name="penguji_usulan[]" class="form-select form-select-sm mb-2" multiple size="5" required>
-                    @foreach(\App\Models\Dosen\Dosen::where('aktif', true)->orderBy('nama_dosen')->get() as $dosenPilihan)
-                    <option value="{{ $dosenPilihan->id_dosen }}" @selected($pengajuan->dosenPenguji->contains('id_dosen', $dosenPilihan->id_dosen))>{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>
-                    @endforeach
-                </select>
-                <small class="text-muted d-block mb-2">Admin dapat meninjau dan mengubah jadwal serta daftar penguji.</small>
-                <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">Simpan Jadwal & Penguji</button>
+                <input type="datetime-local" name="tanggal_seminar" value="{{ $pengajuan->usulan_tanggal_seminar?->format('Y-m-d\TH:i') ?? $pengajuan->tanggal_seminar?->format('Y-m-d\TH:i') }}" class="form-control form-control-sm mb-2" min="{{ now()->addHour()->format('Y-m-d\TH:i') }}" required>
+                <label class="form-label small">Catatan (opsional)</label>
+                <textarea name="catatan_usulan_jadwal" class="form-control form-control-sm mb-2" rows="2" placeholder="Alasan atau waktu alternatif">{{ $pengajuan->catatan_usulan_jadwal }}</textarea>
+                <small class="text-muted d-block mb-2">Mahasiswa mengusulkan waktu saja. Admin menetapkan jadwal resmi dan ruangan.</small>
+                <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">Kirim Usulan Jadwal</button>
             </form>
+            @endif
+            @if($pengajuan->tanggal_seminar && $pengajuan->ruangan_seminar)
+            <a href="{{ route('pkl.invitation', $pengajuan->id) }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm w-100 mb-3">
+                <i class="ti ti-printer me-1"></i> Cetak Undangan Ujian
+            </a>
             @endif
             <!-- Daftar Dewan Penguji -->
             <h6 class="fw-bold mb-2 text-slate-700 small text-uppercase tracking-wider">Daftar Penguji</h6>

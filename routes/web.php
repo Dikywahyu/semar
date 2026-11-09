@@ -33,6 +33,7 @@ use App\Http\Controllers\Capstone\CapstoneStudentController;
 use App\Http\Controllers\Capstone\CapstoneCoordinatorController;
 use App\Http\Controllers\Capstone\CapstoneScoreController;
 use App\Http\Controllers\Capstone\CapstoneAdminController;
+use App\Http\Controllers\TugasAkhir\ThesisWorkflowController;
 
 // PENCEGAT DARURAT: Mengintip data yang dilempar dari SIAKAD Lokal
 // Route::get('/oauth/authorize', function(\Illuminate\Http\Request $request) {
@@ -79,11 +80,13 @@ Route::middleware(['auth'])->prefix('capstone')->name('capstone.')->group(functi
         Route::get('reset-profile', [CapstoneStudentController::class, 'resetProfile'])->name('reset_profile');
         Route::get('/', [CapstoneStudentController::class, 'index'])->name('index');
         Route::post('group', [CapstoneStudentController::class, 'storeGroup'])->name('group.store');
+        Route::delete('group/{groupId}', [CapstoneStudentController::class, 'deletePendingGroup'])->name('group.destroy');
         Route::post('member-response/{id}', [CapstoneStudentController::class, 'responseInvitation'])->name('member.response');
         Route::post('execution/{id}', [CapstoneStudentController::class, 'uploadExecution'])->name('execution.upload');
         Route::post('sidang/{id}', [CapstoneStudentController::class, 'uploadSidang'])->name('sidang.upload');
         Route::post('upload-sidang/{groupId}', [CapstoneStudentController::class, 'uploadSidang'])->name('upload.sidang');
         Route::post('invitation/{memberId}', [CapstoneStudentController::class, 'responseInvitation'])->name('invitation.response');
+        Route::post('schedule/{groupId}', [CapstoneStudentController::class, 'proposeExamSchedule'])->name('schedule.propose');
         Route::delete('delete-sidang/{groupId}/{fileType}', [CapstoneStudentController::class, 'deleteSidangFile'])->name('delete.sidang.file');
     });
 
@@ -91,21 +94,35 @@ Route::middleware(['auth'])->prefix('capstone')->name('capstone.')->group(functi
     Route::prefix('koordinator')->name('koordinator.')->group(function () {
         Route::get('/', [CapstoneCoordinatorController::class, 'index'])->name('index');
 
-        Route::post('/plot-lecturers/{groupId}', [CapstoneCoordinatorController::class, 'plotLecturers']);
-        Route::post('/kpi-approval/{groupId}', [CapstoneCoordinatorController::class, 'updateKpiApproval']);
-        Route::post('/toggle-acc/{groupId}', [CapstoneCoordinatorController::class, 'toggleAccCoordinator']);
+        Route::post('/plot-lecturers/{groupId}', [CapstoneCoordinatorController::class, 'plotLecturers'])->name('plot-lecturers');
+        Route::post('/kpi-approval/{groupId}', [CapstoneCoordinatorController::class, 'updateKpiApproval'])->name('kpi-approval');
+        Route::post('/toggle-acc/{groupId}', [CapstoneCoordinatorController::class, 'toggleAccCoordinator'])->name('toggle-acc');
     });
 
     // --- ROLE: DOSEN (PEMBIMBING & PENGUJI) ---
     Route::prefix('dosen')->name('dosen.')->group(function () {
         Route::get('/', [CapstoneScoreController::class, 'dosenIndex'])->name('index');
         Route::post('student-scores/{groupId}', [CapstoneScoreController::class, 'storeStudentScores'])->name('scores.store');
+        Route::put('group-title/{groupId}', [CapstoneScoreController::class, 'updateGroupTitle'])->name('title.update');
+        Route::post('final-approval/{groupId}', [CapstoneScoreController::class, 'approveFinal'])->name('final-approval');
+        Route::get('scores/{groupId}/export', [CapstoneScoreController::class, 'exportScores'])->name('scores.export');
+        Route::get('scores/{groupId}', [CapstoneScoreController::class, 'downloadScores'])->name('scores.show');
     });
 
     // --- ROLE: ADMIN / KPS (MASTER & RUANGAN) ---
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [CapstoneAdminController::class, 'index'])->name('index');
+        Route::post('groups', [CapstoneAdminController::class, 'storeManualPlotting'])->name('groups.store');
+        Route::put('groups/{id}/plotting', [CapstoneAdminController::class, 'updatePlotting'])->name('groups.plotting');
+        Route::delete('groups/{id}', [CapstoneAdminController::class, 'deleteGroup'])->name('groups.destroy');
         Route::post('room/{id}', [CapstoneAdminController::class, 'setExamRoom'])->name('room');
+        Route::post('groups/{id}/kps-approval', [CapstoneAdminController::class, 'setKpsApproval'])->name('kps-approval');
+        Route::post('plotting/import', [CapstoneAdminController::class, 'importPlotting'])->name('plotting.import');
+        Route::get('plotting/export', [CapstoneAdminController::class, 'exportPlotting'])->name('plotting.export');
+        Route::get('invitation/{id}', [CapstoneAdminController::class, 'invitation'])->name('invitation');
+        Route::post('invitation/{id}/send', [CapstoneAdminController::class, 'sendInvitation'])->name('invitation.send');
+        Route::get('print/{id}/{type}', [CapstoneAdminController::class, 'printDocument'])->name('print');
+        Route::get('grade-recap', [CapstoneAdminController::class, 'gradeRecap'])->name('grade-recap');
 
         // Master Komponen Nilai Routes
         Route::get('komponen', [CapstoneAdminController::class, 'komponenIndex'])->name('komponen.index');
@@ -123,6 +140,36 @@ Route::middleware(['auth'])->prefix('capstone')->name('capstone.')->group(functi
         Route::post('expertises/{id}/lecturers', [CapstoneAdminController::class, 'storeExpertiseLecturer'])->name('expertises.lecturers.store');
         Route::delete('expertises/{expertiseId}/lecturers/{lecturerId}', [CapstoneAdminController::class, 'destroyExpertiseLecturer'])->name('expertises.lecturers.destroy');
     });
+});
+
+Route::middleware(['auth'])->prefix('tugas-akhir')->name('thesis.')->group(function () {
+    Route::get('mahasiswa', [ThesisWorkflowController::class, 'studentIndex'])->name('student.index');
+    Route::post('pengajuan', [ThesisWorkflowController::class, 'submitProposal'])->name('proposal.store');
+    Route::post('{application}/dokumen', [ThesisWorkflowController::class, 'uploadDocument'])->name('documents.upload');
+    Route::post('{application}/jadwal-sempro/usulan', [ThesisWorkflowController::class, 'proposeSemproSchedule'])->name('sempro.schedule.propose');
+    Route::post('{application}/jadwal-ta/usulan', [ThesisWorkflowController::class, 'proposeTaSchedule'])->name('ta.schedule.propose');
+
+    Route::get('admin', [ThesisWorkflowController::class, 'adminIndex'])->name('admin.index');
+    Route::post('admin/pengajuan-manual', [ThesisWorkflowController::class, 'createManualProposal'])->name('admin.proposal.manual');
+    Route::put('admin/{application}/panel', [ThesisWorkflowController::class, 'assignPanel'])->name('admin.panel');
+    Route::put('admin/{application}/override-p1', [ThesisWorkflowController::class, 'overrideP1'])->name('admin.override-p1');
+    Route::post('admin/import-plotting', [ThesisWorkflowController::class, 'importAssignments'])->name('admin.import');
+    Route::get('admin/export-plotting', [ThesisWorkflowController::class, 'exportAssignments'])->name('admin.export');
+    Route::post('admin/{application}/jadwal-sempro', [ThesisWorkflowController::class, 'setSemproSchedule'])->name('admin.sempro.schedule');
+    Route::post('admin/{application}/undangan-sempro', [ThesisWorkflowController::class, 'sendSemproInvitation'])->name('admin.sempro.invitation.send');
+    Route::post('admin/{application}/jadwal-ta', [ThesisWorkflowController::class, 'setTaSchedule'])->name('admin.ta.schedule');
+    Route::post('admin/{application}/undangan-ta', [ThesisWorkflowController::class, 'sendTaInvitation'])->name('admin.ta.invitation.send');
+    Route::post('admin/{application}/sempro/selesai', [ThesisWorkflowController::class, 'finishSempro'])->name('admin.sempro.finish');
+    Route::post('admin/{application}/semhas/selesai', [ThesisWorkflowController::class, 'finishSemhas'])->name('admin.semhas.finish');
+    Route::post('admin/{application}/ta/selesai', [ThesisWorkflowController::class, 'approveFinalTa'])->name('admin.ta.finish');
+    Route::get('admin/{application}/cetak/{type}', [ThesisWorkflowController::class, 'printDocument'])->name('admin.print');
+
+    Route::get('verifikasi', [ThesisWorkflowController::class, 'verifyDashboard'])->name('verify.index');
+    Route::post('{application}/dokumen/{document}/verifikasi', [ThesisWorkflowController::class, 'verifyDocument'])->name('documents.verify');
+    Route::get('dosen', [ThesisWorkflowController::class, 'dosenIndex'])->name('dosen.index');
+    Route::put('{application}/judul', [ThesisWorkflowController::class, 'updateTitle'])->name('title.update');
+    Route::post('{application}/nilai', [ThesisWorkflowController::class, 'saveScore'])->name('scores.store');
+    Route::get('{application}/nilai-ringkas', [ThesisWorkflowController::class, 'gradeSummary'])->name('scores.summary');
 });
 
 /*
@@ -239,6 +286,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/route-map/{pengajuan}/verify', [PklController::class, 'routeMapVerify'])->name('route-map.verify');
         Route::post('/route-map/{pengajuan}/acc', [PklController::class, 'routeMapAcc'])->name('route-map.acc');
         Route::post('/route-map/{pengajuan}/schedule', [PklController::class, 'routeMapSchedule'])->name('route-map.schedule.set');
+        Route::get('/undangan/{pengajuan}', [PklController::class, 'invitation'])->name('invitation');
+        Route::post('/route-map/{pengajuan}/final-approval', [PklController::class, 'routeMapComplete'])->name('route-map.final-approval');
         Route::post('/route-map/{pengajuan}/propose-schedule', [PklController::class, 'routeMapProposeSchedule'])->name('route-map.schedule.propose');
         Route::post('/route-map/{pengajuan}/grade', [PklController::class, 'routeMapGrade'])->name('route-map.grade');
         Route::post('/route-map/{pengajuan}/revision/validate', [PklController::class, 'routeMapValidateRevision'])->name('route-map.revision.validate');
@@ -259,6 +308,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dosen/bimbingan/{pengajuan}', [PklController::class, 'dosenDetail'])->name('dosen.bimbingan.detail');
         Route::get('/dosen/komponen-penilaian/{pengajuan}', [PklController::class, 'dosenComponents'])->name('dosen.komponen-penilaian');
         Route::post('/dosen/penilaian/{pengajuan}', [PklController::class, 'dosenSaveGrades'])->name('dosen.penilaian');
+        Route::post('/dosen/{pengajuan}/final-approval', [PklController::class, 'dosenFinalApproval'])->name('dosen.final-approval');
 
         Route::get('/admin', [PklController::class, 'adminIndex'])->name('admin.index');
         Route::post('/admin/pengajuan', [PklController::class, 'adminStore'])->name('admin.pengajuan.store');
@@ -269,6 +319,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/admin/set-jadwal-penguji/{pengajuan}', [PklController::class, 'setSchedule'])->name('admin.jadwal');
         Route::get('/admin/penilaian-seminar/{pengajuan}', [PklController::class, 'adminGrades'])->name('admin.penilaian.show');
         Route::post('/admin/penilaian-seminar/{pengajuan}', [PklController::class, 'saveAdminGrades'])->name('admin.penilaian.store');
+        Route::get('/admin/rekap-nilai', [PklController::class, 'gradeRecap'])->name('admin.rekap-nilai');
+        Route::get('/admin/rekap-nilai/export', [PklController::class, 'exportGradeRecap'])->name('admin.rekap-nilai.export');
 
         Route::get('/admin/komponen-penilaian', [PklController::class, 'componentsIndex'])->name('admin.komponen.index');
         Route::post('/admin/komponen-penilaian', [PklController::class, 'componentStore'])->name('admin.komponen.store');

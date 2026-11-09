@@ -463,8 +463,8 @@
                         Swal.fire('Terhapus!', res.message, 'success');
                         loadExpertiseData();
                     },
-                    error: function() {
-                        Swal.fire('Gagal', 'Terjadi kesalahan saat menghapus data.', 'error');
+                    error: function(err) {
+                        Swal.fire('Gagal', err.responseJSON?.message || 'Terjadi kesalahan saat menghapus data.', 'error');
                     }
                 });
             }

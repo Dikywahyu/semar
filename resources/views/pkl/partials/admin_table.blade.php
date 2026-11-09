@@ -81,6 +81,11 @@
                                     <span class="fw-semibold text-dark">{{ $penguji->nama_dosen }}</span> 
                                     <span class="badge bg-light text-dark border" style="font-size: 10px;">{{ $penguji->pivot->peran }}</span>
                                 </div>
+                                @if($item->ruangan_seminar)
+                                    <a class="btn btn-sm btn-outline-primary mt-2" href="{{ route('pkl.invitation', $item->id) }}" target="_blank" rel="noopener">
+                                        <i class="ti ti-printer me-1"></i> Undangan
+                                    </a>
+                                @endif
                             @empty
                                 <span class="text-danger small">Penguji belum diplot</span>
                             @endforelse
@@ -109,6 +114,14 @@
                 </td>
                 <td style="white-space: nowrap;">
                     <div class="d-flex align-items-center gap-1">
+                        @php
+                            $dokumenDraft = $item->berkasSeminar->firstWhere('jenis_berkas', 'draft_laporan')?->path_berkas ?? $item->berkas_draft_laporan;
+                            $dokumenKartu = $item->berkasSeminar->firstWhere('jenis_berkas', 'kartu_konsultasi')?->path_berkas ?? $item->berkas_kartu_bimbingan;
+                            $dokumenTranskrip = $item->berkasSeminar->firstWhere('jenis_berkas', 'transkrip_sementara')?->path_berkas;
+                        @endphp
+                        <a href="{{ route('pkl.dosen.bimbingan.detail', $item->id) }}" class="btn btn-sm btn-light border text-secondary" title="Detail Bimbingan">
+                            <i class="ti ti-eye"></i>
+                        </a>
                         <button type="button" class="btn btn-sm btn-light border text-primary btn-kelola" data-id="{{ $item->id }}" title="Plotting Pembimbing/Jadwal">
                             <i class="ti ti-edit"></i>
                         </button>
@@ -121,12 +134,10 @@
                         <button type="button" class="btn btn-sm btn-info text-white fw-semibold btn-verifikasi-berkas shadow-sm" 
                                 data-id="{{ $item->id }}" 
                                 data-nama="{{ $item->mahasiswaRegistrasi->nama_mahasiswa ?? '-' }}"
-                                data-logbook="{{ $item->berkas_logbook ? url('pkl/view-file/' . $item->berkas_logbook) : '' }}"
-                                data-bimbingan="{{ $item->berkas_kartu_bimbingan ? url('pkl/view-file/' . $item->berkas_kartu_bimbingan) : '' }}"
-                                data-laporan="{{ $item->berkas_draft_laporan ? url('pkl/view-file/' . $item->berkas_draft_laporan) : '' }}"
-                                data-pamong="{{ $item->berkas_nilai_pamong ? url('pkl/view-file/' . $item->berkas_nilai_pamong) : '' }}"
-                                data-persetujuan="{{ $item->berkas_persetujuan_pamong ? url('pkl/view-file/' . $item->berkas_persetujuan_pamong) : '' }}"
-                                title="Verifikasi 6 Berkas Seminar">
+                                data-draft="{{ $dokumenDraft ? route('pkl.file', ['path' => $dokumenDraft]) : '' }}"
+                                data-konsultasi="{{ $dokumenKartu ? route('pkl.file', ['path' => $dokumenKartu]) : '' }}"
+                                data-transkrip="{{ $dokumenTranskrip ? route('pkl.file', ['path' => $dokumenTranskrip]) : '' }}"
+                                title="Verifikasi 3 Berkas Seminar">
                             <i class="ti ti-file-check"></i> Cek Berkas
                         </button>
                     </div>

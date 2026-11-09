@@ -17,14 +17,16 @@ class CapstoneCoordinatorController extends Controller
     {
         $user = Auth::user();
         $dosenId = $user?->id_dosen ?? null;
+        $isGlobalAdmin = $user?->hasAnyRole(['Super Admin', 'KPS', 'Kaprodi', 'Admin', 'BAAK', 'Akademik']);
+        abort_unless($isGlobalAdmin || $dosenId, 403);
 
         // Ambil keahlian yang dikoordinatori oleh dosen yang sedang login
         $expertises = CapstoneExpertise::where('coordinator_id', $dosenId)->get();
 
-        $query = CapstoneGroup::with(['leader', 'members.student', 'supervisor', 'examiner', 'expertise.dosens']);
+        $query = CapstoneGroup::with(['leader', 'members.student', 'supervisor', 'examiner', 'expertise.dosens', 'kpiApprover', 'coordinatorApprover']);
 
         // Jika bukan Super Admin / role global, filter berdasarkan keahlian koordinator
-        if ($dosenId && !($user && method_exists($user, 'hasRole') && $user->hasRole(['Super Admin', 'BAAK', 'Akademik', 'KPS']))) {
+        if (! $isGlobalAdmin) {
             $query->whereHas('expertise', function ($q) use ($dosenId) {
                 $q->where('coordinator_id', $dosenId);
             });
@@ -101,16 +103,28 @@ class CapstoneCoordinatorController extends Controller
     // Plotting Dosen Pembimbing & Dosen Penguji
     public function plotLecturers(Request $request, $groupId)
     {
-        $request->validate([
+        $validated = $request->validate([
             'supervisor_id' => 'nullable|exists:dosens,id_dosen',
             'examiner_id' => 'nullable|exists:dosens,id_dosen',
+            'project_location' => 'nullable|string|max:255',
         ]);
 
         $group = CapstoneGroup::findOrFail($groupId);
+        $this->authorizeGroupCoordinator($group);
+        $supervisorChanged = $group->supervisor_id !== ($validated['supervisor_id'] ?? null);
         $group->update([
-            'supervisor_id' => $request->supervisor_id,
-            'examiner_id' => $request->examiner_id,
+            'supervisor_id' => $validated['supervisor_id'] ?? null,
+            'examiner_id' => $validated['examiner_id'] ?? null,
+            'project_location' => $validated['project_location'] ?? null,
         ]);
+        if ($supervisorChanged) {
+            $group->update([
+                'acc_supervisor' => false,
+                'acc_kps' => false,
+                'final_status' => 'proses',
+                'exam_invitation_sent_at' => null,
+            ]);
+        }
 
         return response()->json([
             'status' => 'success',
@@ -121,10 +135,26 @@ class CapstoneCoordinatorController extends Controller
     // Menu KPI: Setujui / Belum untuk Ujian
     public function updateKpiApproval(Request $request, $groupId)
     {
-        $request->validate(['kpi_approval' => 'required|in:pending,approved,rejected']);
-
+        $validated = $request->validate(['kpi_approval' => 'required|in:pending,approved,rejected']);
         $group = CapstoneGroup::findOrFail($groupId);
-        $group->update(['kpi_approval' => $request->kpi_approval]);
+        $this->authorizeGroupCoordinator($group);
+        abort_if($validated['kpi_approval'] === 'approved' && (! $group->draft_report_file || ! $group->consultation_card_file), 409, 'Kartu konsultasi dan draft laporan Capstone harus diunggah sebelum KPI disetujui untuk ujian.');
+        $approved = $validated['kpi_approval'] === 'approved';
+        $isSuperAdmin = Auth::user()->hasRole('Super Admin');
+        $role = $isSuperAdmin ? 'Koordinator CD (diwakilkan Super Admin)' : 'Koordinator CD';
+        $changes = [
+            'kpi_approval' => $validated['kpi_approval'],
+        ];
+        if ($approved) {
+            $changes += [
+                'kpi_approved_by_role' => $role,
+                'kpi_approved_by_user_id' => Auth::id(),
+                'kpi_approved_at' => now(),
+                'approved_by_role' => $role,
+                'approved_by_user_id' => Auth::id(),
+            ];
+        }
+        $group->update($changes);
 
         return response()->json([
             'status' => 'success',
@@ -133,22 +163,59 @@ class CapstoneCoordinatorController extends Controller
     }
 
     // Toggle ACC Koordinator & Evaluasi Status Kelayakan Final Selesai
-    public function toggleAccCoordinator($groupId)
+    public function toggleAccCoordinator(Request $request, $groupId)
     {
         $group = CapstoneGroup::findOrFail($groupId);
-        $group->update(['acc_coordinator' => !$group->acc_coordinator]);
-
-        // Cek status final kelayakan selesai jika semua pihak telah ACC
-        if ($group->acc_coordinator && $group->acc_supervisor && $group->acc_kps) {
-            $group->update(['final_status' => 'selesai']);
-        } else {
-            $group->update(['final_status' => 'proses']);
+        $this->authorizeGroupCoordinator($group);
+        $approved = ! $group->acc_coordinator;
+        abort_if($approved && ! $group->final_report_file, 409, 'Laporan final harus diunggah sebelum ACC kelulusan koordinator.');
+        $role = Auth::user()->hasRole('Super Admin') ? 'Koordinator CD (diwakilkan Super Admin)' : 'Koordinator CD';
+        $changes = ['acc_coordinator' => $approved];
+        if ($approved) {
+            $changes += [
+                'coordinator_approved_by_role' => $role,
+                'coordinator_approved_by_user_id' => Auth::id(),
+                'coordinator_approved_at' => now(),
+                'approved_by_role' => $role,
+                'approved_by_user_id' => Auth::id(),
+            ];
         }
+        $group->update($changes);
+        $this->refreshFinalStatus($group);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Status ACC Koordinator berhasil diubah.',
             'acc_coordinator' => $group->acc_coordinator
+        ]);
+    }
+
+    private function authorizeGroupCoordinator(CapstoneGroup $group): void
+    {
+        $user = Auth::user();
+        if ($user?->hasRole('Super Admin')) {
+            return;
+        }
+
+        $expertise = $group->expertise()->first();
+        $dosenId = $user?->id_dosen;
+        abort_unless(
+            $dosenId && $expertise && (
+                $expertise->coordinator_id === $dosenId
+                || $user?->hasAnyRole(['Koordinator CD', 'Koordinator Capstone', 'Koordinator'])
+                    && $expertise->lecturers()->where('dosens.id_dosen', $dosenId)->exists()
+            ),
+            403
+        );
+    }
+
+    private function refreshFinalStatus(CapstoneGroup $group): void
+    {
+        $group->refresh();
+        $group->update([
+            'final_status' => $group->acc_coordinator && $group->acc_supervisor && $group->acc_kps && $group->final_report_file
+                ? 'selesai'
+                : 'proses',
         ]);
     }
 }
