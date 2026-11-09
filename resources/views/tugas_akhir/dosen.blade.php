@@ -2,7 +2,11 @@
 @section('content')
 <div class="container-fluid py-4">
     <h3 class="fw-bold">Penilaian Tugas Akhir</h3>
+    <p class="text-muted">Profil dosen: {{ $dosen->nama_dosen }}{{ $dosen->nidn ? ' ('.$dosen->nidn.')' : '' }}</p>
     <p class="text-muted">Rumus nilai: rata-rata aritmetika sederhana dari nilai P1, P2, dan Penguji. Nilai dihitung setelah ketiga penilai mengisi.</p>
+    @if(!$canAct)
+    <div class="alert alert-info">Mode Super Admin hanya-baca. Nilai dan judul hanya dapat diubah oleh dosen yang ditugaskan.</div>
+    @endif
     @forelse($applications as $application)
     @php
         $role = $application->p1_id === $dosen->id_dosen ? 'P1' : ($application->p2_id === $dosen->id_dosen ? 'P2' : 'PU');
@@ -16,7 +20,7 @@
     <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
         <h5>{{ $application->student?->name }} — {{ $application->expertise_theme }}</h5>
         <div class="small text-muted mb-3">Peran Anda: {{ $role }} · P1 {{ $application->p1?->nama_dosen }} · P2 {{ $application->p2?->nama_dosen ?? 'belum ditetapkan' }} · Penguji {{ $application->examiner?->nama_dosen ?? 'belum ditetapkan' }}</div>
-        @if($role === 'P1')
+        @if($canAct && $role === 'P1')
         <form class="titleForm row g-2 mb-3" data-id="{{ $application->id }}">
             @csrf
             <div class="col-md-9"><input class="form-control" name="title" value="{{ $application->title }}" placeholder="Judul Tugas Akhir" required maxlength="255"></div>
@@ -34,6 +38,7 @@
             $scores = $application->scores->where('assessment_type', $type);
             $average = $scores->count() === 3 ? number_format((float) $scores->avg('score'), 2) : null;
         @endphp
+        @if($canAct)
         <form class="scoreForm border rounded p-3 mb-3" data-id="{{ $application->id }}">
             @csrf<input type="hidden" name="assessment_type" value="{{ $type }}">
             <h6>{{ $label }} — nilai gabungan: {{ $average ?? 'Menunggu P1, P2, dan Penguji lengkap' }}</h6>
@@ -44,6 +49,12 @@
             </div>
             <small class="text-muted">P1: {{ $scores->firstWhere('evaluator_role', 'P1')?->score ?? '—' }} · P2: {{ $scores->firstWhere('evaluator_role', 'P2')?->score ?? '—' }} · PU: {{ $scores->firstWhere('evaluator_role', 'PU')?->score ?? '—' }}</small>
         </form>
+        @else
+        <div class="border rounded p-3 mb-3">
+            <h6>{{ $label }} — nilai gabungan: {{ $average ?? 'Menunggu P1, P2, dan Penguji lengkap' }}</h6>
+            <small class="text-muted">P1: {{ $scores->firstWhere('evaluator_role', 'P1')?->score ?? '—' }} · P2: {{ $scores->firstWhere('evaluator_role', 'P2')?->score ?? '—' }} · PU: {{ $scores->firstWhere('evaluator_role', 'PU')?->score ?? '—' }}</small>
+        </div>
+        @endif
         @endforeach
     </div>
     @empty<div class="alert alert-info">Belum ada mahasiswa yang ditugaskan kepada Anda.</div>@endforelse

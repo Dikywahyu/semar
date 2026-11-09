@@ -53,7 +53,7 @@ class ThesisWorkflowController extends Controller
     private function dosenForUser(?User $user): ?Dosen
     {
         if (! $user || ! $user->hasAnyRole([
-            'Super Admin', 'dosen_pembimbing', 'dosen_penguji', 'dosen', 'Dosen', 'DosenLB', 'Guru Besar',
+            'dosen_pembimbing', 'dosen_penguji', 'dosen', 'Dosen', 'DosenLB', 'Guru Besar',
         ])) {
             return null;
         }
@@ -96,9 +96,26 @@ class ThesisWorkflowController extends Controller
                 ->count() === 2;
     }
 
-    public function studentIndex()
+    public function studentIndex(Request $request)
     {
-        abort_unless(auth()->user()?->hasAnyRole(['mahasiswa', 'Mahasiswa']), 403);
+        $user = auth()->user();
+        $isStudent = $user?->hasAnyRole(['mahasiswa', 'Mahasiswa']) ?? false;
+        abort_unless($isStudent || $this->isSuperAdmin(), 403);
+
+        $studentId = $isStudent ? $user->id : $request->integer('student_id');
+        if (! $studentId) {
+            return view('tugas_akhir.profile_selector', [
+                'kind' => 'mahasiswa',
+                'profiles' => User::role(['mahasiswa', 'Mahasiswa'])->orderBy('name')->get(),
+                'route' => route('thesis.student.index'),
+                'parameter' => 'student_id',
+                'title' => 'Pilih Profil Mahasiswa',
+                'description' => 'Pilih profil untuk melihat progres Tugas Akhir. Akses Super Admin pada halaman ini bersifat hanya-baca.',
+            ]);
+        }
+
+        $student = $isStudent ? $user : User::role(['mahasiswa', 'Mahasiswa'])->findOrFail($studentId);
+        $readOnly = ! $isStudent;
         $semester = $this->activeSemester();
         $application = $semester
             ? ThesisApplication::with([
@@ -107,7 +124,7 @@ class ThesisWorkflowController extends Controller
                 'semhasKpsVerifier', 'semhasApprover', 'taCoordinatorVerifier', 'taKpsVerifier',
                 'taDraftVerifier', 'taFinalApprover',
             ])
-                ->where('student_id', auth()->id())
+                ->where('student_id', $student->id)
                 ->where('semester_id', $semester->id)
                 ->first()
             : null;
@@ -119,7 +136,7 @@ class ThesisWorkflowController extends Controller
                 return $dosen;
             })->filter(fn (Dosen $dosen) => $dosen->active_thesis_count < self::P1_LIMIT);
 
-        return view('tugas_akhir.student', compact('application', 'semester', 'activeP1'));
+        return view('tugas_akhir.student', compact('application', 'semester', 'activeP1', 'readOnly', 'student'));
     }
 
     public function submitProposal(Request $request)
@@ -182,16 +199,31 @@ class ThesisWorkflowController extends Controller
         return view('tugas_akhir.admin', compact('applications', 'semester', 'lecturers', 'load', 'students'));
     }
 
-    public function dosenIndex()
+    public function dosenIndex(Request $request)
     {
-        $dosen = $this->dosenForUser(auth()->user());
-        abort_unless($dosen, 403, 'Profil dosen tidak terhubung ke akun ini.');
+        $linkedDosen = $this->dosenForUser(auth()->user());
+        $dosen = $linkedDosen;
+        if (! $dosen && $this->isSuperAdmin() && $request->filled('id_dosen')) {
+            $dosen = Dosen::query()->where('aktif', true)->findOrFail($request->input('id_dosen'));
+        }
+        if (! $dosen && $this->isSuperAdmin()) {
+            return view('tugas_akhir.profile_selector', [
+                'kind' => 'dosen',
+                'profiles' => Dosen::query()->where('aktif', true)->orderBy('nama_dosen')->get(),
+                'route' => route('thesis.dosen.index'),
+                'parameter' => 'id_dosen',
+                'title' => 'Pilih Profil Dosen',
+                'description' => 'Pilih profil untuk melihat penugasan dan nilai Tugas Akhir. Akses Super Admin pada halaman ini bersifat hanya-baca.',
+            ]);
+        }
+        abort_unless($dosen, 403, 'Profil dosen aktif untuk akun ini tidak ditemukan.');
+        $canAct = $linkedDosen && $linkedDosen->id_dosen === $dosen->id_dosen;
         $applications = ThesisApplication::with(['student', 'p1', 'p2', 'examiner', 'scores'])
             ->where(fn ($query) => $query->where('p1_id', $dosen->id_dosen)->orWhere('p2_id', $dosen->id_dosen)->orWhere('examiner_id', $dosen->id_dosen))
             ->latest()
             ->get();
 
-        return view('tugas_akhir.dosen', compact('applications', 'dosen'));
+        return view('tugas_akhir.dosen', compact('applications', 'dosen', 'canAct'));
     }
 
     public function updateTitle(Request $request, int $applicationId)

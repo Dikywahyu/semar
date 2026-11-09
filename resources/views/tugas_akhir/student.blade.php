@@ -4,10 +4,16 @@
 <div class="container-fluid py-4">
     <h3 class="fw-bold">Tugas Akhir — Sempro, Semhas, Sidang TA</h3>
     <p class="text-muted">Semester aktif: {{ $semester?->nama ?? 'Belum diatur' }}</p>
+    @if($readOnly)
+    <div class="alert alert-info">Mode Super Admin hanya-baca untuk {{ $student->name }}{{ $student->identifier_number ? ' ('.$student->identifier_number.')' : '' }}. Perubahan data dan unggahan harus dilakukan melalui akun mahasiswa terkait.</div>
+    @endif
 
     @if(!$semester)
     <div class="alert alert-warning">Pengajuan belum dapat dilakukan karena semester aktif belum ditetapkan.</div>
     @elseif(!$application)
+    @if($readOnly)
+    <div class="alert alert-secondary">Profil mahasiswa ini belum memiliki pengajuan Tugas Akhir pada semester aktif.</div>
+    @else
     <div class="card border-0 shadow-sm rounded-4 p-4">
         <h5>Pengajuan Seminar Proposal</h5>
         <form id="proposalForm" class="row g-3">
@@ -29,6 +35,7 @@
             <div class="col-12"><button class="btn btn-primary" @disabled($activeP1->isEmpty())>Ajukan Sempro</button></div>
         </form>
     </div>
+    @endif
     @else
     @php
         $documentLabels = [
@@ -109,6 +116,7 @@
     </div>
 
     <div class="row g-4">
+        @if(!$readOnly)
         <div class="col-lg-5">
             <div class="card border-0 shadow-sm rounded-4 p-4">
                 <h5>Unggah Dokumen</h5>
@@ -144,6 +152,7 @@
                 @endif
             </div>
         </div>
+        @endif
         <div class="col-lg-7">
             <div class="card border-0 shadow-sm rounded-4 p-4">
                 <h5>Status Dokumen</h5>
