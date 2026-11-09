@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('thesis_applications', function (Blueprint $table) {
+        if (! Schema::hasTable('thesis_applications')) {
+            Schema::create('thesis_applications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('student_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('semester_id')->nullable()->constrained('semesters')->restrictOnDelete();
@@ -72,10 +73,12 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['student_id', 'semester_id']);
-            $table->index(['p1_id', 'status']);
-        });
+                $table->index(['p1_id', 'status']);
+            });
+        }
 
-        Schema::create('thesis_documents', function (Blueprint $table) {
+        if (! Schema::hasTable('thesis_documents')) {
+            Schema::create('thesis_documents', function (Blueprint $table) {
             $table->id();
             $table->foreignId('thesis_application_id')->constrained('thesis_applications')->cascadeOnDelete();
             $table->string('document_type', 60);
@@ -86,10 +89,12 @@ return new class extends Migration
             $table->string('verified_by_role')->nullable();
             $table->timestamp('verified_at')->nullable();
             $table->timestamps();
-            $table->unique(['thesis_application_id', 'document_type'], 'thesis_docs_app_type_uq');
-        });
+                $table->unique(['thesis_application_id', 'document_type'], 'thesis_docs_app_type_uq');
+            });
+        }
 
-        Schema::create('thesis_scores', function (Blueprint $table) {
+        if (! Schema::hasTable('thesis_scores')) {
+            Schema::create('thesis_scores', function (Blueprint $table) {
             $table->id();
             $table->foreignId('thesis_application_id')->constrained('thesis_applications')->cascadeOnDelete();
             $table->string('assessment_type', 40);
@@ -99,8 +104,23 @@ return new class extends Migration
             $table->decimal('score', 5, 2);
             $table->text('notes')->nullable();
             $table->timestamps();
-            $table->unique(['thesis_application_id', 'assessment_type', 'evaluator_role'], 'thesis_scores_app_type_role_uq');
-        });
+                $table->unique(['thesis_application_id', 'assessment_type', 'evaluator_role'], 'thesis_scores_app_type_role_uq');
+            });
+        }
+
+        if (Schema::hasTable('thesis_documents')
+            && ! Schema::hasIndex('thesis_documents', ['thesis_application_id', 'document_type'], 'unique')) {
+            Schema::table('thesis_documents', function (Blueprint $table) {
+                $table->unique(['thesis_application_id', 'document_type'], 'thesis_docs_app_type_uq');
+            });
+        }
+
+        if (Schema::hasTable('thesis_scores')
+            && ! Schema::hasIndex('thesis_scores', ['thesis_application_id', 'assessment_type', 'evaluator_role'], 'unique')) {
+            Schema::table('thesis_scores', function (Blueprint $table) {
+                $table->unique(['thesis_application_id', 'assessment_type', 'evaluator_role'], 'thesis_scores_app_type_role_uq');
+            });
+        }
     }
 
     public function down(): void
