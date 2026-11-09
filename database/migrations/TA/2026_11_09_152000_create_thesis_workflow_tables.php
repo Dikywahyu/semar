@@ -86,7 +86,7 @@ return new class extends Migration
             $table->string('verified_by_role')->nullable();
             $table->timestamp('verified_at')->nullable();
             $table->timestamps();
-            $table->unique(['thesis_application_id', 'document_type']);
+            $table->unique(['thesis_application_id', 'document_type'], 'thesis_docs_app_type_uq');
         });
 
         Schema::create('thesis_scores', function (Blueprint $table) {
@@ -99,7 +99,7 @@ return new class extends Migration
             $table->decimal('score', 5, 2);
             $table->text('notes')->nullable();
             $table->timestamps();
-            $table->unique(['thesis_application_id', 'assessment_type', 'evaluator_role']);
+            $table->unique(['thesis_application_id', 'assessment_type', 'evaluator_role'], 'thesis_scores_app_type_role_uq');
         });
     }
 
