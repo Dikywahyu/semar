@@ -1,5 +1,39 @@
 @extends('layouts.app')
 
+@push('styles')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+<style>
+    .pkl-page .select2-container--bootstrap-5 .select2-selection {
+        border-color: #dce3ed;
+        border-radius: 10px;
+        min-height: 38px;
+    }
+
+    .pkl-page .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__rendered {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .25rem;
+        padding: .25rem .4rem;
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(function () {
+        $('.pkl-examiner-select').each(function () {
+            $(this).select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: $(this).data('placeholder') || 'Pilih dosen penguji',
+                closeOnSelect: false
+            });
+        });
+    });
+</script>
+@endpush
 
 @section('content')
 <style>
@@ -592,6 +626,62 @@
             'surat_balasan_instansi' => ['Surat Balasan Instansi', $genericDocuments->get('surat_balasan_instansi')?->path_berkas],
             'acc_pembimbing_awal' => ['ACC Pembimbing', $genericDocuments->get('acc_pembimbing_awal')?->path_berkas],
         ];
+        $arsipLabels = [
+            'proposal' => 'Proposal ke Tempat PKL',
+            'surat_jalan_pkl' => 'Surat Jalan PKL',
+            'surat_balasan_instansi' => 'Surat Balasan Instansi',
+            'acc_pembimbing_awal' => 'ACC Pembimbing Awal',
+            'berkas_bukti_survei' => 'Bukti Survei PKL',
+            'berkas_surat_balasan' => 'Surat Balasan Instansi (Arsip Lama)',
+            'berkas_logbook' => 'Logbook PKL',
+            'draft_laporan' => 'Draft Laporan PKL',
+            'kartu_konsultasi' => 'Kartu Konsultasi',
+            'transkrip_sementara' => 'Transkrip Sementara',
+            'berkas_nilai_pamong' => 'Lembar Penilaian Pamong',
+            'berkas_persetujuan_pamong' => 'Surat Persetujuan Pamong',
+            'formulir_pendaftaran_ujian' => 'Formulir Pendaftaran Ujian',
+            'berita_acara_ujian' => 'Berita Acara Ujian',
+            'formulir_nilai' => 'Formulir Nilai',
+            'permohonan_revisi' => 'Formulir Permohonan Revisi',
+            'laporan_final' => 'Laporan Final',
+            'lampiran_teknis' => 'Lampiran Teknis (Gambar AutoCAD / RAB)',
+            'acc_pembimbing_akhir' => 'ACC Pembimbing Akhir',
+            'rekap_nilai' => 'Rekap Nilai',
+            'berkas_laporan_revisi' => 'Laporan Revisi',
+            'berkas_lembar_pengesahan' => 'Lembar Pengesahan',
+        ];
+        $arsipDokumen = $genericDocuments
+            ->filter(fn ($document) => filled($document->path_berkas))
+            ->mapWithKeys(fn ($document) => [
+                $document->jenis_berkas => [
+                    'label' => $arsipLabels[$document->jenis_berkas] ?? ucfirst(str_replace('_', ' ', $document->jenis_berkas)),
+                    'path' => $document->path_berkas,
+                    'status' => $document->status_verifikasi ?: 'Belum diverifikasi',
+                ],
+            ]);
+        foreach ([
+            'berkas_proposal' => ['Proposal ke Tempat PKL', 'proposal'],
+            'surat_jalan_pkl' => ['Surat Jalan PKL', 'surat_jalan_pkl'],
+            'surat_balasan_instansi' => ['Surat Balasan Instansi', 'surat_balasan_instansi'],
+            'acc_pembimbing_awal' => ['ACC Pembimbing Awal', 'acc_pembimbing_awal'],
+            'berkas_bukti_survei' => ['Bukti Survei PKL', 'berkas_bukti_survei'],
+            'berkas_surat_balasan' => ['Surat Balasan Instansi (Arsip Lama)', 'berkas_surat_balasan'],
+            'berkas_logbook' => ['Logbook PKL', 'berkas_logbook'],
+            'berkas_draft_laporan' => ['Draft Laporan PKL', 'draft_laporan'],
+            'berkas_kartu_bimbingan' => ['Kartu Konsultasi', 'kartu_konsultasi'],
+            'berkas_nilai_pamong' => ['Lembar Penilaian Pamong', 'berkas_nilai_pamong'],
+            'berkas_persetujuan_pamong' => ['Surat Persetujuan Pamong', 'berkas_persetujuan_pamong'],
+            'berkas_laporan_revisi' => ['Laporan Revisi', 'berkas_laporan_revisi'],
+            'berkas_lembar_pengesahan' => ['Lembar Pengesahan', 'berkas_lembar_pengesahan'],
+        ] as $field => [$label, $kind]) {
+            if (filled($pengajuan->{$field}) && ! $arsipDokumen->has($kind)) {
+                $arsipDokumen->put($kind, [
+                    'label' => $label,
+                    'path' => $pengajuan->{$field},
+                    'status' => 'Tersimpan',
+                ]);
+            }
+        }
         @endphp
 
         @if(in_array($pengajuan->status, ['Pengajuan & Verifikasi Admin', 'Pelaksanaan PKL & Bimbingan'], true))
@@ -646,7 +736,7 @@
         </div>
         @endif
 
-        @if(in_array($pengajuan->status, ['Dijadwalkan Ujian', 'Ujian Seminar & Penilaian', 'Revisi Laporan'], true))
+        @if($pengajuan->status === 'Revisi Laporan')
         <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-warning">
             <h5 class="fw-bold mb-1"><i class="ti ti-file-check text-warning me-2"></i>Dokumen Akhir PKL</h5>
             <p class="text-muted small">Unggah semua dokumen ujian dan hasil revisi. Kelulusan diterbitkan setelah ACC akhir pembimbing dan nilai pembimbing tersimpan.</p>
@@ -688,6 +778,31 @@
                 @if($pengajuan->final_approved_at) pada {{ $pengajuan->final_approved_at->format('d M Y H:i') }} @endif.
             </div>
             @endif
+
+        </div>
+        @endif
+
+        @if($pengajuan->status === 'Selesai')
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-success">
+            <h5 class="fw-bold mb-1"><i class="ti ti-archive text-success me-2"></i>Arsip Seluruh Berkas PKL</h5>
+            <p class="text-muted small mb-3">Seluruh berkas yang pernah diunggah selama proses PKL tersedia untuk dilihat atau diunduh.</p>
+            <div class="row g-2">
+                @forelse($arsipDokumen as $document)
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center justify-content-between gap-2 border rounded-3 p-3 h-100">
+                        <div>
+                            <div class="fw-semibold small">{{ $document['label'] }}</div>
+                            <span class="text-muted small">{{ $document['status'] }}</span>
+                        </div>
+                        <a class="btn btn-sm btn-outline-primary flex-shrink-0" href="{{ url('pkl/view-file/' . $document['path']) }}" target="_blank" rel="noopener">
+                            <i class="ti ti-eye me-1"></i>Lihat
+                        </a>
+                    </div>
+                </div>
+                @empty
+                <div class="col-12"><div class="alert alert-light border mb-0">Belum ada berkas yang tersimpan.</div></div>
+                @endforelse
+            </div>
         </div>
         @endif
 
@@ -823,8 +938,10 @@
                 <h6 class="fw-bold small mb-3">{{ $pengajuan->tanggal_seminar ? 'Usulkan Revisi Jadwal & Penguji' : 'Usulkan Jadwal & Penguji' }}</h6>
                 <label class="form-label small">Tanggal dan waktu ujian</label>
                 <input type="datetime-local" name="tanggal_seminar" value="{{ $pengajuan->usulan_tanggal_seminar?->format('Y-m-d\TH:i') ?? $pengajuan->tanggal_seminar?->format('Y-m-d\TH:i') }}" class="form-control form-control-sm mb-2" min="{{ now()->addHour()->format('Y-m-d\TH:i') }}" required>
+                <label class="form-label small">Usulan ruang ujian</label>
+                <input type="text" name="ruangan_seminar" value="{{ $pengajuan->usulan_ruangan_seminar ?? $pengajuan->ruangan_seminar }}" class="form-control form-control-sm mb-2" maxlength="255" placeholder="Contoh: Ruang Sidang 2 / tautan konferensi" required>
                 <label class="form-label small">Usulan dosen penguji</label>
-                <select name="penguji_ids[]" class="form-select form-select-sm mb-2" multiple size="4" required>
+                <select name="penguji_ids[]" class="form-select form-select-sm mb-2 pkl-examiner-select" multiple data-placeholder="Pilih satu atau beberapa dosen penguji" required>
                     @foreach($dosensPenguji as $dosenPilihan)
                     <option value="{{ $dosenPilihan->id_dosen }}" @selected(collect($pengajuan->usulan_dosen_penguji ?? [])->contains(fn ($penguji) => (string) data_get($penguji, 'dosen_id') === (string) $dosenPilihan->id_dosen) || collect($pengajuan->usulan_dosen_penguji ?? [])->isEmpty() && $pengajuan->dosenPenguji->contains('id_dosen', $dosenPilihan->id_dosen))>{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>
                     @endforeach

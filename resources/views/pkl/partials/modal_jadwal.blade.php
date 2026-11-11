@@ -134,7 +134,7 @@
                     $('#jadwal_id').val(data.id);
                     const scheduleDate = data.usulan_tanggal_seminar || data.tanggal_seminar || '';
                     $('#tanggal_seminar').val(scheduleDate ? scheduleDate.replace(' ', 'T').slice(0, 16) : '');
-                    $('#ruangan_seminar').val(data.ruangan_seminar);
+                    $('#ruangan_seminar').val(data.usulan_ruangan_seminar || data.ruangan_seminar || '');
 
                     // Reset container penguji
                     $('#listPengujiContainer').empty();

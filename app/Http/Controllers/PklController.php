@@ -155,7 +155,7 @@ class PklController extends Controller
         $allowedStageStatus = match ($tahap) {
             1 => [self::STATUS_PENGAJUAN, self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI],
             2 => [self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI],
-            3 => [self::STATUS_UJIAN, self::STATUS_SEMINAR, self::STATUS_REVISI],
+            3 => [self::STATUS_REVISI],
             default => abort(404),
         };
         abort_unless(in_array($pengajuan->status, $allowedStageStatus, true), 409, 'Unggahan dokumen tidak tersedia pada status PKL saat ini.');
@@ -326,6 +326,7 @@ class PklController extends Controller
         abort_unless($pengajuan->status === self::STATUS_UJIAN, 409, 'Usulan atau revisi jadwal tersedia sebelum ujian dimulai.');
         $validated = $request->validate([
             'tanggal_seminar' => ['required', 'date', 'after:now'],
+            'ruangan_seminar' => ['required', 'string', 'max:255'],
             'catatan_usulan_jadwal' => ['nullable', 'string', 'max:2000'],
             'penguji_ids' => ['required', 'array', 'min:1'],
             'penguji_ids.*' => ['required', 'distinct', Rule::exists('dosens', 'id_dosen')->where('aktif', true)],
@@ -339,11 +340,12 @@ class PklController extends Controller
         )->all();
         $pengajuan->update([
             'usulan_tanggal_seminar' => $validated['tanggal_seminar'],
+            'usulan_ruangan_seminar' => $validated['ruangan_seminar'],
             'catatan_usulan_jadwal' => $validated['catatan_usulan_jadwal'] ?? null,
             'usulan_dosen_penguji' => $usulanPenguji,
         ]);
         $namaPenguji = Dosen::query()->whereIn('id_dosen', $validated['penguji_ids'])->pluck('nama_dosen')->implode(', ');
-        $this->logPklActivity($pengajuan, 'Usulan Mahasiswa', 'Mahasiswa ' . (auth()->user()->name ?? '') . ' mengusulkan atau meminta revisi tanggal ujian menjadi ' . $validated['tanggal_seminar'] . '. Usulan dosen penguji: ' . $namaPenguji . (($validated['catatan_usulan_jadwal'] ?? '') !== '' ? '. Catatan: ' . $validated['catatan_usulan_jadwal'] : '') . '. Penetapan jadwal resmi, ruangan, dan penguji menunggu admin. Usulan sebelumnya: ' . ($tanggalSebelumnya ?: '-') . '.');
+        $this->logPklActivity($pengajuan, 'Usulan Mahasiswa', 'Mahasiswa ' . (auth()->user()->name ?? '') . ' mengusulkan atau meminta revisi jadwal ujian menjadi ' . $validated['tanggal_seminar'] . ' di ' . $validated['ruangan_seminar'] . '. Usulan dosen penguji: ' . $namaPenguji . (($validated['catatan_usulan_jadwal'] ?? '') !== '' ? '. Catatan: ' . $validated['catatan_usulan_jadwal'] : '') . '. Penetapan jadwal resmi dan penguji menunggu admin. Usulan sebelumnya: ' . ($tanggalSebelumnya ?: '-') . '.');
 
         return back()->with('success', 'Usulan tanggal ujian tersimpan. Jadwal dan ruangan resmi akan ditetapkan admin.');
     }
@@ -371,7 +373,7 @@ class PklController extends Controller
         $allowed = match ($stage) {
             1 => in_array($pengajuan->status, [self::STATUS_PENGAJUAN, self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI], true),
             2 => in_array($pengajuan->status, [self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI], true),
-            3 => in_array($pengajuan->status, [self::STATUS_UJIAN, self::STATUS_SEMINAR, self::STATUS_REVISI], true),
+            3 => $pengajuan->status === self::STATUS_REVISI,
             default => false,
         };
         abort_unless($allowed, 409, 'Unggahan dokumen tidak tersedia pada status PKL saat ini.');
@@ -414,6 +416,7 @@ class PklController extends Controller
                 'schedule_approved_by' => auth()->id(),
                 'schedule_approved_at' => now(),
                 'usulan_tanggal_seminar' => null,
+                'usulan_ruangan_seminar' => null,
                 'catatan_usulan_jadwal' => null,
                 'usulan_dosen_penguji' => null,
             ]);
@@ -659,7 +662,7 @@ class PklController extends Controller
         $preExamFields = ['berkas_kartu_bimbingan', 'berkas_draft_laporan', 'transkrip_sementara'];
         $isFinalDocument = ! in_array($field, array_merge($earlyStageFields, $preExamFields), true);
         $allowedStatuses = $isFinalDocument
-            ? [self::STATUS_UJIAN, self::STATUS_SEMINAR, self::STATUS_REVISI]
+            ? [self::STATUS_REVISI]
             : ($field === 'transkrip_sementara' || in_array($field, ['berkas_kartu_bimbingan', 'berkas_draft_laporan'], true)
                 ? [self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI]
                 : [self::STATUS_PENGAJUAN, self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI]);
@@ -758,7 +761,7 @@ class PklController extends Controller
             preg_match('/Usulan ruangan:\\s*([^;]+)/u', $deskripsi, $ruangan);
             preg_match('/usulan dosen pembimbing:\\s*(.+?)(?:;|\\.|$)/u', $deskripsi, $pembimbing);
             $pengajuan->setAttribute('usulan_tanggal_seminar', $pengajuan->usulan_tanggal_seminar?->format('Y-m-d\TH:i') ?: trim($tanggal[1] ?? ''));
-            $pengajuan->setAttribute('usulan_ruangan_seminar', trim($ruangan[1] ?? ''));
+            $pengajuan->setAttribute('usulan_ruangan_seminar', $pengajuan->usulan_ruangan_seminar ?: trim($ruangan[1] ?? ''));
             $pengajuan->setAttribute('usulan_nama_pembimbing', trim($pembimbing[1] ?? ''));
         });
 
@@ -899,6 +902,7 @@ class PklController extends Controller
             'schedule_approved_by' => auth()->id(),
             'schedule_approved_at' => now(),
             'usulan_tanggal_seminar' => null,
+            'usulan_ruangan_seminar' => null,
             'catatan_usulan_jadwal' => null,
         ]);
         $dokumenUjianLengkap = $this->examDocumentsApproved($pengajuan);
@@ -1009,6 +1013,7 @@ class PklController extends Controller
                 'schedule_approved_by' => auth()->id(),
                 'schedule_approved_at' => now(),
                 'usulan_tanggal_seminar' => null,
+                'usulan_ruangan_seminar' => null,
                 'catatan_usulan_jadwal' => null,
                 'usulan_dosen_penguji' => null,
             ]);

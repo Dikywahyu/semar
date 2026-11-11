@@ -137,6 +137,8 @@
                                 'surat_jalan_pkl' => 'Surat Jalan PKL',
                                 'surat_balasan_instansi' => 'Surat Balasan Instansi',
                                 'acc_pembimbing_awal' => 'ACC Pembimbing Awal',
+                                'berkas_bukti_survei' => 'Bukti Survei PKL',
+                                'berkas_surat_balasan' => 'Surat Balasan Instansi (Arsip Lama)',
                                 'berkas_logbook' => 'Logbook PKL',
                                 'berkas_nilai_pamong' => 'Lembar Penilaian Pamong',
                                 'berkas_persetujuan_pamong' => 'Surat Persetujuan Pamong',
@@ -166,6 +168,8 @@
                                 ->values();
                             foreach ([
                                 'berkas_proposal' => ['Proposal ke Tempat PKL', 'proposal'],
+                                'berkas_bukti_survei' => ['Bukti Survei PKL', 'berkas_bukti_survei'],
+                                'berkas_surat_balasan' => ['Surat Balasan Instansi (Arsip Lama)', 'berkas_surat_balasan'],
                                 'berkas_logbook' => ['Logbook PKL', 'berkas_logbook'],
                                 'berkas_draft_laporan' => ['Draft Laporan PKL', 'draft_laporan'],
                                 'berkas_kartu_bimbingan' => ['Kartu Konsultasi', 'kartu_konsultasi'],

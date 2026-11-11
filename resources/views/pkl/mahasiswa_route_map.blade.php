@@ -53,6 +53,16 @@
     };
 @endphp
 
+@push('styles')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+<style>
+    .route-map .select2-container--bootstrap-5 {
+        width: 100% !important;
+    }
+</style>
+@endpush
+
 <style>
     .route-map { --rm-ink:#26364b; --rm-muted:#7d8da2; --rm-line:#e7edf5; --rm-primary:#5b7cff; color:var(--rm-ink); background:linear-gradient(135deg,#f6f8fd 0%,#f0f4fa 100%); min-height:100vh; padding:1.5rem!important; }
     .route-map .rmap-card { background:#fff; border:1px solid rgba(226,232,240,.7); border-radius:1.1rem; box-shadow:0 5px 16px rgba(34,55,90,.055); }
@@ -90,6 +100,7 @@
             <h2 class="mb-2 text-lg font-bold">Belum ada data pengajuan PKL</h2>
             <p class="mb-0 text-sm text-slate-500">Pilih pengajuan dari daftar atau buat pengajuan PKL untuk melihat alur, jadwal, dokumen, dan nilai.</p>
         </div>
+        @endif
     @endif
     @if ($isAcademicViewer)
         <section class="rmap-card mb-6 p-5 sm:p-6">
@@ -291,8 +302,9 @@
                     @if ($showMahasiswa && $pkl && $pkl->status === 'Dijadwalkan Ujian')
                         <form action="{{ route('pkl.route-map.schedule.propose', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="space-y-3">@csrf
                             <label class="block text-xs font-semibold text-slate-600">Usulan tanggal & waktu ujian</label><input class="rmap-input" type="datetime-local" name="tanggal_seminar" value="{{ $pkl->usulan_tanggal_seminar?->format('Y-m-d\TH:i') ?? $pkl->tanggal_seminar?->format('Y-m-d\TH:i') }}" min="{{ now()->addHour()->format('Y-m-d\TH:i') }}" required>
+                            <label class="block text-xs font-semibold text-slate-600">Usulan ruang seminar</label><input class="rmap-input" name="ruangan_seminar" value="{{ $pkl->usulan_ruangan_seminar ?? $pkl->ruangan_seminar }}" maxlength="255" placeholder="Contoh: Ruang Sidang 2 / tautan konferensi" required>
                             <label class="block text-xs font-semibold text-slate-600">Usulan dosen penguji (pilih satu atau beberapa)</label>
-                            <select class="rmap-input" name="penguji_ids[]" multiple required>
+                            <select class="rmap-input pkl-examiner-select" name="penguji_ids[]" multiple data-placeholder="Pilih satu atau beberapa dosen penguji" required>
                                 @foreach($dosensPenguji as $dosenPilihan)
                                     <option value="{{ $dosenPilihan->id_dosen }}" @selected(collect($pkl->usulan_dosen_penguji ?? [])->contains(fn ($penguji) => (string) data_get($penguji, 'dosen_id') === (string) $dosenPilihan->id_dosen) || collect($pkl->usulan_dosen_penguji ?? [])->isEmpty() && $pkl->dosenPenguji->contains('id_dosen', $dosenPilihan->id_dosen))>{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>
                                 @endforeach
@@ -312,9 +324,9 @@
                 @if ($pkl && auth()->user()?->hasAnyRole(['admin', 'Admin', 'Super Admin', 'Kaprodi']))
                     <div class="rounded-xl bg-indigo-50/70 p-4"><h3 class="mb-3 text-sm font-bold">Penetapan Jadwal & Ruangan</h3>
                         <form action="{{ route('pkl.route-map.schedule.set', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="space-y-3">@csrf
-                            <input class="rmap-input" type="datetime-local" name="tanggal_seminar" value="{{ $pkl->tanggal_seminar?->format('Y-m-d\TH:i') ?? $pkl->usulan_tanggal_seminar?->format('Y-m-d\TH:i') ?? '' }}" required><input class="rmap-input" name="ruangan_seminar" value="{{ $pkl->ruangan_seminar ?? '' }}" placeholder="Ruangan seminar" required>
+                            <input class="rmap-input" type="datetime-local" name="tanggal_seminar" value="{{ $pkl->usulan_tanggal_seminar?->format('Y-m-d\TH:i') ?? $pkl->tanggal_seminar?->format('Y-m-d\TH:i') ?? '' }}" required><input class="rmap-input" name="ruangan_seminar" value="{{ $pkl->usulan_ruangan_seminar ?? $pkl->ruangan_seminar ?? '' }}" placeholder="Ruangan seminar" required>
                             <label class="block text-xs font-semibold text-slate-600">Dosen penguji</label>
-                            <select class="rmap-input" name="penguji_ids[]" multiple required>
+                            <select class="rmap-input pkl-examiner-select" name="penguji_ids[]" multiple data-placeholder="Pilih dosen penguji" required>
                                 @foreach($dosensPenguji as $dosenPilihan)
                                     <option value="{{ $dosenPilihan->id_dosen }}" @selected(collect($pkl->usulan_dosen_penguji ?? [])->contains(fn ($penguji) => (string) data_get($penguji, 'dosen_id') === (string) $dosenPilihan->id_dosen) || collect($pkl->usulan_dosen_penguji ?? [])->isEmpty() && $pkl->dosenPenguji->contains('id_dosen', $dosenPilihan->id_dosen))>{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>
                                 @endforeach
@@ -325,7 +337,7 @@
                         <form action="{{ route('pkl.route-map.schedule.set', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="space-y-3">@csrf<input type="hidden" name="penjadwalan_ulang" value="1">
                             <input class="rmap-input" type="datetime-local" name="tanggal_seminar_baru" required><input class="rmap-input" name="ruangan_seminar_baru" placeholder="Ruangan baru" required>
                             <label class="block text-xs font-semibold text-slate-600">Dosen penguji</label>
-                            <select class="rmap-input" name="penguji_ids[]" multiple required>
+                            <select class="rmap-input pkl-examiner-select" name="penguji_ids[]" multiple data-placeholder="Pilih dosen penguji" required>
                                 @foreach($dosensPenguji as $dosenPilihan)
                                     <option value="{{ $dosenPilihan->id_dosen }}" @selected($pkl->dosenPenguji->contains('id_dosen', $dosenPilihan->id_dosen))>{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>
                                 @endforeach
@@ -355,8 +367,9 @@
                         @if (!empty($dokumenFormulir[$file]))<a class="mb-2 flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm font-semibold text-indigo-700" href="{{ route('pkl.route-map.document', ['dokumen' => $file]) }}"><span>{{ $label }}</span><span>↓</span></a>@else<div class="mb-2 flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-500"><span>{{ $label }}</span><span>Belum tersedia</span></div>@endif
                     @endforeach
             </div>
-            <div class="rounded-xl border border-slate-200 p-4"><h3 class="mb-3 text-sm font-bold">Unggah Berkas Akhir</h3>
-                @if ($showMahasiswa)
+            @if (!$showMahasiswa || in_array($pkl?->status, ['Revisi Laporan', 'Selesai'], true))
+            <div class="rounded-xl border border-slate-200 p-4"><h3 class="mb-3 text-sm font-bold">Dokumen Akhir PKL</h3>
+                @if ($showMahasiswa && $pkl?->status === 'Revisi Laporan')
                     @foreach ([['formulir_pendaftaran_ujian','Formulir Pendaftaran Ujian'],['berita_acara_ujian','Berita Acara Ujian'],['formulir_nilai','Formulir Nilai'],['permohonan_revisi','Formulir Permohonan Revisi'],['laporan_final','Laporan Final'],['lampiran_teknis','Lampiran Teknis (AutoCAD / RAB)'],['acc_pembimbing_akhir','ACC Pembimbing Akhir'],['rekap_nilai','Rekap Nilai']] as [$key,$label])
                         @php $doc = $pkl?->berkasSeminar?->firstWhere('jenis_berkas', $key); @endphp
                         <form action="{{ $routeMapUpload3 }}" method="POST" enctype="multipart/form-data" class="mb-3 rounded-lg border border-slate-200 p-3">@csrf<input type="hidden" name="jenis_dokumen" value="{{ $key }}">
@@ -364,10 +377,73 @@
                             <div class="flex items-center justify-between gap-2"><span class="text-xs text-slate-500">{{ $doc?->status_verifikasi ?? 'Belum diunggah' }}</span><div class="flex gap-2">@if($doc)<a class="rmap-btn rmap-btn-secondary py-2" href="{{ route('pkl.file', ['path' => $doc->path_berkas]) }}" target="_blank">Lihat</a>@endif<button class="rmap-btn rmap-btn-primary py-2" type="submit">Unggah</button></div></div>
                         </form>
                     @endforeach
+                @elseif ($showMahasiswa && $pkl?->status === 'Selesai')
+                    @php
+                        $archiveLabels = [
+                            'proposal' => 'Proposal ke Tempat PKL',
+                            'surat_jalan_pkl' => 'Surat Jalan PKL',
+                            'surat_balasan_instansi' => 'Surat Balasan Instansi',
+                            'acc_pembimbing_awal' => 'ACC Pembimbing Awal',
+                            'berkas_bukti_survei' => 'Bukti Survei PKL',
+                            'berkas_surat_balasan' => 'Surat Balasan Instansi (Arsip Lama)',
+                            'draft_laporan' => 'Draft Laporan PKL',
+                            'kartu_konsultasi' => 'Kartu Konsultasi',
+                            'transkrip_sementara' => 'Transkrip Sementara',
+                            'berkas_logbook' => 'Logbook PKL',
+                            'berkas_nilai_pamong' => 'Lembar Penilaian Pamong',
+                            'berkas_persetujuan_pamong' => 'Surat Persetujuan Pamong',
+                            'formulir_pendaftaran_ujian' => 'Formulir Pendaftaran Ujian',
+                            'berita_acara_ujian' => 'Berita Acara Ujian',
+                            'formulir_nilai' => 'Formulir Nilai',
+                            'permohonan_revisi' => 'Formulir Permohonan Revisi',
+                            'laporan_final' => 'Laporan Final',
+                            'lampiran_teknis' => 'Lampiran Teknis',
+                            'acc_pembimbing_akhir' => 'ACC Pembimbing Akhir',
+                            'rekap_nilai' => 'Rekap Nilai',
+                            'berkas_laporan_revisi' => 'Laporan Revisi',
+                            'berkas_lembar_pengesahan' => 'Lembar Pengesahan',
+                        ];
+                        $archiveDocuments = $pkl->berkasSeminar
+                            ->filter(fn ($document) => filled($document->path_berkas))
+                            ->keyBy('jenis_berkas');
+                        foreach ([
+                            'berkas_proposal' => 'proposal',
+                            'surat_jalan_pkl' => 'surat_jalan_pkl',
+                            'surat_balasan_instansi' => 'surat_balasan_instansi',
+                            'acc_pembimbing_awal' => 'acc_pembimbing_awal',
+                            'berkas_draft_laporan' => 'draft_laporan',
+                            'berkas_kartu_bimbingan' => 'kartu_konsultasi',
+                            'berkas_logbook' => 'berkas_logbook',
+                            'berkas_nilai_pamong' => 'berkas_nilai_pamong',
+                            'berkas_persetujuan_pamong' => 'berkas_persetujuan_pamong',
+                            'berkas_bukti_survei' => 'berkas_bukti_survei',
+                            'berkas_surat_balasan' => 'berkas_surat_balasan',
+                            'berkas_laporan_revisi' => 'berkas_laporan_revisi',
+                            'berkas_lembar_pengesahan' => 'berkas_lembar_pengesahan',
+                        ] as $field => $kind) {
+                            if (filled($pkl->{$field}) && ! $archiveDocuments->has($kind)) {
+                                $archiveDocuments->put($kind, (object) [
+                                    'jenis_berkas' => $kind,
+                                    'path_berkas' => $pkl->{$field},
+                                    'status_verifikasi' => 'Tersimpan',
+                                ]);
+                            }
+                        }
+                    @endphp
+                    @forelse ($archiveDocuments as $kind => $document)
+                        <a class="mb-2 flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm font-semibold text-indigo-700" href="{{ route('pkl.file', ['path' => $document->path_berkas]) }}" target="_blank" rel="noopener">
+                            <span>{{ $archiveLabels[$kind] ?? ucfirst(str_replace('_', ' ', $kind)) }} · {{ $document->status_verifikasi ?: 'Tersimpan' }}</span><span>↓</span>
+                        </a>
+                    @empty
+                        <p class="mb-0 text-sm text-slate-500">Belum ada berkas yang tersimpan.</p>
+                    @endforelse
+                @elseif ($showMahasiswa)
+                    <p class="mb-0 text-sm text-slate-500">Unggah berkas akhir tersedia setelah ujian dan masuk ke tahap Revisi Laporan.</p>
                 @else
                     @foreach ([['berkas_laporan_revisi','Laporan Revisi'],['berkas_lembar_pengesahan','Lembar Pengesahan']] as [$key,$label])@if($pkl?->{$key})<a class="mb-2 block text-sm font-semibold text-indigo-700 underline" href="{{ route('pkl.file', ['path' => $pkl->{$key}]) }}" target="_blank" rel="noopener">{{ $label }}</a>@endif @endforeach
                 @endif
             </div>
+            @endif
             <div class="rounded-xl border border-slate-200 p-4"><h3 class="mb-3 text-sm font-bold">Nilai & Validasi Revisi</h3>
                 @if ($pkl && ($canPerformPembimbingActions || $canPerformPengujiActions))
                     <form action="{{ route('pkl.route-map.grade', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="space-y-3">@csrf<input type="hidden" name="kategori_penilai" value="{{ $showPembimbing ? 'Pembimbing' : 'Penguji' }}">
@@ -401,3 +477,19 @@
     </section>
 </div>
 @endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(function () {
+        $('.pkl-examiner-select').each(function () {
+            $(this).select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: $(this).data('placeholder') || 'Pilih dosen penguji',
+                closeOnSelect: false
+            });
+        });
+    });
+</script>
+@endpush

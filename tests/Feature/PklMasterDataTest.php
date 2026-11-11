@@ -38,6 +38,7 @@ class PklMasterDataTest extends TestCase
         $this->assertSame($dosen->id_dosen, $pengajuan->dosenPembimbing->id_dosen);
         $this->assertSame($mahasiswa->id_registrasi_mahasiswa, $pengajuan->mahasiswaRegistrasi->id_registrasi_mahasiswa);
         $this->assertTrue(Schema::hasColumn('pengajuan_pkl', 'berkas_proposal'));
+        $this->assertTrue(Schema::hasColumn('pengajuan_pkl', 'usulan_ruangan_seminar'));
         $this->assertTrue(Schema::hasColumn('pengajuan_pkl', 'unit_kerja'));
         $this->assertTrue(Schema::hasColumn('komponen_penilaian_pkl', 'id_semester'));
         $this->assertTrue(Schema::hasColumn('komponen_penilaian_pkl', 'bobot'));

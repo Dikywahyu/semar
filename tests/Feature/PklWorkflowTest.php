@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Mahasiswa\MahasiswaRegistrasi;
+use App\Models\Dosen\Dosen;
 use App\Models\Pkl\KomponenPenilaianPkl;
 use App\Models\Pkl\PengajuanPkl;
 use App\Models\Semester;
@@ -98,11 +99,18 @@ class PklWorkflowTest extends TestCase
             'alamat_instansi' => 'Alamat Uji',
             'status' => 'Dijadwalkan Ujian',
         ]);
+        $examiner = Dosen::create([
+            'nidn' => '0011223399',
+            'nama_dosen' => 'Dosen Penguji',
+            'email' => 'penguji@example.test',
+        ]);
         $proposedDate = now()->addDays(3)->startOfHour();
 
         $this->actingAs($studentUser)
             ->post(route('pkl.mahasiswa.usulkan-jadwal', $submission), [
                 'tanggal_seminar' => $proposedDate->format('Y-m-d H:i:s'),
+                'ruangan_seminar' => 'Usulan Ruang Sidang 1',
+                'penguji_ids' => [$examiner->id_dosen],
                 'catatan_usulan_jadwal' => 'Waktu yang disepakati dengan dosen.',
             ])
             ->assertRedirect();
@@ -111,6 +119,8 @@ class PklWorkflowTest extends TestCase
         $this->assertNull($submission->tanggal_seminar);
         $this->assertNull($submission->ruangan_seminar);
         $this->assertEquals($proposedDate->format('Y-m-d H:i:s'), $submission->usulan_tanggal_seminar->format('Y-m-d H:i:s'));
+        $this->assertSame('Usulan Ruang Sidang 1', $submission->usulan_ruangan_seminar);
+        $this->assertSame($examiner->id_dosen, $submission->usulan_dosen_penguji[0]['dosen_id']);
     }
 
     private function userWithRole(string $roleName, array $attributes = []): User
