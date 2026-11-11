@@ -999,21 +999,53 @@ class PklController extends Controller
                 'final_approved_by' => auth()->id(),
                 'final_approved_at' => now(),
             ]);
-            $pengajuan->berkasSeminar()
-                ->where('jenis_berkas', 'acc_pembimbing_akhir')
-                ->update([
-                    'status_verifikasi' => 'Valid',
-                    'catatan_verifikator' => null,
-                    'verified_by' => auth()->id(),
-                    'verified_at' => now(),
-                    'approved_by' => auth()->id(),
-                    'approved_at' => now(),
-                ]);
             $this->logPklActivity($pengajuan, 'ACC Penyelesaian PKL', 'Admin ' . (auth()->user()->name ?? '') . ' memberikan ACC penyelesaian PKL.');
             abort_unless($this->completePklIfReady($pengajuan), 409, 'Status PKL belum dapat diselesaikan. Periksa kembali kelengkapan dokumen dan nilai.');
         });
 
         return response()->json(['message' => 'PKL berhasil di-ACC dan status mahasiswa menjadi Selesai.']);
+    }
+
+    public function adminReviewFinalDocument(Request $request, PengajuanPkl $pengajuan): JsonResponse
+    {
+        $this->authorizeAdmin();
+        abort_unless($pengajuan->status === self::STATUS_REVISI, 409, 'Berkas akhir hanya dapat diverifikasi pada tahap Revisi Laporan.');
+        $validated = $request->validate([
+            'jenis_berkas' => ['required', Rule::in([
+                'formulir_pendaftaran_ujian',
+                'berita_acara_ujian',
+                'formulir_nilai',
+                'permohonan_revisi',
+                'laporan_final',
+                'lampiran_teknis',
+                'acc_pembimbing_akhir',
+                'rekap_nilai',
+            ])],
+            'status' => ['required', Rule::in(['Valid', 'Ditolak'])],
+            'catatan' => ['required_if:status,Ditolak', 'nullable', 'string', 'max:5000'],
+        ]);
+        $berkas = $pengajuan->berkasSeminar()
+            ->where('jenis_berkas', $validated['jenis_berkas'])
+            ->whereNotNull('path_berkas')
+            ->firstOrFail();
+        $isApproved = $validated['status'] === 'Valid';
+        $berkas->update([
+            'status_verifikasi' => $validated['status'],
+            'catatan_verifikator' => $isApproved ? null : $validated['catatan'],
+            'verified_by' => auth()->id(),
+            'verified_at' => now(),
+            'approved_by' => $isApproved ? auth()->id() : null,
+            'approved_at' => $isApproved ? now() : null,
+        ]);
+
+        $label = $this->routeMapDocumentCatalog()[$validated['jenis_berkas']]['label'] ?? str_replace('_', ' ', $validated['jenis_berkas']);
+        $this->logPklActivity(
+            $pengajuan,
+            $isApproved ? 'Berkas Akhir Di-ACC' : 'Berkas Akhir Perlu Revisi',
+            'Admin ' . (auth()->user()->name ?? '') . ($isApproved ? ' menyetujui ' : ' meminta revisi ') . $label . ($isApproved ? '.' : ': ' . $validated['catatan'])
+        );
+
+        return response()->json(['message' => $isApproved ? 'Berkas berhasil di-ACC.' : 'Permintaan revisi berkas berhasil disimpan.']);
     }
 
     public function setSchedule(Request $request, PengajuanPkl $pengajuan): JsonResponse|RedirectResponse
@@ -1857,7 +1889,9 @@ class PklController extends Controller
         if (collect($requiredFinalDocuments)->contains(fn($jenis) => ! $documents->get($jenis)?->path_berkas)) {
             return false;
         }
-        if ($documents->get('acc_pembimbing_akhir')->status_verifikasi !== 'Valid') {
+        if (collect($requiredFinalDocuments)->contains(
+            fn($jenis) => $documents->get($jenis)?->status_verifikasi !== 'Valid'
+        )) {
             return false;
         }
 
@@ -1898,7 +1932,12 @@ class PklController extends Controller
             ->distinct('komponen_penilaian_pkl_id')
             ->count('komponen_penilaian_pkl_id') === $pembimbingComponents->count();
 
+        $statuses = $pengajuan->berkasSeminar()
+            ->whereIn('jenis_berkas', $requiredFinalDocuments)
+            ->pluck('status_verifikasi', 'jenis_berkas');
+
         return collect($requiredFinalDocuments)->every(fn($jenis) => filled($documents->get($jenis)))
+            && collect($requiredFinalDocuments)->every(fn($jenis) => $statuses->get($jenis) === 'Valid')
             && $hasAllSupervisorScores
             && $pengajuan->fresh()->nilai_akhir !== null;
     }

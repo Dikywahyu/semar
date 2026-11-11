@@ -315,6 +315,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/pengajuan/{pengajuan}/edit', [PklController::class, 'adminEdit'])->name('admin.pengajuan.edit');
         Route::post('/admin/pengajuan/{pengajuan}/update', [PklController::class, 'adminUpdate'])->name('admin.pengajuan.update');
         Route::post('/admin/verifikasi-berkas-seminar/{pengajuan}', [PklController::class, 'verifyDocuments'])->name('admin.verifikasi-berkas');
+        Route::post('/admin/berkas-akhir/{pengajuan}', [PklController::class, 'adminReviewFinalDocument'])->name('admin.berkas-akhir.review');
         Route::post('/admin/selesaikan-pkl/{pengajuan}', [PklController::class, 'adminFinalizePkl'])->name('admin.selesaikan');
         Route::post('/admin/terapkan-usulan-mahasiswa/{pengajuan}', [PklController::class, 'adminApplyStudentProposals'])->name('admin.terapkan-usulan-mahasiswa');
         Route::post('/admin/set-jadwal-penguji/{pengajuan}', [PklController::class, 'setSchedule'])->name('admin.jadwal');
