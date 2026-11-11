@@ -196,38 +196,16 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content rounded-4 border-0 shadow">
             <div class="modal-header border-bottom px-4 bg-light">
-                <h5 class="modal-title fw-bold text-slate-800">Verifikasi Berkas Seminar Mahasiswa: <span id="mhs-nama-text" class="text-primary"></span></h5>
+                <h5 class="modal-title fw-bold text-slate-800"><span id="modalBerkasTitle">Berkas Mahasiswa: </span><span id="mhs-nama-text" class="text-primary"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="formVerifikasiBerkas" method="POST">
                 @csrf
                 <div class="modal-body p-4">
-                    <p class="text-muted small mb-3">Silakan periksa kelengkapan dan keabsahan dokumen persyaratan seminar mahasiswa di bawah ini:</p>
-                    
-                    <div class="list-group mb-4">
-                        <div class="list-group-item d-flex justify-content-between align-items-center py-3">
-                            <span><i class="ti ti-file-text me-2 text-secondary"></i>1. Draft Laporan PKL</span>
-                            <div>
-                                <a href="#" id="link-draft" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary d-none"><i class="ti ti-eye me-1"></i> Lihat Dokumen</a>
-                                <span id="empty-draft" class="badge bg-secondary-subtle text-secondary small">Belum diunggah</span>
-                            </div>
-                        </div>
-                        <div class="list-group-item d-flex justify-content-between align-items-center py-3">
-                            <span><i class="ti ti-file-text me-2 text-secondary"></i>2. Kartu Konsultasi</span>
-                            <div>
-                                <a href="#" id="link-konsultasi" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary d-none"><i class="ti ti-eye me-1"></i> Lihat Dokumen</a>
-                                <span id="empty-konsultasi" class="badge bg-secondary-subtle text-secondary small">Belum diunggah</span>
-                            </div>
-                        </div>
-                        <div class="list-group-item d-flex justify-content-between align-items-center py-3">
-                            <span><i class="ti ti-file-text me-2 text-secondary"></i>3. Transkrip Sementara</span>
-                            <div>
-                                <a href="#" id="link-transkrip" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary d-none"><i class="ti ti-eye me-1"></i> Lihat Dokumen</a>
-                                <span id="empty-transkrip" class="badge bg-secondary-subtle text-secondary small">Belum diunggah</span>
-                            </div>
-                        </div>
-                    </div>
+                    <p class="text-muted small mb-3">Daftar berikut menampilkan semua berkas yang tersedia untuk pengajuan mahasiswa ini.</p>
+                    <div id="allStudentDocuments" class="list-group mb-4"></div>
 
+                    <div class="verification-controls">
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Keputusan Verifikasi <span class="text-danger">*</span></label>
                         <select name="keputusan" id="selectKeputusan" class="form-select" required>
@@ -240,10 +218,11 @@
                         <label class="form-label fw-semibold">Alasan Penolakan / Catatan Perbaikan <span class="text-danger">*</span></label>
                         <textarea name="catatan_admin" id="inputCatatan" class="form-control" rows="3" placeholder="Tuliskan bagian dokumen mana yang harus direvisi oleh mahasiswa..."></textarea>
                     </div>
+                    </div>
                 </div>
                 <div class="modal-footer border-top px-4 py-3 bg-light">
                     <button type="button" class="btn btn-light border text-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary fw-semibold px-4">Simpan Keputusan</button>
+                    <button type="submit" id="btnSimpanVerifikasi" class="btn btn-primary fw-semibold px-4">Simpan Keputusan</button>
                 </div>
             </form>
         </div>
@@ -338,34 +317,66 @@
             }
         });
 
-        // 1. EVENT KLIK TOMBOL CEK BERKAS (MODAL SHOW)
-        $(document).on('click', 'button.btn-verifikasi-berkas', function(e) {
-            e.preventDefault(); // Mencegah pemicu aksi bawaan tombol
-            
-            let id = $(this).data('id');
-            let nama = $(this).data('nama');
-            
-            $('#mhs-nama-text').text(nama);
-            $('#formVerifikasiBerkas').attr('action', "{{ url('pkl/admin/verifikasi-berkas-seminar') }}/" + id);
-        
-            function setFileLink(fileUrl, linkId, emptyId) {
-                if (fileUrl && fileUrl !== '') {
-                    $(linkId).attr('href', fileUrl).removeClass('d-none');
-                    $(emptyId).addClass('d-none');
-                } else {
-                    $(linkId).addClass('d-none');
-                    $(emptyId).removeClass('d-none');
-                }
+        function showStudentDocuments(button, canVerify) {
+            const documents = button.data('documents') || [];
+            const list = $('#allStudentDocuments').empty();
+            $('#mhs-nama-text').text(button.data('nama') || '-');
+            $('#modalBerkasTitle').text(canVerify ? 'Verifikasi Berkas Mahasiswa: ' : 'Berkas Mahasiswa: ');
+            $('#formVerifikasiBerkas').attr('action', "{{ url('pkl/admin/verifikasi-berkas-seminar') }}/" + button.data('id'));
+            $('.verification-controls, #btnSimpanVerifikasi').toggle(canVerify);
+
+            if (!documents.length) {
+                list.append($('<div>', { class: 'list-group-item text-muted', text: 'Belum ada berkas yang diunggah.' }));
+            } else {
+                documents.forEach(function(document) {
+                    const row = $('<div>', { class: 'list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2' });
+                    const title = $('<div>').append(
+                        $('<div>', { class: 'fw-semibold', text: document.label }),
+                        $('<small>', { class: 'text-muted', text: 'Status: ' + (document.status || 'Tersimpan') })
+                    );
+                    row.append(title);
+                    if (document.url) {
+                        row.append($('<a>', {
+                            class: 'btn btn-sm btn-outline-primary',
+                            href: document.url,
+                            target: '_blank',
+                            rel: 'noopener',
+                            text: 'Lihat Berkas'
+                        }));
+                    } else {
+                        row.append($('<span>', { class: 'badge bg-secondary-subtle text-secondary', text: 'Belum diunggah' }));
+                    }
+                    list.append(row);
+                });
             }
-        
-            setFileLink($(this).data('draft'), '#link-draft', '#empty-draft');
-            setFileLink($(this).data('konsultasi'), '#link-konsultasi', '#empty-konsultasi');
-            setFileLink($(this).data('transkrip'), '#link-transkrip', '#empty-transkrip');
-        
+
             $('#selectKeputusan').val('disetujui').trigger('change');
             $('#inputCatatan').val('');
-            
             $('#modalVerifikasiBerkas').modal('show');
+        }
+
+        $(document).on('click', 'button.btn-verifikasi-berkas', function(e) {
+            e.preventDefault();
+            showStudentDocuments($(this), $(this).attr('data-can-verify') === 'true');
+        });
+
+        $(document).on('click', '.btn-status-stage', function() {
+            const row = $(this).closest('tr');
+            const action = $(this).data('action');
+            if (action === 'documents-verify' || action === 'documents-view') {
+                const documentsButton = row.find('.btn-verifikasi-berkas').first();
+                showStudentDocuments(documentsButton, action === 'documents-verify');
+                return;
+            }
+
+            const target = {
+                manage: '.btn-kelola',
+                schedule: '.btn-jadwal',
+                grades: '.btn-penilaian-dinamis'
+            }[action];
+            if (target) {
+                row.find(target).first().trigger('click');
+            }
         });
 
         $(document).on('click', '.btn-terapkan-usulan', function() {

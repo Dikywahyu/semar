@@ -37,6 +37,16 @@
                         $badgeClass = 'bg-secondary-subtle text-secondary';
                         $iconClass = 'ti ti-clock';
                         $label = $status;
+                        $stageAction = match ($status) {
+                            'Pengajuan & Verifikasi Admin' => 'manage',
+                            'Pelaksanaan PKL & Bimbingan' => 'manage',
+                            'Verifikasi Berkas Admin' => 'documents-verify',
+                            'Dijadwalkan Ujian' => 'schedule',
+                            'Ujian Seminar & Penilaian' => 'grades',
+                            'Revisi Laporan' => 'documents-view',
+                            'Selesai' => 'documents-view',
+                            default => 'manage',
+                        };
 
                         if (!empty($item->catatan_admin)) {
                             $badgeClass = 'bg-danger-subtle text-danger border border-danger-subtle fw-bold';
@@ -58,10 +68,13 @@
                         }
                     @endphp
 
+                    <button type="button" class="btn btn-link p-0 border-0 text-decoration-none btn-status-stage" data-action="{{ $stageAction }}" title="Klik untuk membuka tindakan pada tahap ini">
                     <span class="badge {{ $badgeClass }} px-3 py-2 rounded-pill d-inline-flex align-items-center gap-1">
                         <i class="{{ $iconClass }}"></i>
                         <span>{{ $label }}</span>
                     </span>
+                    <i class="ti ti-external-link ms-1 small text-muted" aria-hidden="true"></i>
+                    </button>
 
                     @if($item->catatan_admin)
                         <div class="mt-1">
@@ -119,9 +132,57 @@
                 <td style="white-space: nowrap;">
                     <div class="d-flex align-items-center gap-1">
                         @php
-                            $dokumenDraft = $item->berkasSeminar->firstWhere('jenis_berkas', 'draft_laporan')?->path_berkas ?? $item->berkas_draft_laporan;
-                            $dokumenKartu = $item->berkasSeminar->firstWhere('jenis_berkas', 'kartu_konsultasi')?->path_berkas ?? $item->berkas_kartu_bimbingan;
-                            $dokumenTranskrip = $item->berkasSeminar->firstWhere('jenis_berkas', 'transkrip_sementara')?->path_berkas;
+                            $documentLabels = [
+                                'proposal' => 'Proposal ke Tempat PKL',
+                                'surat_jalan_pkl' => 'Surat Jalan PKL',
+                                'surat_balasan_instansi' => 'Surat Balasan Instansi',
+                                'acc_pembimbing_awal' => 'ACC Pembimbing Awal',
+                                'berkas_logbook' => 'Logbook PKL',
+                                'berkas_nilai_pamong' => 'Lembar Penilaian Pamong',
+                                'berkas_persetujuan_pamong' => 'Surat Persetujuan Pamong',
+                                'draft_laporan' => 'Draft Laporan PKL',
+                                'kartu_konsultasi' => 'Kartu Konsultasi',
+                                'berkas_kartu_bimbingan' => 'Kartu Konsultasi',
+                                'transkrip_sementara' => 'Transkrip Sementara',
+                                'formulir_pendaftaran_ujian' => 'Formulir Pendaftaran Ujian',
+                                'berita_acara_ujian' => 'Berita Acara Ujian',
+                                'formulir_nilai' => 'Formulir Nilai',
+                                'permohonan_revisi' => 'Formulir Permohonan Revisi',
+                                'laporan_final' => 'Laporan Final',
+                                'lampiran_teknis' => 'Lampiran Teknis',
+                                'acc_pembimbing_akhir' => 'ACC Pembimbing Akhir',
+                                'rekap_nilai' => 'Rekap Nilai',
+                                'berkas_laporan_revisi' => 'Laporan Revisi',
+                                'berkas_lembar_pengesahan' => 'Lembar Pengesahan',
+                            ];
+                            $documents = $item->berkasSeminar
+                                ->filter(fn ($document) => filled($document->path_berkas))
+                                ->map(fn ($document) => [
+                                    'kind' => $document->jenis_berkas,
+                                    'label' => $documentLabels[$document->jenis_berkas] ?? ucfirst(str_replace('_', ' ', $document->jenis_berkas)),
+                                    'url' => url('pkl/view-file/' . $document->path_berkas),
+                                    'status' => $document->status_verifikasi ?: 'Belum diverifikasi',
+                                ])
+                                ->values();
+                            foreach ([
+                                'berkas_proposal' => ['Proposal ke Tempat PKL', 'proposal'],
+                                'berkas_logbook' => ['Logbook PKL', 'berkas_logbook'],
+                                'berkas_draft_laporan' => ['Draft Laporan PKL', 'draft_laporan'],
+                                'berkas_kartu_bimbingan' => ['Kartu Konsultasi', 'kartu_konsultasi'],
+                                'berkas_nilai_pamong' => ['Lembar Penilaian Pamong', 'berkas_nilai_pamong'],
+                                'berkas_persetujuan_pamong' => ['Surat Persetujuan Pamong', 'berkas_persetujuan_pamong'],
+                                'berkas_laporan_revisi' => ['Laporan Revisi', 'berkas_laporan_revisi'],
+                                'berkas_lembar_pengesahan' => ['Lembar Pengesahan', 'berkas_lembar_pengesahan'],
+                            ] as $field => [$documentLabel, $documentKind]) {
+                                if (filled($item->{$field}) && ! $documents->contains('kind', $documentKind)) {
+                                    $documents->push([
+                                        'kind' => $documentKind,
+                                        'label' => $documentLabel,
+                                        'url' => url('pkl/view-file/' . $item->{$field}),
+                                        'status' => 'Tersimpan',
+                                    ]);
+                                }
+                            }
                         @endphp
                         <a href="{{ route('pkl.dosen.bimbingan.detail', $item->id) }}" class="btn btn-sm btn-light border text-secondary" title="Detail Bimbingan">
                             <i class="ti ti-eye"></i>
@@ -138,10 +199,9 @@
                         <button type="button" class="btn btn-sm btn-info text-white fw-semibold btn-verifikasi-berkas shadow-sm" 
                                 data-id="{{ $item->id }}" 
                                 data-nama="{{ $item->mahasiswaRegistrasi->nama_mahasiswa ?? '-' }}"
-                                data-draft="{{ $dokumenDraft ? route('pkl.file', ['path' => $dokumenDraft]) : '' }}"
-                                data-konsultasi="{{ $dokumenKartu ? route('pkl.file', ['path' => $dokumenKartu]) : '' }}"
-                                data-transkrip="{{ $dokumenTranskrip ? route('pkl.file', ['path' => $dokumenTranskrip]) : '' }}"
-                                title="Verifikasi 3 Berkas Seminar">
+                                data-documents="{{ json_encode($documents, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) }}"
+                                data-can-verify="{{ $item->status === 'Verifikasi Berkas Admin' ? 'true' : 'false' }}"
+                                title="Lihat seluruh berkas mahasiswa">
                             <i class="ti ti-file-check"></i> Cek Berkas
                         </button>
                     </div>
