@@ -126,7 +126,7 @@
                         <a href="{{ route('pkl.dosen.bimbingan.detail', $item->id) }}" class="btn btn-sm btn-light border text-secondary" title="Detail Bimbingan">
                             <i class="ti ti-eye"></i>
                         </a>
-                        <button type="button" class="btn btn-sm btn-light border text-primary btn-kelola" data-id="{{ $item->id }}" title="Plotting Pembimbing/Jadwal">
+                        <button type="button" class="btn btn-sm btn-light border text-primary btn-kelola" data-id="{{ $item->id }}" title="Edit pengajuan / tentukan dosen pembimbing">
                             <i class="ti ti-edit"></i>
                         </button>
                         <button type="button" class="btn btn-sm btn-light border text-warning btn-penilaian-dinamis" data-id="{{ $item->id }}" title="Nilai Komponen Seminar">

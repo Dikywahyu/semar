@@ -21,7 +21,7 @@
                     
                     <!-- SELECT2 DOSEN PEMBIMBING -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Dosen Pembimbing</label>
+                        <label class="form-label fw-semibold">Dosen Pembimbing PKL</label>
                         <select class="form-select select2-dosen" id="edit_dosen_pembimbing_id" name="dosen_pembimbing_id">
                             <option value="">-- Pilih Dosen Pembimbing --</option>
                             @isset($dosens)
@@ -30,6 +30,7 @@
                                 @endforeach
                             @endisset
                         </select>
+                        <small class="form-text text-muted">Super Admin dan Kaprodi dapat menetapkan atau mengubah pembimbing dari menu ini.</small>
                     </div>
 
                     <div class="row g-3 mb-3">

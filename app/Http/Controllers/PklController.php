@@ -102,6 +102,7 @@ class PklController extends Controller
         return view('pkl.mahasiswa_dashboard', [
             'pengajuan' => $pengajuan,
             'mahasiswa' => $mahasiswa,
+            'dosensPembimbing' => Dosen::query()->where('aktif', true)->orderBy('nama_dosen')->get(),
             'isActingAsProfile' => $isPrivileged,
             'availableProfiles' => $isPrivileged
                 ? MahasiswaRegistrasi::query()->where('aktif', true)->orderBy('nama_mahasiswa')->get()
@@ -209,8 +210,10 @@ class PklController extends Controller
         $this->authorizeStudentAction();
         $this->assertOwnSubmission($pengajuan);
         abort_unless($pengajuan->status === self::STATUS_PENGAJUAN, 409, 'Pembimbing hanya dapat diusulkan sebelum pelaksanaan PKL dimulai.');
+        abort_unless(! $pengajuan->dosen_pembimbing_id, 409, 'Dosen pembimbing sudah ditetapkan. Hubungi Super Admin atau Kaprodi jika perlu diubah.');
+        abort_unless($this->hasInitialRegistrationDocuments($pengajuan), 409, 'Lengkapi formulir dan unggah Proposal, Surat Jalan PKL, Surat Balasan Instansi, serta ACC Pembimbing sebelum memilih dosen pembimbing.');
         $validated = $request->validate([
-            'dosen_pembimbing_id' => ['required', 'exists:dosens,id_dosen'],
+            'dosen_pembimbing_id' => ['required', Rule::exists('dosens', 'id_dosen')->where('aktif', true)],
         ]);
         $dosen = Dosen::findOrFail($validated['dosen_pembimbing_id']);
         $pengajuan->update([
@@ -221,6 +224,21 @@ class PklController extends Controller
         $this->logPklActivity($pengajuan, 'Perubahan Status PKL', 'Status berubah dari ' . self::STATUS_PENGAJUAN . ' menjadi ' . self::STATUS_PELAKSANAAN . ' setelah mahasiswa memilih dosen pembimbing.');
 
         return back()->with('success', 'Dosen pembimbing ditetapkan dan status PKL berubah menjadi Pelaksanaan PKL & Bimbingan. Admin dapat menyesuaikan penetapan ini.');
+    }
+
+    private function hasInitialRegistrationDocuments(PengajuanPkl $pengajuan): bool
+    {
+        if (! $pengajuan->berkas_proposal) {
+            return false;
+        }
+
+        $requiredDocuments = ['surat_jalan_pkl', 'surat_balasan_instansi', 'acc_pembimbing_awal'];
+
+        return $pengajuan->berkasSeminar()
+            ->whereIn('jenis_berkas', $requiredDocuments)
+            ->whereNotNull('path_berkas')
+            ->distinct('jenis_berkas')
+            ->count('jenis_berkas') === count($requiredDocuments);
     }
 
     private function advanceAfterExamDocuments(PengajuanPkl $pengajuan): void
@@ -774,7 +792,7 @@ class PklController extends Controller
             'nama_instansi' => ['required', 'string', 'max:255'],
             'alamat_instansi' => ['required', 'string', 'max:5000'],
             'unit_kerja' => ['nullable', 'string', 'max:255'],
-            'dosen_pembimbing_id' => ['nullable', 'exists:dosens,id_dosen'],
+            'dosen_pembimbing_id' => ['nullable', Rule::exists('dosens', 'id_dosen')->where('aktif', true)],
             'semester_master_id' => ['required', 'exists:semesters,id'],
             'sk_tugas' => ['nullable', 'string', 'max:255'],
             'status' => ['required', Rule::in($this->statuses())],
@@ -784,6 +802,13 @@ class PklController extends Controller
         $pembimbingSebelumnya = $pengajuan->dosen_pembimbing_id;
         $tanggalSebelumnya = $pengajuan->tanggal_seminar?->format('Y-m-d H:i:s');
         $ruanganSebelumnya = $pengajuan->ruangan_seminar;
+        if (
+            ! $pembimbingSebelumnya
+            && ! empty($validated['dosen_pembimbing_id'])
+            && $validated['status'] === self::STATUS_PENGAJUAN
+        ) {
+            $validated['status'] = self::STATUS_PELAKSANAAN;
+        }
         $semester = Semester::findOrFail($validated['semester_master_id']);
         $validated['id_semester'] = $semester->kode_semester;
         $pengajuan->update($validated);

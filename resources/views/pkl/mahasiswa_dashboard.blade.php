@@ -583,20 +583,10 @@
         $uploadDocument = function ($kind) use ($pengajuan) {
         return route('pkl.mahasiswa.upload-dokumen', $pengajuan->id);
         };
+        $dokumenPendaftaranLengkap = filled($pengajuan->berkas_proposal)
+            && collect(['surat_jalan_pkl', 'surat_balasan_instansi', 'acc_pembimbing_awal'])
+                ->every(fn($kind) => filled($genericDocuments->get($kind)?->path_berkas));
         @endphp
-
-        @if($pengajuan->status === 'Pengajuan & Verifikasi Admin' && !$pengajuan->dosen_pembimbing_id)
-        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-primary">
-            <h5 class="fw-bold mb-2"><i class="ti ti-user-check text-primary me-2"></i>Pilih Dosen Pembimbing PKL</h5>
-            <p class="text-muted small">Pilih dosen pembimbing untuk memulai pelaksanaan. Admin dapat meninjau dan mengubah penetapan ini.</p>
-            <form action="{{ route('pkl.mahasiswa.plot-pembimbing', $pengajuan->id) }}" method="POST" class="row g-2 align-items-end">@csrf
-                <div class="col-md-8"><label class="form-label small fw-semibold">Dosen Pembimbing</label><select class="form-select" name="dosen_pembimbing_id" required>
-                        <option value="">Pilih dosen pembimbing</option>@foreach(\App\Models\Dosen\Dosen::where('aktif', true)->orderBy('nama_dosen')->get() as $dosenPilihan)<option value="{{ $dosenPilihan->id_dosen }}">{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>@endforeach
-                    </select></div>
-                <div class="col-md-4"><button class="btn btn-primary w-100 fw-semibold" type="submit">Pilih Pembimbing & Mulai PKL</button></div>
-            </form>
-        </div>
-        @endif
 
         @if(in_array($pengajuan->status, ['Pengajuan & Verifikasi Admin', 'Pelaksanaan PKL & Bimbingan'], true))
         <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-info">
@@ -627,6 +617,31 @@
                 </div>
                 @endforeach
             </div>
+        </div>
+        @endif
+
+        @if($pengajuan->status === 'Pengajuan & Verifikasi Admin' && !$pengajuan->dosen_pembimbing_id)
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-primary">
+            <h5 class="fw-bold mb-2"><i class="ti ti-user-check text-primary me-2"></i>Pilih Dosen Pembimbing PKL</h5>
+            @if($dokumenPendaftaranLengkap)
+            <p class="text-muted small">Berkas pendaftaran lengkap. Pilih dosen pembimbing untuk memulai pelaksanaan PKL.</p>
+            <form action="{{ route('pkl.mahasiswa.plot-pembimbing', $pengajuan->id) }}" method="POST" class="row g-2 align-items-end">
+                @csrf
+                <div class="col-md-8">
+                    <label class="form-label small fw-semibold">Dosen Pembimbing</label>
+                    <select class="form-select" name="dosen_pembimbing_id" required>
+                        <option value="">Pilih dosen pembimbing</option>
+                        @foreach($dosensPembimbing as $dosenPilihan)
+                        <option value="{{ $dosenPilihan->id_dosen }}">{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-4"><button class="btn btn-primary w-100 fw-semibold" type="submit">Pilih Pembimbing & Mulai PKL</button></div>
+            </form>
+            @else
+            <p class="text-muted small mb-2">Lengkapi formulir dan unggah seluruh berkas pendaftaran sebelum memilih pembimbing.</p>
+            <div class="small text-muted">Syarat: Proposal ke Tempat PKL, Surat Jalan PKL, Surat Balasan Instansi, dan ACC Pembimbing.</div>
+            @endif
         </div>
         @endif
 
