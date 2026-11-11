@@ -196,7 +196,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content rounded-4 border-0 shadow">
             <div class="modal-header border-bottom px-4 bg-light">
-                <h5 class="modal-title fw-bold text-slate-800"><span id="modalBerkasTitle">Berkas Mahasiswa: </span><span id="mhs-nama-text" class="text-primary"></span></h5>
+                <h5 class="modal-title fw-bold text-slate-800"><span id="modalBerkasTitle">Berkas Mahasiswa: </span><span id="mhs-nama-text" class="text-primary"></span> <span id="modalBerkasStatus" class="badge bg-warning-subtle text-warning-emphasis ms-2 d-none"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="formVerifikasiBerkas" method="POST">
@@ -204,6 +204,17 @@
                 <div class="modal-body p-4">
                     <p class="text-muted small mb-3">Daftar berikut menampilkan semua berkas yang tersedia untuk pengajuan mahasiswa ini.</p>
                     <div id="allStudentDocuments" class="list-group mb-4"></div>
+                    <div class="final-approval-controls border rounded-3 bg-success-subtle p-3 d-none">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                            <div>
+                                <div class="fw-semibold text-success-emphasis">ACC Penyelesaian PKL</div>
+                                <small class="text-muted">Pastikan seluruh berkas tahap revisi dan nilai dosen sudah lengkap sebelum menyelesaikan status mahasiswa.</small>
+                            </div>
+                            <button type="button" class="btn btn-success fw-semibold" id="btnAdminFinalApproval">
+                                <i class="ti ti-circle-check me-1"></i> ACC & Selesaikan Status
+                            </button>
+                        </div>
+                    </div>
 
                     <div class="verification-controls">
                     <div class="mb-3">
@@ -320,33 +331,46 @@
         function showStudentDocuments(button, canVerify) {
             const documents = button.data('documents') || [];
             const list = $('#allStudentDocuments').empty();
+            const isRevision = button.attr('data-status') === 'Revisi Laporan';
+            const submissionId = button.data('id');
             $('#mhs-nama-text').text(button.data('nama') || '-');
             $('#modalBerkasTitle').text(canVerify ? 'Verifikasi Berkas Mahasiswa: ' : 'Berkas Mahasiswa: ');
-            $('#formVerifikasiBerkas').attr('action', "{{ url('pkl/admin/verifikasi-berkas-seminar') }}/" + button.data('id'));
+            $('#modalBerkasStatus').toggleClass('d-none', !isRevision).text(isRevision ? 'REVISI LAPORAN' : '');
+            $('#formVerifikasiBerkas').attr('action', "{{ url('pkl/admin/verifikasi-berkas-seminar') }}/" + submissionId);
             $('.verification-controls, #btnSimpanVerifikasi').toggle(canVerify);
+            $('.final-approval-controls').toggle(isRevision);
+            $('#btnAdminFinalApproval').data('id', submissionId);
 
             if (!documents.length) {
                 list.append($('<div>', { class: 'list-group-item text-muted', text: 'Belum ada berkas yang diunggah.' }));
             } else {
-                documents.forEach(function(document) {
-                    const row = $('<div>', { class: 'list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2' });
-                    const title = $('<div>').append(
-                        $('<div>', { class: 'fw-semibold', text: document.label }),
-                        $('<small>', { class: 'text-muted', text: 'Status: ' + (document.status || 'Tersimpan') })
-                    );
-                    row.append(title);
-                    if (document.url) {
-                        row.append($('<a>', {
-                            class: 'btn btn-sm btn-outline-primary',
-                            href: document.url,
-                            target: '_blank',
-                            rel: 'noopener',
-                            text: 'Lihat Berkas'
-                        }));
-                    } else {
-                        row.append($('<span>', { class: 'badge bg-secondary-subtle text-secondary', text: 'Belum diunggah' }));
-                    }
-                    list.append(row);
+                const groups = [
+                    { key: 'previous', title: 'Berkas Sebelumnya', documents: documents.filter(document => document.group !== 'final') },
+                    { key: 'final', title: 'Berkas Baru · Tahap Revisi Laporan', documents: documents.filter(document => document.group === 'final') }
+                ];
+                groups.forEach(function(group) {
+                    if (!group.documents.length) return;
+                    list.append($('<div>', { class: 'list-group-item bg-light fw-bold', text: group.title }));
+                    group.documents.forEach(function(document) {
+                        const row = $('<div>', { class: 'list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2' });
+                        const title = $('<div>').append(
+                            $('<div>', { class: 'fw-semibold', text: document.label }),
+                            $('<small>', { class: 'text-muted', text: 'Status: ' + (document.status || 'Tersimpan') })
+                        );
+                        row.append(title);
+                        if (document.url) {
+                            row.append($('<a>', {
+                                class: 'btn btn-sm btn-outline-primary',
+                                href: document.url,
+                                target: '_blank',
+                                rel: 'noopener',
+                                text: 'Lihat Berkas'
+                            }));
+                        } else {
+                            row.append($('<span>', { class: 'badge bg-secondary-subtle text-secondary', text: 'Belum diunggah' }));
+                        }
+                        list.append(row);
+                    });
                 });
             }
 
@@ -358,6 +382,29 @@
         $(document).on('click', 'button.btn-verifikasi-berkas', function(e) {
             e.preventDefault();
             showStudentDocuments($(this), $(this).attr('data-can-verify') === 'true');
+        });
+
+        $(document).on('click', '#btnAdminFinalApproval', function() {
+            const button = $(this);
+            const submissionId = button.data('id');
+            button.prop('disabled', true);
+            $.ajax({
+                url: "{{ url('pkl/admin/selesaikan-pkl') }}/" + submissionId,
+                type: 'POST',
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                success: function(response) {
+                    $('#modalVerifikasiBerkas').modal('hide');
+                    Swal.fire('Berhasil', response.message || 'Status PKL berhasil diselesaikan.', 'success')
+                        .then(() => fetchTableData());
+                },
+                error: function(xhr) {
+                    const message = xhr.responseJSON?.message || 'Status PKL belum dapat diselesaikan.';
+                    Swal.fire('Belum dapat diselesaikan', message, 'warning');
+                },
+                complete: function() {
+                    button.prop('disabled', false);
+                }
+            });
         });
 
         $(document).on('click', '.btn-status-stage', function() {

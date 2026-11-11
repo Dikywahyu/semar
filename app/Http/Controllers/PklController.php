@@ -988,6 +988,34 @@ class PklController extends Controller
         return response()->json(['message' => 'Keputusan verifikasi berhasil disimpan.']);
     }
 
+    public function adminFinalizePkl(PengajuanPkl $pengajuan): JsonResponse
+    {
+        $this->authorizeAdmin();
+        abort_unless($pengajuan->status === self::STATUS_REVISI, 409, 'Penyelesaian PKL hanya dapat di-ACC pada tahap Revisi Laporan.');
+        abort_unless($this->hasFinalDocumentsAndScore($pengajuan), 409, 'Seluruh berkas akhir dan nilai dosen wajib lengkap sebelum status dapat diselesaikan.');
+
+        DB::transaction(function () use ($pengajuan) {
+            $pengajuan->update([
+                'final_approved_by' => auth()->id(),
+                'final_approved_at' => now(),
+            ]);
+            $pengajuan->berkasSeminar()
+                ->where('jenis_berkas', 'acc_pembimbing_akhir')
+                ->update([
+                    'status_verifikasi' => 'Valid',
+                    'catatan_verifikator' => null,
+                    'verified_by' => auth()->id(),
+                    'verified_at' => now(),
+                    'approved_by' => auth()->id(),
+                    'approved_at' => now(),
+                ]);
+            $this->logPklActivity($pengajuan, 'ACC Penyelesaian PKL', 'Admin ' . (auth()->user()->name ?? '') . ' memberikan ACC penyelesaian PKL.');
+            abort_unless($this->completePklIfReady($pengajuan), 409, 'Status PKL belum dapat diselesaikan. Periksa kembali kelengkapan dokumen dan nilai.');
+        });
+
+        return response()->json(['message' => 'PKL berhasil di-ACC dan status mahasiswa menjadi Selesai.']);
+    }
+
     public function setSchedule(Request $request, PengajuanPkl $pengajuan): JsonResponse|RedirectResponse
     {
         $this->authorizeAdmin();

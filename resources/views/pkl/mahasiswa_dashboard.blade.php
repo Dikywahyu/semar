@@ -772,6 +772,39 @@
                 </div>
                 @endforeach
             </div>
+            @php
+                $berkasTahapAkhir = [
+                    'formulir_pendaftaran_ujian',
+                    'berita_acara_ujian',
+                    'formulir_nilai',
+                    'permohonan_revisi',
+                    'laporan_final',
+                    'lampiran_teknis',
+                    'acc_pembimbing_akhir',
+                    'rekap_nilai',
+                ];
+                $berkasLama = $arsipDokumen->reject(fn ($document, $kind) => in_array($kind, $berkasTahapAkhir, true));
+            @endphp
+            <div class="mt-4 border-top pt-4">
+                <h6 class="fw-bold mb-3"><i class="ti ti-history text-secondary me-1"></i>Berkas Sebelumnya</h6>
+                <div class="row g-2">
+                    @forelse($berkasLama as $document)
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center justify-content-between gap-2 border rounded-3 p-3 h-100 bg-light">
+                            <div>
+                                <div class="fw-semibold small">{{ $document['label'] }}</div>
+                                <span class="text-muted small">{{ $document['status'] }}</span>
+                            </div>
+                            <a class="btn btn-sm btn-outline-secondary flex-shrink-0" href="{{ url('pkl/view-file/' . $document['path']) }}" target="_blank" rel="noopener">
+                                <i class="ti ti-eye me-1"></i>Lihat
+                            </a>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="col-12"><p class="text-muted small mb-0">Belum ada berkas sebelumnya.</p></div>
+                    @endforelse
+                </div>
+            </div>
             @if($pengajuan->final_approved_at)
             <div class="alert alert-success mt-3 mb-0">
                 ACC Final oleh {{ $pengajuan->finalApprover?->name ?? 'Dosen Pembimbing' }} ({{ $pengajuan->finalApprover?->getRoleNames()->implode(', ') ?: 'Dosen Pembimbing' }})

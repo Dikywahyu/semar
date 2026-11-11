@@ -157,6 +157,16 @@
                                 'berkas_laporan_revisi' => 'Laporan Revisi',
                                 'berkas_lembar_pengesahan' => 'Lembar Pengesahan',
                             ];
+                            $finalDocumentKinds = [
+                                'formulir_pendaftaran_ujian',
+                                'berita_acara_ujian',
+                                'formulir_nilai',
+                                'permohonan_revisi',
+                                'laporan_final',
+                                'lampiran_teknis',
+                                'acc_pembimbing_akhir',
+                                'rekap_nilai',
+                            ];
                             $documents = $item->berkasSeminar
                                 ->filter(fn ($document) => filled($document->path_berkas))
                                 ->map(fn ($document) => [
@@ -164,6 +174,7 @@
                                     'label' => $documentLabels[$document->jenis_berkas] ?? ucfirst(str_replace('_', ' ', $document->jenis_berkas)),
                                     'url' => url('pkl/view-file/' . $document->path_berkas),
                                     'status' => $document->status_verifikasi ?: 'Belum diverifikasi',
+                                    'group' => in_array($document->jenis_berkas, $finalDocumentKinds, true) ? 'final' : 'previous',
                                 ])
                                 ->values();
                             foreach ([
@@ -184,7 +195,21 @@
                                         'label' => $documentLabel,
                                         'url' => url('pkl/view-file/' . $item->{$field}),
                                         'status' => 'Tersimpan',
+                                        'group' => 'previous',
                                     ]);
+                                }
+                            }
+                            if ($item->status === 'Revisi Laporan') {
+                                foreach ($finalDocumentKinds as $kind) {
+                                    if (! $documents->contains('kind', $kind)) {
+                                        $documents->push([
+                                            'kind' => $kind,
+                                            'label' => $documentLabels[$kind] ?? ucfirst(str_replace('_', ' ', $kind)),
+                                            'url' => null,
+                                            'status' => 'Belum diunggah',
+                                            'group' => 'final',
+                                        ]);
+                                    }
                                 }
                             }
                         @endphp
@@ -203,6 +228,7 @@
                         <button type="button" class="btn btn-sm btn-info text-white fw-semibold btn-verifikasi-berkas shadow-sm" 
                                 data-id="{{ $item->id }}" 
                                 data-nama="{{ $item->mahasiswaRegistrasi->nama_mahasiswa ?? '-' }}"
+                                data-status="{{ $item->status }}"
                                 data-documents="{{ json_encode($documents, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) }}"
                                 data-can-verify="{{ $item->status === 'Verifikasi Berkas Admin' ? 'true' : 'false' }}"
                                 title="Lihat seluruh berkas mahasiswa">
