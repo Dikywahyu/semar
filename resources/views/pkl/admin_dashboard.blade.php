@@ -205,15 +205,21 @@
                     <p class="text-muted small mb-3">Daftar berikut menampilkan semua berkas yang tersedia untuk pengajuan mahasiswa ini.</p>
                     <div id="allStudentDocuments" class="list-group mb-4"></div>
                     <div class="final-approval-controls border rounded-3 bg-success-subtle p-3" style="display: none;">
-                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-                            <div>
-                                <div class="fw-semibold text-success-emphasis">ACC Penyelesaian PKL</div>
-                                <small class="text-muted">Pastikan seluruh berkas tahap revisi dan nilai dosen sudah lengkap sebelum menyelesaikan status mahasiswa.</small>
-                            </div>
-                            <button type="button" class="btn btn-success fw-semibold" id="btnAdminFinalApproval">
-                                <i class="ti ti-circle-check me-1"></i> ACC & Selesaikan Status
-                            </button>
+                        <div class="mb-3">
+                            <label for="selectFinalDecision" class="form-label fw-semibold">Keputusan Akhir <span class="text-danger">*</span></label>
+                            <select id="selectFinalDecision" class="form-select">
+                                <option value="">Pilih keputusan</option>
+                                <option value="disetujui">ACC & Selesaikan PKL</option>
+                                <option value="ditolak">Minta Revisi</option>
+                            </select>
                         </div>
+                        <div class="mb-3" id="wrapperFinalNote" style="display: none;">
+                            <label for="inputFinalNote" class="form-label fw-semibold">Catatan revisi <span class="text-danger">*</span></label>
+                            <textarea id="inputFinalNote" class="form-control" rows="3" maxlength="5000" placeholder="Jelaskan bagian yang harus diperbaiki mahasiswa"></textarea>
+                        </div>
+                        <button type="button" class="btn btn-success fw-semibold" id="btnAdminFinalApproval" disabled>
+                            <i class="ti ti-check me-1"></i> Simpan Keputusan
+                        </button>
                     </div>
 
                     <div class="verification-controls">
@@ -366,30 +372,6 @@
                                 rel: 'noopener',
                                 text: 'Lihat Berkas'
                             }));
-                            if (isRevision && document.group === 'final') {
-                                const review = $('<div>', { class: 'd-flex flex-wrap align-items-center gap-2 w-100 mt-2' });
-                                const statusSelect = $('<select>', { class: 'form-select form-select-sm final-document-status', 'aria-label': 'Keputusan berkas' })
-                                    .append($('<option>', { value: '', text: 'Pilih keputusan' }))
-                                    .append($('<option>', { value: 'Valid', text: 'ACC' }))
-                                    .append($('<option>', { value: 'Ditolak', text: 'Minta Revisi' }))
-                                    .val(['Valid', 'Ditolak'].includes(document.status) ? document.status : '');
-                                const note = $('<input>', {
-                                    type: 'text',
-                                    class: 'form-control form-control-sm final-document-note flex-grow-1',
-                                    placeholder: 'Catatan revisi (wajib bila minta revisi)',
-                                    maxlength: 5000
-                                }).toggle(statusSelect.val() === 'Ditolak');
-                                const save = $('<button>', {
-                                    type: 'button',
-                                    class: 'btn btn-sm btn-outline-success btn-save-final-document',
-                                    text: 'Simpan'
-                                }).data('kind', document.kind).data('id', submissionId);
-                                statusSelect.on('change', function() {
-                                    note.toggle($(this).val() === 'Ditolak');
-                                });
-                                review.append(statusSelect, note, save);
-                                row.append(review);
-                            }
                         } else {
                             row.append($('<span>', { class: 'badge bg-secondary-subtle text-secondary', text: 'Belum diunggah' }));
                         }
@@ -400,6 +382,10 @@
 
             $('#selectKeputusan').val('disetujui').trigger('change');
             $('#inputCatatan').val('');
+            $('#selectFinalDecision').val('');
+            $('#inputFinalNote').val('');
+            $('#wrapperFinalNote').hide();
+            $('#btnAdminFinalApproval').prop('disabled', true).toggleClass('btn-success btn-warning', false);
             $('#modalVerifikasiBerkas').modal('show');
         }
 
@@ -408,63 +394,49 @@
             showStudentDocuments($(this), $(this).attr('data-can-verify') === 'true');
         });
 
+        $('#selectFinalDecision').on('change', function() {
+            const isRevisionRequest = $(this).val() === 'ditolak';
+            $('#wrapperFinalNote').toggle(isRevisionRequest);
+            $('#btnAdminFinalApproval').prop('disabled', !$(this).val())
+                .toggleClass('btn-success', !isRevisionRequest)
+                .toggleClass('btn-warning', isRevisionRequest);
+        });
+
         $(document).on('click', '#btnAdminFinalApproval', function() {
             const button = $(this);
             const submissionId = button.data('id');
+            const decision = $('#selectFinalDecision').val();
+            const note = $('#inputFinalNote').val().trim();
+            if (!decision) {
+                Swal.fire('Pilih keputusan', 'Pilih ACC atau Minta Revisi terlebih dahulu.', 'warning');
+                return;
+            }
+            if (decision === 'ditolak' && !note) {
+                Swal.fire('Catatan diperlukan', 'Isi catatan revisi sebelum mengirim keputusan.', 'warning');
+                return;
+            }
+
             button.prop('disabled', true);
             $.ajax({
                 url: "{{ url('pkl/admin/selesaikan-pkl') }}/" + submissionId,
                 type: 'POST',
-                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content'),
+                    keputusan: decision,
+                    catatan: note
+                },
                 success: function(response) {
                     $('#modalVerifikasiBerkas').modal('hide');
-                    Swal.fire('Berhasil', response.message || 'Status PKL berhasil diselesaikan.', 'success')
+                    Swal.fire('Berhasil', response.message || 'Keputusan akhir berhasil disimpan.', 'success')
                         .then(() => fetchTableData());
                 },
                 error: function(xhr) {
-                    const message = xhr.responseJSON?.message || 'Status PKL belum dapat diselesaikan.';
-                    Swal.fire('Belum dapat diselesaikan', message, 'warning');
+                    const message = xhr.responseJSON?.message || 'Keputusan akhir gagal disimpan.';
+                    Swal.fire('Gagal', message, 'error');
                 },
                 complete: function() {
                     button.prop('disabled', false);
                 }
-            });
-
-            $(document).on('click', '.btn-save-final-document', function() {
-                const button = $(this);
-                const row = button.closest('.list-group-item');
-                const status = row.find('.final-document-status').val();
-                const note = row.find('.final-document-note').val();
-                if (!status) {
-                    Swal.fire('Pilih keputusan', 'Pilih ACC atau Minta Revisi untuk berkas ini.', 'warning');
-                    return;
-                }
-                if (status === 'Ditolak' && !String(note || '').trim()) {
-                    Swal.fire('Catatan diperlukan', 'Tuliskan catatan perbaikan sebelum meminta revisi.', 'warning');
-                    return;
-                }
-
-                button.prop('disabled', true);
-                $.ajax({
-                    url: "{{ url('pkl/admin/berkas-akhir') }}/" + button.data('id'),
-                    type: 'POST',
-                    data: {
-                        _token: $('meta[name="csrf-token"]').attr('content'),
-                        jenis_berkas: button.data('kind'),
-                        status: status,
-                        catatan: note
-                    },
-                    success: function(response) {
-                        Swal.fire('Tersimpan', response.message || 'Keputusan berkas disimpan.', 'success');
-                        fetchTableData();
-                    },
-                    error: function(xhr) {
-                        Swal.fire('Gagal', xhr.responseJSON?.message || 'Keputusan berkas tidak dapat disimpan.', 'error');
-                    },
-                    complete: function() {
-                        button.prop('disabled', false);
-                    }
-                });
             });
         });
 

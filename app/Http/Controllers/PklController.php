@@ -988,64 +988,71 @@ class PklController extends Controller
         return response()->json(['message' => 'Keputusan verifikasi berhasil disimpan.']);
     }
 
-    public function adminFinalizePkl(PengajuanPkl $pengajuan): JsonResponse
+    public function adminFinalizePkl(Request $request, PengajuanPkl $pengajuan): JsonResponse
     {
         $this->authorizeAdmin();
         abort_unless($pengajuan->status === self::STATUS_REVISI, 409, 'Penyelesaian PKL hanya dapat di-ACC pada tahap Revisi Laporan.');
-        abort_unless($this->hasFinalDocumentsAndScore($pengajuan), 409, 'Seluruh berkas akhir dan nilai dosen wajib lengkap sebelum status dapat diselesaikan.');
+        $validated = $request->validate([
+            'keputusan' => ['required', Rule::in(['disetujui', 'ditolak'])],
+            'catatan' => ['required_if:keputusan,ditolak', 'nullable', 'string', 'max:5000'],
+        ]);
+        $isApproved = $validated['keputusan'] === 'disetujui';
+        $finalDocumentKinds = [
+            'formulir_pendaftaran_ujian',
+            'berita_acara_ujian',
+            'formulir_nilai',
+            'permohonan_revisi',
+            'laporan_final',
+            'lampiran_teknis',
+            'acc_pembimbing_akhir',
+            'rekap_nilai',
+        ];
 
-        DB::transaction(function () use ($pengajuan) {
-            $pengajuan->update([
-                'final_approved_by' => auth()->id(),
-                'final_approved_at' => now(),
-            ]);
-            $this->logPklActivity($pengajuan, 'ACC Penyelesaian PKL', 'Admin ' . (auth()->user()->name ?? '') . ' memberikan ACC penyelesaian PKL.');
-            abort_unless($this->completePklIfReady($pengajuan), 409, 'Status PKL belum dapat diselesaikan. Periksa kembali kelengkapan dokumen dan nilai.');
+        DB::transaction(function () use ($pengajuan, $validated, $finalDocumentKinds, $isApproved) {
+            $pengajuan->berkasSeminar()
+                ->whereIn('jenis_berkas', $finalDocumentKinds)
+                ->whereNotNull('path_berkas')
+                ->update([
+                    'status_verifikasi' => $isApproved ? 'Valid' : 'Ditolak',
+                    'catatan_verifikator' => $isApproved ? null : $validated['catatan'],
+                    'verified_by' => auth()->id(),
+                    'verified_at' => now(),
+                    'approved_by' => $isApproved ? auth()->id() : null,
+                    'approved_at' => $isApproved ? now() : null,
+                ]);
+
+            if ($isApproved) {
+                $pengajuan->update([
+                    'status' => self::STATUS_SELESAI,
+                    'final_approved_by' => auth()->id(),
+                    'final_approved_at' => now(),
+                    'catatan_admin' => null,
+                ]);
+                $pengajuan->mahasiswaRegistrasi?->update(['status_pkl' => 'Lulus PKL']);
+                $this->logPklActivity(
+                    $pengajuan,
+                    'ACC Penyelesaian PKL',
+                    'Admin ' . (auth()->user()->name ?? '') . ' memberikan ACC akhir dan mengubah status PKL menjadi Selesai.'
+                );
+            } else {
+                $pengajuan->update([
+                    'final_approved_by' => null,
+                    'final_approved_at' => null,
+                    'catatan_admin' => $validated['catatan'],
+                ]);
+                $this->logPklActivity(
+                    $pengajuan,
+                    'Berkas Akhir Perlu Revisi',
+                    'Admin ' . (auth()->user()->name ?? '') . ' meminta revisi pada berkas akhir: ' . $validated['catatan']
+                );
+            }
         });
 
-        return response()->json(['message' => 'PKL berhasil di-ACC dan status mahasiswa menjadi Selesai.']);
-    }
-
-    public function adminReviewFinalDocument(Request $request, PengajuanPkl $pengajuan): JsonResponse
-    {
-        $this->authorizeAdmin();
-        abort_unless($pengajuan->status === self::STATUS_REVISI, 409, 'Berkas akhir hanya dapat diverifikasi pada tahap Revisi Laporan.');
-        $validated = $request->validate([
-            'jenis_berkas' => ['required', Rule::in([
-                'formulir_pendaftaran_ujian',
-                'berita_acara_ujian',
-                'formulir_nilai',
-                'permohonan_revisi',
-                'laporan_final',
-                'lampiran_teknis',
-                'acc_pembimbing_akhir',
-                'rekap_nilai',
-            ])],
-            'status' => ['required', Rule::in(['Valid', 'Ditolak'])],
-            'catatan' => ['required_if:status,Ditolak', 'nullable', 'string', 'max:5000'],
+        return response()->json([
+            'message' => $isApproved
+                ? 'PKL berhasil di-ACC dan status mahasiswa menjadi Selesai.'
+                : 'Permintaan revisi berkas akhir berhasil disimpan.',
         ]);
-        $berkas = $pengajuan->berkasSeminar()
-            ->where('jenis_berkas', $validated['jenis_berkas'])
-            ->whereNotNull('path_berkas')
-            ->firstOrFail();
-        $isApproved = $validated['status'] === 'Valid';
-        $berkas->update([
-            'status_verifikasi' => $validated['status'],
-            'catatan_verifikator' => $isApproved ? null : $validated['catatan'],
-            'verified_by' => auth()->id(),
-            'verified_at' => now(),
-            'approved_by' => $isApproved ? auth()->id() : null,
-            'approved_at' => $isApproved ? now() : null,
-        ]);
-
-        $label = $this->routeMapDocumentCatalog()[$validated['jenis_berkas']]['label'] ?? str_replace('_', ' ', $validated['jenis_berkas']);
-        $this->logPklActivity(
-            $pengajuan,
-            $isApproved ? 'Berkas Akhir Di-ACC' : 'Berkas Akhir Perlu Revisi',
-            'Admin ' . (auth()->user()->name ?? '') . ($isApproved ? ' menyetujui ' : ' meminta revisi ') . $label . ($isApproved ? '.' : ': ' . $validated['catatan'])
-        );
-
-        return response()->json(['message' => $isApproved ? 'Berkas berhasil di-ACC.' : 'Permintaan revisi berkas berhasil disimpan.']);
     }
 
     public function setSchedule(Request $request, PengajuanPkl $pengajuan): JsonResponse|RedirectResponse
