@@ -1,4 +1,16 @@
 <script src="{{ asset('dist/assets/js/vendor.min.js') }}"></script>
+<script>
+    if (window.jQuery) {
+        $.ajaxPrefilter(function(options, originalOptions, jqXHR) {
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            const target = new URL(options.url, window.location.href);
+
+            if (token && target.origin === window.location.origin) {
+                jqXHR.setRequestHeader('X-CSRF-TOKEN', token);
+            }
+        });
+    }
+</script>
 <!-- Import Js Files -->
 <script src="{{ asset('dist/assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ asset('dist/assets/libs/simplebar/dist/simplebar.min.js') }}"></script>

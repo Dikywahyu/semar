@@ -17,7 +17,7 @@
                         <select class="form-select form-select-lg mb-3" name="{{ $parameter }}" id="profile-choice" required>
                             <option value="">Pilih {{ $jenis }}...</option>
                             @foreach($profiles as $profile)
-                                <option value="{{ $profile->getKey() }}">
+                                <option value="{{ $profile->getKey() }}" @selected(request($parameter) == $profile->getKey())>
                                     @if($jenis === 'mahasiswa')
                                         {{ $profile->nama_mahasiswa }} ({{ $profile->nim }}){{ $profile->nama_program_studi ? ' — ' . $profile->nama_program_studi : '' }}
                                     @else

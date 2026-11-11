@@ -42,17 +42,40 @@ class PklController extends Controller
         'berkas_lembar_pengesahan',
     ];
 
+    private function canSelectActingProfile(): bool
+    {
+        return auth()->user()?->hasAnyRole(['Super Admin', 'Kaprodi', 'Admin'])
+            || auth()->user()?->can('academic-edit');
+    }
+
+    private function canActAsStudent(): bool
+    {
+        return $this->canSelectActingProfile()
+            && (bool) session('pkl.mahasiswa_profile_id');
+    }
+
+    private function canActAsLecturer(): bool
+    {
+        return $this->canSelectActingProfile()
+            && (bool) session('pkl.dosen_profile_id');
+    }
+
     public function mahasiswaIndex(Request $request): View
     {
         $user = auth()->user();
-        $isPrivileged = $user?->hasAnyRole(['Super Admin', 'Kaprodi', 'Admin'])
-            || $user?->can('academic-edit');
+        $isPrivileged = $this->canSelectActingProfile();
         $canSelectStudentProfile = $isPrivileged || $user?->hasAnyRole(['mahasiswa', 'Mahasiswa']);
-        $mahasiswa = $canSelectStudentProfile && $request->filled('id_registrasi_mahasiswa')
-            ? MahasiswaRegistrasi::query()->where('aktif', true)->find($request->input('id_registrasi_mahasiswa'))
+        if ($isPrivileged && $request->filled('id_registrasi_mahasiswa')) {
+            $selected = MahasiswaRegistrasi::query()->where('aktif', true)->find($request->input('id_registrasi_mahasiswa'));
+            abort_unless($selected, 404, 'Profil mahasiswa aktif tidak ditemukan.');
+            $request->session()->put('pkl.mahasiswa_profile_id', $selected->id_registrasi_mahasiswa);
+        }
+        $mahasiswa = $isPrivileged && $request->session()->has('pkl.mahasiswa_profile_id')
+            ? MahasiswaRegistrasi::query()->where('aktif', true)->find($request->session()->get('pkl.mahasiswa_profile_id'))
             : $this->mahasiswaProfilesForUser()->first();
 
         if (! $mahasiswa && $canSelectStudentProfile) {
+            $request->session()->forget('pkl.mahasiswa_profile_id');
             return view('pkl.profile_selector', [
                 'jenis' => 'mahasiswa',
                 'profiles' => MahasiswaRegistrasi::query()->where('aktif', true)->orderBy('nama_mahasiswa')->get(),
@@ -63,6 +86,9 @@ class PklController extends Controller
             ]);
         }
         abort_unless($mahasiswa, 403, 'Profil mahasiswa aktif untuk akun ini belum tersedia. Hubungi administrator untuk memperbarui identitas akun.');
+        if ($isPrivileged) {
+            $request->session()->put('pkl.mahasiswa_profile_id', $mahasiswa->id_registrasi_mahasiswa);
+        }
 
         $pengajuan = $mahasiswa->pengajuanPkl()->with([
             'dosenPembimbing',
@@ -73,7 +99,14 @@ class PklController extends Controller
             'berkasSeminar',
         ])->latest()->first();
 
-        return view('pkl.mahasiswa_dashboard', compact('pengajuan', 'mahasiswa'));
+        return view('pkl.mahasiswa_dashboard', [
+            'pengajuan' => $pengajuan,
+            'mahasiswa' => $mahasiswa,
+            'isActingAsProfile' => $isPrivileged,
+            'availableProfiles' => $isPrivileged
+                ? MahasiswaRegistrasi::query()->where('aktif', true)->orderBy('nama_mahasiswa')->get()
+                : collect(),
+        ]);
     }
 
     public function routeMap(Request $request): View
@@ -115,9 +148,7 @@ class PklController extends Controller
 
     public function routeMapUpload(Request $request, PengajuanPkl $pengajuan, int $tahap): RedirectResponse
     {
-        abort_unless(auth()->user()?->hasAnyRole(['mahasiswa', 'Mahasiswa']), 403);
-        $mahasiswa = $this->mahasiswaProfilesForUser()->where('id_registrasi_mahasiswa', $pengajuan->mahasiswa_registrasi_id)->exists();
-        abort_unless($mahasiswa, 403);
+        $this->assertOwnSubmission($pengajuan);
         $allowedStageStatus = match ($tahap) {
             1 => [self::STATUS_PENGAJUAN, self::STATUS_PELAKSANAAN],
             2 => [self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI],
@@ -175,7 +206,7 @@ class PklController extends Controller
 
     public function mahasiswaPlotPembimbing(Request $request, PengajuanPkl $pengajuan): RedirectResponse
     {
-        abort_unless(auth()->user()?->hasAnyRole(['mahasiswa', 'Mahasiswa']), 403);
+        $this->authorizeStudentAction();
         $this->assertOwnSubmission($pengajuan);
         abort_unless($pengajuan->status === self::STATUS_PENGAJUAN, 409, 'Pembimbing hanya dapat diusulkan sebelum pelaksanaan PKL dimulai.');
         $validated = $request->validate([
@@ -243,7 +274,7 @@ class PklController extends Controller
 
     public function routeMapAcc(PengajuanPkl $pengajuan): RedirectResponse
     {
-        abort_unless(auth()->user()?->hasAnyRole(['dosen_pembimbing', 'Dosen']), 403);
+        $this->authorizeLecturerAction();
         $dosen = $this->currentDosen();
         abort_unless($pengajuan->dosen_pembimbing_id === $dosen->id_dosen, 403);
         $wasAcc = (bool) $pengajuan->is_acc_seminar;
@@ -262,7 +293,7 @@ class PklController extends Controller
 
     public function routeMapProposeSchedule(Request $request, PengajuanPkl $pengajuan): RedirectResponse
     {
-        abort_unless(auth()->user()?->hasAnyRole(['mahasiswa', 'Mahasiswa']), 403);
+        $this->authorizeStudentAction();
         $this->assertOwnSubmission($pengajuan);
         abort_unless($pengajuan->status === self::STATUS_UJIAN, 409, 'Usulan jadwal hanya tersedia sebelum ujian dimulai.');
         $validated = $request->validate([
@@ -281,7 +312,7 @@ class PklController extends Controller
 
     public function mahasiswaProposeSchedule(Request $request, PengajuanPkl $pengajuan): RedirectResponse
     {
-        abort_unless(auth()->user()?->hasAnyRole(['mahasiswa', 'Mahasiswa']), 403);
+        $this->authorizeStudentAction();
         $this->assertOwnSubmission($pengajuan);
         abort_unless($pengajuan->status === self::STATUS_UJIAN, 409, 'Usulan atau revisi jadwal tersedia sebelum ujian dimulai.');
         $validated = $request->validate([
@@ -309,7 +340,7 @@ class PklController extends Controller
 
     public function uploadTahapDocument(Request $request, PengajuanPkl $pengajuan): RedirectResponse
     {
-        abort_unless(auth()->user()?->hasAnyRole(['mahasiswa', 'Mahasiswa']), 403);
+        $this->authorizeStudentAction();
         $this->assertOwnSubmission($pengajuan);
         $validated = $request->validate([
             'jenis_berkas' => ['required', Rule::in(array_keys($this->routeMapDocumentCatalog()))],
@@ -377,7 +408,7 @@ class PklController extends Controller
 
     public function routeMapGrade(Request $request, PengajuanPkl $pengajuan): RedirectResponse
     {
-        abort_unless(auth()->user()?->hasAnyRole(['dosen_pembimbing', 'dosen_penguji', 'Dosen']), 403);
+        $this->authorizeLecturerAction();
         $dosen = $this->currentDosen();
         abort_unless($this->isAssignedDosen($pengajuan, $dosen), 403);
         $validated = $request->validate([
@@ -418,6 +449,7 @@ class PklController extends Controller
 
     public function routeMapValidateRevision(PengajuanPkl $pengajuan): RedirectResponse
     {
+        $this->authorizeLecturerAction();
         $dosen = $this->currentDosen();
         abort_unless($this->isAssignedDosen($pengajuan, $dosen), 403);
         abort_unless($pengajuan->berkas_laporan_revisi, 409, 'Laporan revisi belum diunggah.');
@@ -429,7 +461,7 @@ class PklController extends Controller
 
     public function routeMapComplete(PengajuanPkl $pengajuan): RedirectResponse
     {
-        abort_unless(auth()->user()?->hasAnyRole(['dosen_pembimbing', 'Dosen']), 403);
+        $this->authorizeLecturerAction();
         $dosen = $this->currentDosen();
         abort_unless($pengajuan->dosen_pembimbing_id === $dosen->id_dosen, 403);
         abort_unless(in_array($pengajuan->status, [self::STATUS_SEMINAR, self::STATUS_REVISI, self::STATUS_SELESAI], true), 409, 'ACC kelulusan akhir hanya dapat diberikan setelah ujian.');
@@ -471,6 +503,7 @@ class PklController extends Controller
 
     public function mahasiswaStore(Request $request): JsonResponse|RedirectResponse
     {
+        $this->authorizeStudentAction();
         $mahasiswa = $this->currentMahasiswa();
         abort_if($mahasiswa->pengajuanPkl()->exists(), 409, 'Anda sudah memiliki pengajuan PKL.');
         $fileFields = ['berkas_proposal', 'surat_jalan_pkl', 'surat_balasan_instansi', 'acc_pembimbing_awal'];
@@ -646,9 +679,14 @@ class PklController extends Controller
     public function selesaiPelaksanaan(PengajuanPkl $pengajuan): JsonResponse
     {
         $user = auth()->user();
-        $isMahasiswaPemilik = $this->mahasiswaProfilesForUser()->whereKey($pengajuan->mahasiswa_registrasi_id)->exists();
-        $isDosenPembimbing = $user?->hasAnyRole(['dosen_pembimbing', 'Dosen'])
-            && $pengajuan->dosen_pembimbing_id === $this->dosenProfilesForUser()->value('id_dosen');
+        $student = ($user?->hasAnyRole(['mahasiswa', 'Mahasiswa']) || $this->canActAsStudent())
+            ? $this->currentMahasiswa()
+            : null;
+        $dosen = ($user?->hasAnyRole(['dosen_pembimbing', 'dosen_penguji', 'Dosen']) || $this->canActAsLecturer())
+            ? $this->actingDosenProfile()
+            : null;
+        $isMahasiswaPemilik = $student?->id_registrasi_mahasiswa === $pengajuan->mahasiswa_registrasi_id;
+        $isDosenPembimbing = $dosen && $pengajuan->dosen_pembimbing_id === $dosen->id_dosen;
         abort_unless($isMahasiswaPemilik || $isDosenPembimbing, 403);
         abort_unless($pengajuan->status === self::STATUS_PELAKSANAAN, 409, 'Pengajuan tidak sedang dalam tahap pelaksanaan.');
 
@@ -1167,13 +1205,18 @@ class PklController extends Controller
 
     public function dosenIndex(Request $request): View|JsonResponse
     {
-        $isPrivileged = auth()->user()?->hasAnyRole(['Super Admin', 'Kaprodi', 'Admin'])
-            || auth()->user()?->can('academic-edit');
-        $dosen = $isPrivileged && $request->filled('id_dosen')
-            ? Dosen::query()->where('aktif', true)->find($request->input('id_dosen'))
+        $isPrivileged = $this->canSelectActingProfile();
+        if ($isPrivileged && $request->filled('id_dosen')) {
+            $selected = Dosen::query()->where('aktif', true)->find($request->input('id_dosen'));
+            abort_unless($selected, 404, 'Profil dosen aktif tidak ditemukan.');
+            $request->session()->put('pkl.dosen_profile_id', $selected->id_dosen);
+        }
+        $dosen = $isPrivileged && $request->session()->has('pkl.dosen_profile_id')
+            ? Dosen::query()->where('aktif', true)->find($request->session()->get('pkl.dosen_profile_id'))
             : $this->dosenProfilesForUser()->first();
 
         if (! $dosen && $isPrivileged) {
+            $request->session()->forget('pkl.dosen_profile_id');
             return view('pkl.profile_selector', [
                 'jenis' => 'dosen',
                 'profiles' => Dosen::query()->where('aktif', true)->orderBy('nama_dosen')->get(),
@@ -1184,6 +1227,9 @@ class PklController extends Controller
             ]);
         }
         abort_unless($dosen, 403, 'Profil dosen aktif untuk akun ini belum tersedia. Hubungi administrator untuk memperbarui identitas akun.');
+        if ($isPrivileged) {
+            $request->session()->put('pkl.dosen_profile_id', $dosen->id_dosen);
+        }
         $query = PengajuanPkl::query()
             ->with(['mahasiswaRegistrasi', 'dosenPenguji', 'dosenPembimbing'])
             ->where(function ($query) use ($dosen) {
@@ -1207,6 +1253,11 @@ class PklController extends Controller
             'totalBimbingan' => $totalBimbingan,
             'totalPenguji' => $totalPenguji,
             'semesters' => Semester::query()->orderByDesc('tahun_akademik')->orderBy('periode')->get(),
+            'dosen' => $dosen,
+            'isActingAsProfile' => $isPrivileged,
+            'availableProfiles' => $isPrivileged
+                ? Dosen::query()->where('aktif', true)->orderBy('nama_dosen')->get()
+                : collect(),
         ]);
     }
 
@@ -1215,12 +1266,10 @@ class PklController extends Controller
         $user = auth()->user();
         $isAdmin = $user?->hasAnyRole(['Super Admin', 'Admin', 'BAAK', 'Akademik', 'Kemahasiswaan', 'Kaprodi', 'Kajur'])
             || $user?->can('academic-edit');
-        $canApproveFinal = false;
-        if (! $isAdmin) {
-            $dosen = $this->currentDosen();
-            abort_unless($this->isAssignedDosen($pengajuan, $dosen), 403);
-            $canApproveFinal = $pengajuan->dosen_pembimbing_id === $dosen->id_dosen;
-        }
+        $dosen = $this->actingDosenProfile();
+        $isAssignedDosen = $dosen && $this->isAssignedDosen($pengajuan, $dosen);
+        abort_unless($isAdmin || $isAssignedDosen, 403);
+        $canApproveFinal = $isAssignedDosen && $pengajuan->dosen_pembimbing_id === $dosen->id_dosen;
         $pengajuan->load([
             'mahasiswaRegistrasi',
             'logAktivitas.aktor',
@@ -1237,6 +1286,7 @@ class PklController extends Controller
 
     public function dosenComponents(PengajuanPkl $pengajuan): JsonResponse
     {
+        $this->authorizeLecturerAction();
         $dosen = $this->currentDosen();
         abort_unless($this->isAssignedDosen($pengajuan, $dosen), 403);
         $categories = collect();
@@ -1272,6 +1322,7 @@ class PklController extends Controller
 
     public function dosenSaveGrades(Request $request, PengajuanPkl $pengajuan): JsonResponse
     {
+        $this->authorizeLecturerAction();
         $dosen = $this->currentDosen();
         abort_unless($this->isAssignedDosen($pengajuan, $dosen), 403);
         $validated = $request->validate([
@@ -1521,7 +1572,9 @@ class PklController extends Controller
 
     private function currentMahasiswa(): MahasiswaRegistrasi
     {
-        $mahasiswa = $this->mahasiswaProfilesForUser()->first();
+        $mahasiswa = $this->canSelectActingProfile() && session()->has('pkl.mahasiswa_profile_id')
+            ? MahasiswaRegistrasi::query()->where('aktif', true)->find(session('pkl.mahasiswa_profile_id'))
+            : $this->mahasiswaProfilesForUser()->first();
         abort_unless($mahasiswa, 403, 'Profil mahasiswa untuk akun ini belum tertaut. Pastikan email akun sama dengan email data mahasiswa atau identifier akun berisi NIM.');
 
         return $mahasiswa;
@@ -1529,7 +1582,36 @@ class PklController extends Controller
 
     private function currentDosen(): Dosen
     {
-        return $this->dosenProfilesForUser()->firstOrFail();
+        $dosen = $this->actingDosenProfile();
+        abort_unless($dosen, 403, 'Pilih profil dosen terlebih dahulu atau hubungkan identitas dosen pada akun ini.');
+
+        return $dosen;
+    }
+
+    private function actingDosenProfile(): ?Dosen
+    {
+        if ($this->canSelectActingProfile() && session()->has('pkl.dosen_profile_id')) {
+            return Dosen::query()->where('aktif', true)->find(session('pkl.dosen_profile_id'));
+        }
+
+        $isLecturer = auth()->user()?->hasAnyRole(['dosen_pembimbing', 'dosen_penguji', 'dosen', 'Dosen', 'DosenLB', 'Guru Besar']);
+        if (! $isLecturer) {
+            return null;
+        }
+
+        return $this->dosenProfilesForUser()->first();
+    }
+
+    private function authorizeStudentAction(): void
+    {
+        $isStudent = auth()->user()?->hasAnyRole(['mahasiswa', 'Mahasiswa']) ?? false;
+        abort_unless($isStudent || $this->canActAsStudent(), 403, 'Pilih profil mahasiswa untuk bertindak sebagai mahasiswa PKL.');
+    }
+
+    private function authorizeLecturerAction(): void
+    {
+        $isLecturer = auth()->user()?->hasAnyRole(['dosen_pembimbing', 'dosen_penguji', 'dosen', 'Dosen', 'DosenLB', 'Guru Besar']) ?? false;
+        abort_unless($isLecturer || $this->canActAsLecturer(), 403, 'Pilih profil dosen untuk bertindak sebagai dosen PKL.');
     }
 
     private function mahasiswaProfilesForUser()
@@ -1582,6 +1664,7 @@ class PklController extends Controller
 
     private function assertOwnSubmission(PengajuanPkl $pengajuan): void
     {
+        $this->authorizeStudentAction();
         abort_unless(
             $pengajuan->mahasiswa_registrasi_id === $this->currentMahasiswa()->id_registrasi_mahasiswa,
             403

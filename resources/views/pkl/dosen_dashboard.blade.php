@@ -32,6 +32,19 @@
 </style>
 
 <div class="container-fluid py-4 min-vh-100 pkl-page">
+    @if($isActingAsProfile)
+    <div class="alert alert-info d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div><strong>Mode bertindak sebagai dosen:</strong> {{ $dosen->nama_dosen }}{{ $dosen->nidn ? ' ('.$dosen->nidn.')' : '' }}. Aksi akan dicatat atas akun {{ auth()->user()->name }}.</div>
+        <form method="GET" action="{{ route('pkl.dosen.index') }}" class="d-flex gap-2">
+            <select name="id_dosen" class="form-select form-select-sm" required>
+                @foreach($availableProfiles as $profile)
+                <option value="{{ $profile->id_dosen }}" @selected($profile->id_dosen === $dosen->id_dosen)>{{ $profile->nama_dosen }}{{ $profile->nidn ? ' ('.$profile->nidn.')' : '' }}</option>
+                @endforeach
+            </select>
+            <button class="btn btn-sm btn-outline-primary">Ganti Profil</button>
+        </form>
+    </div>
+    @endif
     <!-- Header Banner Dosen -->
     <div class="row mb-4">
         <div class="col-md-12">

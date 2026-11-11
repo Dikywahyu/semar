@@ -340,7 +340,7 @@
                         <h2 class="fw-bold mb-1 text-white"><i class="ti ti-briefcase me-2 text-white"></i>Portal Praktik Kerja Lapangan (PKL)</h2>
                         <p class="text-white-50 mb-0">Kelola tahapan magang, pantau roadmap progres secara real-time, dan unggah berkas dengan mudah.</p>
                     </div>
-                    @if($pengajuan->schedule_approved_at)
+                    @if($pengajuan?->schedule_approved_at)
                     <p class="small text-muted">Jadwal ditetapkan oleh {{ $pengajuan->scheduleApprover?->name ?? 'Admin' }} ({{ $pengajuan->scheduleApprover?->getRoleNames()->implode(', ') ?: 'Admin' }}) pada {{ $pengajuan->schedule_approved_at->format('d M Y H:i') }}.</p>
                     @endif
                     @if($pengajuan &&$pengajuan->status == 'Pengajuan & Verifikasi Admin')
@@ -354,6 +354,19 @@
             </div>
         </div>
     </div>
+    @if($isActingAsProfile)
+    <div class="alert alert-info d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div><strong>Mode bertindak sebagai mahasiswa:</strong> {{ $mahasiswa->nama_mahasiswa }} ({{ $mahasiswa->nim }}). Aksi akan dicatat atas akun {{ auth()->user()->name }}.</div>
+        <form method="GET" action="{{ route('pkl.mahasiswa.index') }}" class="d-flex gap-2">
+            <select name="id_registrasi_mahasiswa" class="form-select form-select-sm" required>
+                @foreach($availableProfiles as $profile)
+                <option value="{{ $profile->id_registrasi_mahasiswa }}" @selected($profile->id_registrasi_mahasiswa === $mahasiswa->id_registrasi_mahasiswa)>{{ $profile->nama_mahasiswa }} ({{ $profile->nim }})</option>
+                @endforeach
+            </select>
+            <button class="btn btn-sm btn-outline-primary">Ganti Profil</button>
+        </form>
+    </div>
+    @endif
 
     <div class="row">
         @if(!$pengajuan)
