@@ -600,10 +600,10 @@
                 <td class="text-muted">Status Saat Ini</td>
                 <td>: <span class="badge bg-primary-subtle text-primary px-3 py-2 fw-bold">{{ $pengajuan->status }}</span></td>
             </tr>
-            @if($pengajuan->nilai_akhir)
+            @if($pengajuan->status === 'Selesai' && $pengajuan->nilai_akhir !== null)
             <tr>
                 <td class="text-muted">Nilai Akhir</td>
-                <td>: <span class="badge bg-success-subtle text-success fs-6 px-3 py-1">{{ $pengajuan->nilai_akhir }} ({{$pengajuan->nilai_huruf }})</span></td>
+                <td>: <span class="badge bg-success-subtle text-success fs-6 px-3 py-1">{{ number_format((float) $pengajuan->nilai_akhir, 2) }}</span></td>
             </tr>
             @endif
         </table>

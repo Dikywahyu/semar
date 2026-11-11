@@ -268,8 +268,9 @@
         <aside class="rmap-card p-5 sm:p-6">
             <span class="rmap-badge rmap-badge-info mb-2">REKAP NILAI</span>
             <h2 class="mb-4 text-xl font-bold">Ringkasan Akhir</h2>
-            <div class="mb-3 flex justify-between border-b border-slate-100 py-3 text-sm"><span class="text-slate-500">Nilai akhir</span><strong>{{ $pkl->nilai_akhir ?? '—' }}</strong></div>
-            <div class="mb-3 flex justify-between border-b border-slate-100 py-3 text-sm"><span class="text-slate-500">Nilai huruf</span><strong>{{ $pkl->nilai_huruf ?? '—' }}</strong></div>
+            @if(($pkl->status ?? null) === 'Selesai' && $pkl->nilai_akhir !== null)
+                <div class="mb-3 flex justify-between border-b border-slate-100 py-3 text-sm"><span class="text-slate-500">Nilai Akhir</span><strong>{{ number_format((float) $pkl->nilai_akhir, 2) }}</strong></div>
+            @endif
             <div class="flex justify-between py-3 text-sm"><span class="text-slate-500">Status kelulusan</span><span class="rmap-badge {{ $badgeClass($pkl->status ?? 'Belum Ambil') }}">{{ $pkl->status ?? 'Belum Ambil' }}</span></div>
         </aside>
     </div>
@@ -457,7 +458,9 @@
                     </form>
                     @if($showPembimbing)<form action="{{ route('pkl.route-map.revision.validate', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="mt-3">@csrf<button class="rmap-btn rmap-btn-secondary" type="submit">Validasi revisi pasca-ujian</button></form>@endif
                 @else
-                    <p class="mb-0 text-sm text-slate-600">Nilai akhir: <strong>{{ data_get($pkl, 'nilai_akhir', '—') }}</strong> · Nilai huruf: <strong>{{ data_get($pkl, 'nilai_huruf', '—') }}</strong></p>
+                    @if(($pkl->status ?? null) === 'Selesai' && $pkl->nilai_akhir !== null)
+                        <p class="mb-0 text-sm text-slate-600">Nilai Akhir: <strong>{{ number_format((float) $pkl->nilai_akhir, 2) }}</strong></p>
+                    @endif
                 @endif
                 @if($pkl && $canPerformPembimbingActions && !$pkl->final_approved_at)
                     <form action="{{ route('pkl.route-map.final-approval', ['pengajuan' => $pkl->getKey()]) }}" method="POST" class="mt-3">@csrf

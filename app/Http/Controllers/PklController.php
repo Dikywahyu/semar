@@ -467,7 +467,7 @@ class PklController extends Controller
                 ['nilai_angka' => $nilai]
             );
         }
-        $this->markExamStarted($pengajuan);
+        $this->markRevisionAfterGradeEntry($pengajuan);
         $this->refreshFinalGrade($pengajuan);
         if ($request->filled('catatan_evaluasi')) {
             $pengajuan->update(['catatan_admin' => $validated['catatan_evaluasi']]);
@@ -1117,7 +1117,7 @@ class PklController extends Controller
                 ]);
             }
         });
-        $this->markExamStarted($pengajuan);
+        $this->markRevisionAfterGradeEntry($pengajuan);
         $this->refreshFinalGrade($pengajuan);
         $this->completePklIfReady($pengajuan);
 
@@ -1420,7 +1420,7 @@ class PklController extends Controller
                 ]);
             }
         });
-        $this->markExamStarted($pengajuan);
+        $this->markRevisionAfterGradeEntry($pengajuan);
         $this->refreshFinalGrade($pengajuan);
         $this->logPklActivity($pengajuan, 'Penilaian PKL', 'Dosen ' . (auth()->user()->name ?? '') . ' menyimpan nilai seminar dan evaluasi.');
         if ($pengajuan->dosen_pembimbing_id === $dosen->id_dosen) {
@@ -1560,14 +1560,19 @@ class PklController extends Controller
         ]);
     }
 
-    private function markExamStarted(PengajuanPkl $pengajuan): void
+    private function markRevisionAfterGradeEntry(PengajuanPkl $pengajuan): void
     {
-        if ($pengajuan->status !== self::STATUS_UJIAN) {
+        if (! in_array($pengajuan->status, [self::STATUS_UJIAN, self::STATUS_SEMINAR], true)) {
             return;
         }
 
-        $pengajuan->update(['status' => self::STATUS_SEMINAR]);
-        $this->logPklActivity($pengajuan, 'Ujian Seminar Dimulai', 'Status berubah menjadi ' . self::STATUS_SEMINAR . ' setelah penilaian seminar dimulai.');
+        $statusSebelumnya = $pengajuan->status;
+        $pengajuan->update(['status' => self::STATUS_REVISI]);
+        $this->logPklActivity(
+            $pengajuan,
+            'Status PKL Menjadi Revisi Laporan',
+            'Status berubah dari ' . $statusSebelumnya . ' menjadi ' . self::STATUS_REVISI . ' setelah dosen menyimpan nilai ujian.'
+        );
     }
 
     private function sendExamInvitation(PengajuanPkl $pengajuan): bool
