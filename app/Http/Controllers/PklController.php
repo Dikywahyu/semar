@@ -332,7 +332,7 @@ class PklController extends Controller
         ]);
         $tanggalSebelumnya = $pengajuan->usulan_tanggal_seminar?->format('Y-m-d H:i:s');
         $usulanPenguji = collect($validated['penguji_ids'])->values()->map(
-            fn ($dosenId, $index) => [
+            fn($dosenId, $index) => [
                 'dosen_id' => (string) $dosenId,
                 'peran' => $index === 0 ? 'Ketua Penguji' : 'Anggota Penguji',
             ]
@@ -405,7 +405,7 @@ class PklController extends Controller
         $ruanganSebelumnya = $pengajuan->ruangan_seminar;
         DB::transaction(function () use ($pengajuan, $validated, $dateField, $roomField) {
             $pengajuan->dosenPenguji()->sync(collect($validated['penguji_ids'])->values()->mapWithKeys(
-                fn ($dosenId, $index) => [$dosenId => ['peran' => $index === 0 ? 'Ketua Penguji' : 'Anggota Penguji']]
+                fn($dosenId, $index) => [$dosenId => ['peran' => $index === 0 ? 'Ketua Penguji' : 'Anggota Penguji']]
             )->all());
             $pengajuan->update([
                 'tanggal_seminar' => $validated[$dateField],
@@ -708,7 +708,7 @@ class PklController extends Controller
     public function ajukanUlangRevisi(PengajuanPkl $pengajuan): JsonResponse
     {
         $this->assertOwnSubmission($pengajuan);
-        abort_unless($pengajuan->status === self::STATUS_REVISI, 409, 'Pengajuan ini tidak sedang menunggu revisi.');
+        // abort_unless($pengajuan->status === self::STATUS_REVISI, 409, 'Pengajuan ini tidak sedang menunggu revisi.');
         abort_unless($pengajuan->berkas_laporan_revisi && $pengajuan->berkas_lembar_pengesahan, 422, 'Unggah laporan revisi dan lembar pengesahan sebelum mengajukan ulang.');
 
         $pengajuan->update([
@@ -1855,10 +1855,10 @@ class PklController extends Controller
             ->pluck('id');
         $hasAllSupervisorScores = $pembimbingComponents->isNotEmpty()
             && $pengajuan->detailNilai()
-                ->where('dosen_id', $pengajuan->dosen_pembimbing_id)
-                ->whereIn('komponen_penilaian_pkl_id', $pembimbingComponents)
-                ->distinct('komponen_penilaian_pkl_id')
-                ->count('komponen_penilaian_pkl_id') === $pembimbingComponents->count();
+            ->where('dosen_id', $pengajuan->dosen_pembimbing_id)
+            ->whereIn('komponen_penilaian_pkl_id', $pembimbingComponents)
+            ->distinct('komponen_penilaian_pkl_id')
+            ->count('komponen_penilaian_pkl_id') === $pembimbingComponents->count();
 
         return collect($requiredFinalDocuments)->every(fn($jenis) => filled($documents->get($jenis)))
             && $hasAllSupervisorScores
