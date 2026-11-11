@@ -380,37 +380,7 @@
         });
 
         $(document).on('click', '.btn-terapkan-usulan', function() {
-            const button = $(this);
-            const options = @json(($dosens ?? collect())->map(fn ($dosen) => ['id' => $dosen->id_dosen, 'nama' => $dosen->nama_dosen])->values());
-            const dosenOptions = options.map(dosen => `<option value="${dosen.id}" ${String(dosen.id) === String(button.data('dosen')) ? 'selected' : ''}>${$('<div>').text(dosen.nama).html()}</option>`).join('');
-            const defaultDate = button.data('tanggal') || '';
-            const defaultRoom = $('<div>').text(button.data('ruangan') || '').html();
-            const proposedSupervisor = button.data('usulan-pembimbing');
-            const supervisorHint = proposedSupervisor ? `<div class="alert alert-info text-start mt-2 mb-0">Usulan pembimbing mahasiswa: <strong>${$('<div>').text(proposedSupervisor).html()}</strong></div>` : '';
-            Swal.fire({
-                title: 'Tinjau dan tetapkan usulan',
-                html: `${supervisorHint}<label class="form-label text-start w-100 mt-3">Dosen pembimbing (admin dapat mengubah)</label><select id="admin-usulan-dosen" class="swal2-select w-100 mt-0"><option value="">Pilih dosen</option>${dosenOptions}</select><label class="form-label text-start w-100 mt-3">Tanggal dan waktu</label><input id="admin-usulan-tanggal" type="datetime-local" class="swal2-input w-100 m-0" value="${defaultDate}"><label class="form-label text-start w-100 mt-3">Ruangan</label><input id="admin-usulan-ruangan" class="swal2-input w-100 m-0" value="${defaultRoom}">`,
-                showCancelButton: true,
-                confirmButtonText: 'Tetapkan jadwal',
-                cancelButtonText: 'Batal',
-                preConfirm: () => ({
-                    dosen_pembimbing_id: $('#admin-usulan-dosen').val(),
-                    tanggal_seminar: $('#admin-usulan-tanggal').val(),
-                    ruangan_seminar: $('#admin-usulan-ruangan').val()
-                })
-            }).then(result => {
-                if (!result.isConfirmed) return;
-                $.ajax({
-                    url: "{{ url('pkl/admin/terapkan-usulan-mahasiswa') }}/" + button.data('id'),
-                    type: 'POST', data: result.value,
-                    headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-                    success: function(response) {
-                        Swal.fire({icon: 'success', title: 'Berhasil', text: response.message || 'Jadwal ditetapkan.', timer: 1200, showConfirmButton: false});
-                        fetchTableData();
-                    },
-                    error: function(xhr) { Swal.fire('Belum dapat diterapkan', xhr.responseJSON?.message || 'Periksa berkas verifikasi dan jadwal.', 'warning'); }
-                });
-            });
+            $(this).closest('tr').find('.btn-jadwal').first().trigger('click');
         });
 
         // 2. SUBMIT FORM VERIFIKASI BERKAS VIA AJAX (MENCEGAH REDIRECT / PINDAH HALAMAN)

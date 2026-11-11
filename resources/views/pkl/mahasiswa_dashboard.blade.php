@@ -588,7 +588,7 @@
                 ->every(fn($kind) => filled($genericDocuments->get($kind)?->path_berkas));
         @endphp
 
-        @if(in_array($pengajuan->status, ['Pengajuan & Verifikasi Admin', 'Pelaksanaan PKL & Bimbingan'], true))
+        @if(in_array($pengajuan->status, ['Pengajuan & Verifikasi Admin', 'Pelaksanaan PKL & Bimbingan', 'Verifikasi Berkas Admin'], true))
         <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-info">
             <h5 class="fw-bold mb-1"><i class="ti ti-file-certificate text-info me-2"></i>Dokumen Pendaftaran PKL · Semester 6</h5>
             <p class="text-muted small mb-3">Lengkapi berkas awal PKL. Proposal yang dikirim saat pengajuan tetap dapat diganti di sini.</p>
@@ -719,13 +719,16 @@
                 </div>
                 <div>
                     <h5 class="fw-bold mb-0">Verifikasi Berkas Ujian</h5>
-                    <p class="text-muted small mb-0">Unggah draft laporan, kartu konsultasi, dan transkrip sementara. Admin akan memverifikasi kelengkapannya.</p>
+                    <p class="text-muted small mb-0">Berkas yang ditolak dapat diperbaiki dan diunggah ulang di tahap ini. Admin akan memverifikasi kembali semua berkas.</p>
                 </div>
             </div>
 
             <div class="row g-3">
                 @php
                 $berkasList = [
+                'surat_jalan_pkl' => ['label' => 'Surat Jalan PKL', 'value' => $genericDocuments->get('surat_jalan_pkl')?->path_berkas],
+                'surat_balasan_instansi' => ['label' => 'Surat Balasan Instansi', 'value' => $genericDocuments->get('surat_balasan_instansi')?->path_berkas],
+                'acc_pembimbing_awal' => ['label' => 'ACC Pembimbing Awal', 'value' => $genericDocuments->get('acc_pembimbing_awal')?->path_berkas],
                 'berkas_draft_laporan' => ['label' => 'Draft Laporan PKL', 'value' => $pengajuan->berkas_draft_laporan],
                 'berkas_kartu_bimbingan' => ['label' => 'Kartu Konsultasi / Bimbingan', 'value' => $pengajuan->berkas_kartu_bimbingan],
                 'transkrip_sementara' => ['label' => 'Transkrip Sementara', 'value' => $genericDocuments->get('transkrip_sementara')?->path_berkas],
@@ -815,12 +818,18 @@
             @if($pengajuan->status === 'Dijadwalkan Ujian')
             <form action="{{ route('pkl.mahasiswa.usulkan-jadwal', $pengajuan->id) }}" method="POST" class="border rounded-3 p-3 mb-4 bg-light">
                 @csrf
-                <h6 class="fw-bold small mb-3">{{ $pengajuan->tanggal_seminar ? 'Usulkan Revisi Tanggal' : 'Usulkan Tanggal Ujian' }}</h6>
+                <h6 class="fw-bold small mb-3">{{ $pengajuan->tanggal_seminar ? 'Usulkan Revisi Jadwal & Penguji' : 'Usulkan Jadwal & Penguji' }}</h6>
                 <label class="form-label small">Tanggal dan waktu ujian</label>
                 <input type="datetime-local" name="tanggal_seminar" value="{{ $pengajuan->usulan_tanggal_seminar?->format('Y-m-d\TH:i') ?? $pengajuan->tanggal_seminar?->format('Y-m-d\TH:i') }}" class="form-control form-control-sm mb-2" min="{{ now()->addHour()->format('Y-m-d\TH:i') }}" required>
+                <label class="form-label small">Usulan dosen penguji</label>
+                <select name="penguji_ids[]" class="form-select form-select-sm mb-2" multiple size="4" required>
+                    @foreach($dosensPenguji as $dosenPilihan)
+                    <option value="{{ $dosenPilihan->id_dosen }}" @selected(collect($pengajuan->usulan_dosen_penguji ?? [])->contains(fn ($penguji) => (string) data_get($penguji, 'dosen_id') === (string) $dosenPilihan->id_dosen) || collect($pengajuan->usulan_dosen_penguji ?? [])->isEmpty() && $pengajuan->dosenPenguji->contains('id_dosen', $dosenPilihan->id_dosen))>{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>
+                    @endforeach
+                </select>
                 <label class="form-label small">Catatan (opsional)</label>
                 <textarea name="catatan_usulan_jadwal" class="form-control form-control-sm mb-2" rows="2" placeholder="Alasan atau waktu alternatif">{{ $pengajuan->catatan_usulan_jadwal }}</textarea>
-                <small class="text-muted d-block mb-2">Mahasiswa mengusulkan waktu saja. Admin menetapkan jadwal resmi dan ruangan.</small>
+                <small class="text-muted d-block mb-2">Pilih satu atau beberapa calon penguji. Admin menetapkan/merevisi jadwal resmi, ruangan, dan susunan penguji.</small>
                 <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">Kirim Usulan Jadwal</button>
             </form>
             @endif

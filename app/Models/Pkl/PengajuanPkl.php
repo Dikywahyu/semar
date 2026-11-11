@@ -19,6 +19,7 @@ class PengajuanPkl extends Model
 
     protected $casts = [
         'is_acc_seminar' => 'boolean',
+        'usulan_dosen_penguji' => 'array',
         'tanggal_seminar' => 'datetime',
         'usulan_tanggal_seminar' => 'datetime',
         'schedule_approved_at' => 'datetime',

@@ -103,6 +103,7 @@ class PklController extends Controller
             'pengajuan' => $pengajuan,
             'mahasiswa' => $mahasiswa,
             'dosensPembimbing' => Dosen::query()->where('aktif', true)->orderBy('nama_dosen')->get(),
+            'dosensPenguji' => Dosen::query()->where('aktif', true)->orderBy('nama_dosen')->get(),
             'isActingAsProfile' => $isPrivileged,
             'availableProfiles' => $isPrivileged
                 ? MahasiswaRegistrasi::query()->where('aktif', true)->orderBy('nama_mahasiswa')->get()
@@ -136,6 +137,7 @@ class PklController extends Controller
         return view('pkl.mahasiswa_route_map', [
             'pkl' => $pengajuan,
             'mahasiswa' => $mahasiswa,
+            'dosensPenguji' => Dosen::query()->where('aktif', true)->orderBy('nama_dosen')->get(),
             'komponen_penilaian_pkl' => $pengajuan ? $this->componentsForSubmission($pengajuan)->get() : collect(),
             'submissions' => $submissions,
             'stats' => $stats,
@@ -151,7 +153,7 @@ class PklController extends Controller
     {
         $this->assertOwnSubmission($pengajuan);
         $allowedStageStatus = match ($tahap) {
-            1 => [self::STATUS_PENGAJUAN, self::STATUS_PELAKSANAAN],
+            1 => [self::STATUS_PENGAJUAN, self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI],
             2 => [self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI],
             3 => [self::STATUS_UJIAN, self::STATUS_SEMINAR, self::STATUS_REVISI],
             default => abort(404),
@@ -190,8 +192,8 @@ class PklController extends Controller
         abort_unless($request->file('file')->isValid(), 422, 'Pilih berkas yang valid.');
 
         if ($field === 'berkas_proposal') {
-            $pengajuan->update(['berkas_proposal' => $this->storeFile($request->file('file'))]);
-            $this->logPklActivity($pengajuan, 'Unggah Dokumen', (auth()->user()?->name ?? 'Mahasiswa') . ' mengunggah dokumen: Proposal PKL.');
+            $document = $this->storePklDocument($pengajuan, 'proposal', $request->file('file'));
+            $pengajuan->update(['berkas_proposal' => $document->path_berkas]);
         } elseif (in_array($field, ['draft_laporan', 'kartu_konsultasi'], true)) {
             $legacyField = $field === 'draft_laporan' ? 'berkas_draft_laporan' : 'berkas_kartu_bimbingan';
             $pengajuan->update([$legacyField => $this->storeFile($request->file('file'))]);
@@ -244,7 +246,7 @@ class PklController extends Controller
     private function advanceAfterExamDocuments(PengajuanPkl $pengajuan): void
     {
         $required = ['draft_laporan', 'kartu_konsultasi', 'transkrip_sementara'];
-        if ($pengajuan->status !== self::STATUS_VERIFIKASI || ! $pengajuan->is_acc_seminar || ! $this->examDocumentsApproved($pengajuan, $required)) {
+        if ($pengajuan->status !== self::STATUS_VERIFIKASI || ! $this->examDocumentsApproved($pengajuan, $required)) {
             return;
         }
 
@@ -314,18 +316,7 @@ class PklController extends Controller
         $this->authorizeStudentAction();
         $this->assertOwnSubmission($pengajuan);
         abort_unless($pengajuan->status === self::STATUS_UJIAN, 409, 'Usulan jadwal hanya tersedia sebelum ujian dimulai.');
-        $validated = $request->validate([
-            'tanggal_seminar' => ['required', 'date', 'after:now'],
-            'catatan_usulan_jadwal' => ['nullable', 'string', 'max:2000'],
-        ]);
-        $tanggalSebelumnya = $pengajuan->usulan_tanggal_seminar?->format('Y-m-d H:i:s');
-        $pengajuan->update([
-            'usulan_tanggal_seminar' => $validated['tanggal_seminar'],
-            'catatan_usulan_jadwal' => $validated['catatan_usulan_jadwal'] ?? null,
-        ]);
-        $this->logPklActivity($pengajuan, 'Usulan Mahasiswa', 'Mahasiswa ' . (auth()->user()->name ?? '') . ' mengusulkan tanggal ujian ' . $validated['tanggal_seminar'] . (($validated['catatan_usulan_jadwal'] ?? '') !== '' ? '. Catatan: ' . $validated['catatan_usulan_jadwal'] : '') . '. Penetapan ruangan dan jadwal resmi menunggu admin. Usulan sebelumnya: ' . ($tanggalSebelumnya ?: '-') . '.');
-
-        return back()->with('success', 'Usulan jadwal seminar tersimpan dan menunggu penetapan admin.');
+        return $this->mahasiswaProposeSchedule($request, $pengajuan);
     }
 
     public function mahasiswaProposeSchedule(Request $request, PengajuanPkl $pengajuan): RedirectResponse
@@ -336,12 +327,23 @@ class PklController extends Controller
         $validated = $request->validate([
             'tanggal_seminar' => ['required', 'date', 'after:now'],
             'catatan_usulan_jadwal' => ['nullable', 'string', 'max:2000'],
+            'penguji_ids' => ['required', 'array', 'min:1'],
+            'penguji_ids.*' => ['required', 'distinct', Rule::exists('dosens', 'id_dosen')->where('aktif', true)],
         ]);
+        $tanggalSebelumnya = $pengajuan->usulan_tanggal_seminar?->format('Y-m-d H:i:s');
+        $usulanPenguji = collect($validated['penguji_ids'])->values()->map(
+            fn ($dosenId, $index) => [
+                'dosen_id' => (string) $dosenId,
+                'peran' => $index === 0 ? 'Ketua Penguji' : 'Anggota Penguji',
+            ]
+        )->all();
         $pengajuan->update([
             'usulan_tanggal_seminar' => $validated['tanggal_seminar'],
             'catatan_usulan_jadwal' => $validated['catatan_usulan_jadwal'] ?? null,
+            'usulan_dosen_penguji' => $usulanPenguji,
         ]);
-        $this->logPklActivity($pengajuan, 'Usulan Mahasiswa', 'Mahasiswa ' . (auth()->user()->name ?? '') . ' mengusulkan atau meminta revisi tanggal ujian menjadi ' . $validated['tanggal_seminar'] . (($validated['catatan_usulan_jadwal'] ?? '') !== '' ? '. Catatan: ' . $validated['catatan_usulan_jadwal'] : '') . '. Penetapan waktu resmi dan ruangan menunggu admin.');
+        $namaPenguji = Dosen::query()->whereIn('id_dosen', $validated['penguji_ids'])->pluck('nama_dosen')->implode(', ');
+        $this->logPklActivity($pengajuan, 'Usulan Mahasiswa', 'Mahasiswa ' . (auth()->user()->name ?? '') . ' mengusulkan atau meminta revisi tanggal ujian menjadi ' . $validated['tanggal_seminar'] . '. Usulan dosen penguji: ' . $namaPenguji . (($validated['catatan_usulan_jadwal'] ?? '') !== '' ? '. Catatan: ' . $validated['catatan_usulan_jadwal'] : '') . '. Penetapan jadwal resmi, ruangan, dan penguji menunggu admin. Usulan sebelumnya: ' . ($tanggalSebelumnya ?: '-') . '.');
 
         return back()->with('success', 'Usulan tanggal ujian tersimpan. Jadwal dan ruangan resmi akan ditetapkan admin.');
     }
@@ -367,7 +369,7 @@ class PklController extends Controller
 
         $stage = $this->routeMapDocumentCatalog()[$validated['jenis_berkas']]['stage'];
         $allowed = match ($stage) {
-            1 => in_array($pengajuan->status, [self::STATUS_PENGAJUAN, self::STATUS_PELAKSANAAN], true),
+            1 => in_array($pengajuan->status, [self::STATUS_PENGAJUAN, self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI], true),
             2 => in_array($pengajuan->status, [self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI], true),
             3 => in_array($pengajuan->status, [self::STATUS_UJIAN, self::STATUS_SEMINAR, self::STATUS_REVISI], true),
             default => false,
@@ -376,8 +378,8 @@ class PklController extends Controller
 
         $kind = $validated['jenis_berkas'];
         if ($kind === 'proposal') {
-            $pengajuan->update(['berkas_proposal' => $this->storeFile($request->file('file'))]);
-            $this->logPklActivity($pengajuan, 'Unggah Dokumen', 'Mahasiswa ' . (auth()->user()->name ?? '') . ' mengunggah dokumen: Proposal PKL.');
+            $document = $this->storePklDocument($pengajuan, 'proposal', $request->file('file'));
+            $pengajuan->update(['berkas_proposal' => $document->path_berkas]);
         } else {
             $this->storePklDocument($pengajuan, $kind, $request->file('file'));
         }
@@ -388,26 +390,34 @@ class PklController extends Controller
     public function routeMapSchedule(Request $request, PengajuanPkl $pengajuan): RedirectResponse
     {
         abort_unless(auth()->user()?->hasAnyRole(['admin', 'Admin', 'Super Admin', 'Kaprodi']), 403);
-        abort_unless($pengajuan->is_acc_seminar && $this->examDocumentsApproved($pengajuan), 409, 'Jadwal hanya dapat ditetapkan setelah berkas praujian diverifikasi dan mendapat ACC pembimbing.');
+        abort_unless($this->examDocumentsApproved($pengajuan), 409, 'Jadwal hanya dapat ditetapkan setelah berkas praujian diverifikasi admin.');
         $isReschedule = $request->boolean('penjadwalan_ulang');
         $dateField = $isReschedule ? 'tanggal_seminar_baru' : 'tanggal_seminar';
         $roomField = $isReschedule ? 'ruangan_seminar_baru' : 'ruangan_seminar';
         $validated = $request->validate([
             $dateField => ['required', 'date', 'after:now'],
             $roomField => ['required', 'string', 'max:255'],
+            'penguji_ids' => ['required', 'array', 'min:1'],
+            'penguji_ids.*' => ['required', 'distinct', Rule::exists('dosens', 'id_dosen')->where('aktif', true)],
             'alasan' => ['nullable', 'string', 'max:2000'],
         ]);
         $tanggalSebelumnya = $pengajuan->tanggal_seminar?->format('Y-m-d H:i:s');
         $ruanganSebelumnya = $pengajuan->ruangan_seminar;
-        $pengajuan->update([
-            'tanggal_seminar' => $validated[$dateField],
-            'ruangan_seminar' => $validated[$roomField],
-            'status' => self::STATUS_UJIAN,
-            'schedule_approved_by' => auth()->id(),
-            'schedule_approved_at' => now(),
-            'usulan_tanggal_seminar' => null,
-            'catatan_usulan_jadwal' => null,
-        ]);
+        DB::transaction(function () use ($pengajuan, $validated, $dateField, $roomField) {
+            $pengajuan->dosenPenguji()->sync(collect($validated['penguji_ids'])->values()->mapWithKeys(
+                fn ($dosenId, $index) => [$dosenId => ['peran' => $index === 0 ? 'Ketua Penguji' : 'Anggota Penguji']]
+            )->all());
+            $pengajuan->update([
+                'tanggal_seminar' => $validated[$dateField],
+                'ruangan_seminar' => $validated[$roomField],
+                'status' => self::STATUS_UJIAN,
+                'schedule_approved_by' => auth()->id(),
+                'schedule_approved_at' => now(),
+                'usulan_tanggal_seminar' => null,
+                'catatan_usulan_jadwal' => null,
+                'usulan_dosen_penguji' => null,
+            ]);
+        });
         $aksi = $isReschedule ? 'Jadwal Ujian Direvisi' : 'Jadwal Ujian Ditetapkan';
         $deskripsi = 'Admin ' . (auth()->user()->name ?? '') . ($isReschedule ? ' mengubah jadwal ujian' : ' menetapkan jadwal ujian')
             . ' dari ' . ($tanggalSebelumnya ?: '-') . ' / ' . ($ruanganSebelumnya ?: '-')
@@ -563,6 +573,18 @@ class PklController extends Controller
             $this->storePklDocument($pengajuan, $field, $file);
         }
         if ($pengajuan->berkas_proposal) {
+            $pengajuan->berkasSeminar()->updateOrCreate(
+                ['jenis_berkas' => 'proposal'],
+                [
+                    'path_berkas' => $pengajuan->berkas_proposal,
+                    'status_verifikasi' => 'Pending',
+                    'catatan_verifikator' => null,
+                    'verified_by' => null,
+                    'verified_at' => null,
+                    'approved_by' => null,
+                    'approved_at' => null,
+                ]
+            );
             $this->logPklActivity($pengajuan, 'Unggah Dokumen', (auth()->user()?->name ?? 'Mahasiswa') . ' mengunggah dokumen: Proposal PKL.');
         }
 
@@ -640,7 +662,7 @@ class PklController extends Controller
             ? [self::STATUS_UJIAN, self::STATUS_SEMINAR, self::STATUS_REVISI]
             : ($field === 'transkrip_sementara' || in_array($field, ['berkas_kartu_bimbingan', 'berkas_draft_laporan'], true)
                 ? [self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI]
-                : [self::STATUS_PENGAJUAN, self::STATUS_PELAKSANAAN]);
+                : [self::STATUS_PENGAJUAN, self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI]);
         abort_unless(in_array($pengajuan->status, $allowedStatuses, true), 409, 'Berkas belum dapat diunggah pada tahap ini.');
         $technicalAttachment = $field === 'lampiran_teknis';
         $validated = $request->validate([
@@ -657,7 +679,11 @@ class PklController extends Controller
             $berkas = $this->storePklDocument($pengajuan, $validated['field'], $request->file('file'));
         } else {
             if (in_array($validated['field'], ['berkas_proposal', 'berkas_draft_laporan', 'berkas_kartu_bimbingan'], true)) {
-                $storedPath = $this->storeFile($request->file('file'));
+                if ($validated['field'] === 'berkas_proposal') {
+                    $storedPath = $this->storePklDocument($pengajuan, 'proposal', $request->file('file'))->path_berkas;
+                } else {
+                    $storedPath = $this->storeFile($request->file('file'));
+                }
                 $pengajuan->update([$validated['field'] => $storedPath]);
                 if (in_array($validated['field'], ['berkas_draft_laporan', 'berkas_kartu_bimbingan'], true)) {
                     $jenisBerkas = $validated['field'] === 'berkas_draft_laporan' ? 'draft_laporan' : 'kartu_konsultasi';
@@ -907,6 +933,7 @@ class PklController extends Controller
     public function verifyDocuments(Request $request, PengajuanPkl $pengajuan): JsonResponse
     {
         $this->authorizeAdmin();
+        abort_unless($pengajuan->status === self::STATUS_VERIFIKASI, 409, 'Berkas hanya dapat diverifikasi pada tahap Verifikasi Berkas Admin.');
         $validated = $request->validate([
             'keputusan' => ['required', Rule::in(['disetujui', 'ditolak'])],
             'catatan_admin' => ['required_if:keputusan,ditolak', 'nullable', 'string', 'max:5000'],
@@ -921,10 +948,10 @@ class PklController extends Controller
                 ->unique();
             abort_unless($uploadedRequiredKinds->count() === count($requiredDocumentKinds), 422, 'Draft laporan, kartu konsultasi, dan transkrip sementara wajib diunggah sebelum disetujui.');
             $statusSebelumnya = $pengajuan->status;
-            $statusBaru = $pengajuan->is_acc_seminar ? self::STATUS_UJIAN : self::STATUS_VERIFIKASI;
+            $statusBaru = self::STATUS_UJIAN;
             $pengajuan->update(['status' => $statusBaru, 'catatan_admin' => null]);
             $pengajuan->berkasSeminar()
-                ->whereIn('jenis_berkas', $requiredDocumentKinds)
+                ->whereNotNull('path_berkas')
                 ->update([
                     'status_verifikasi' => 'Valid',
                     'catatan_verifikator' => null,
@@ -933,7 +960,7 @@ class PklController extends Controller
                     'approved_by' => auth()->id(),
                     'approved_at' => now(),
                 ]);
-            $this->logPklActivity($pengajuan, 'Verifikasi Berkas Disetujui', 'Admin ' . (auth()->user()->name ?? '') . ' menyetujui tiga berkas persyaratan ujian.');
+            $this->logPklActivity($pengajuan, 'Verifikasi Berkas Disetujui', 'Admin ' . (auth()->user()->name ?? '') . ' menyetujui berkas yang diunggah setelah tiga dokumen wajib praujian dinyatakan lengkap.');
             if ($statusSebelumnya !== $statusBaru) {
                 $this->logPklActivity($pengajuan, 'Perubahan Status PKL', 'Admin ' . auth()->user()->name . ' mengubah status dari ' . $statusSebelumnya . ' menjadi ' . $statusBaru . '.');
             }
@@ -942,7 +969,7 @@ class PklController extends Controller
                 'catatan_admin' => $validated['catatan_admin'],
             ]);
             $pengajuan->berkasSeminar()
-                ->whereIn('jenis_berkas', ['draft_laporan', 'kartu_konsultasi', 'transkrip_sementara'])
+                ->whereNotNull('path_berkas')
                 ->update([
                     'status_verifikasi' => 'Ditolak',
                     'catatan_verifikator' => $validated['catatan_admin'],
@@ -960,7 +987,7 @@ class PklController extends Controller
     public function setSchedule(Request $request, PengajuanPkl $pengajuan): JsonResponse|RedirectResponse
     {
         $this->authorizeAdmin();
-        abort_unless($pengajuan->is_acc_seminar && $this->examDocumentsApproved($pengajuan), 409, 'Jadwal hanya dapat ditetapkan setelah berkas praujian diverifikasi dan mendapat ACC pembimbing.');
+        abort_unless($this->examDocumentsApproved($pengajuan), 409, 'Jadwal hanya dapat ditetapkan setelah berkas praujian diverifikasi admin.');
         $validated = $request->validate([
             'tanggal_seminar' => ['required', 'date', 'after:now'],
             'ruangan_seminar' => ['required', 'string', 'max:255'],
@@ -983,6 +1010,7 @@ class PklController extends Controller
                 'schedule_approved_at' => now(),
                 'usulan_tanggal_seminar' => null,
                 'catatan_usulan_jadwal' => null,
+                'usulan_dosen_penguji' => null,
             ]);
         });
         $isReschedule = $tanggalSebelumnya !== null || $ruanganSebelumnya !== null;
