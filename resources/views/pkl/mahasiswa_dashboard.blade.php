@@ -586,19 +586,30 @@
         $dokumenPendaftaranLengkap = filled($pengajuan->berkas_proposal)
             && collect(['surat_jalan_pkl', 'surat_balasan_instansi', 'acc_pembimbing_awal'])
                 ->every(fn($kind) => filled($genericDocuments->get($kind)?->path_berkas));
+        $berkasPendaftaran = [
+            'proposal' => ['Proposal ke Tempat PKL', $pengajuan->berkas_proposal],
+        ];
+        if ($pengajuan->status !== 'Verifikasi Berkas Admin') {
+            $berkasPendaftaran += [
+                'surat_jalan_pkl' => ['Surat Jalan PKL', $genericDocuments->get('surat_jalan_pkl')?->path_berkas],
+                'surat_balasan_instansi' => ['Surat Balasan Instansi', $genericDocuments->get('surat_balasan_instansi')?->path_berkas],
+                'acc_pembimbing_awal' => ['ACC Pembimbing', $genericDocuments->get('acc_pembimbing_awal')?->path_berkas],
+            ];
+        }
         @endphp
 
         @if(in_array($pengajuan->status, ['Pengajuan & Verifikasi Admin', 'Pelaksanaan PKL & Bimbingan', 'Verifikasi Berkas Admin'], true))
         <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-info">
             <h5 class="fw-bold mb-1"><i class="ti ti-file-certificate text-info me-2"></i>Dokumen Pendaftaran PKL · Semester 6</h5>
-            <p class="text-muted small mb-3">Lengkapi berkas awal PKL. Proposal yang dikirim saat pengajuan tetap dapat diganti di sini.</p>
+            <p class="text-muted small mb-3">
+                @if($pengajuan->status === 'Verifikasi Berkas Admin')
+                    Proposal yang dikirim saat pengajuan tetap dapat diganti di sini. Surat Jalan, Surat Balasan, dan ACC Pembimbing ditampilkan pada bagian Verifikasi Berkas Ujian di bawah.
+                @else
+                    Lengkapi berkas awal PKL. Proposal yang dikirim saat pengajuan tetap dapat diganti di sini.
+                @endif
+            </p>
             <div class="row g-3">
-                @foreach([
-                'proposal' => ['Proposal ke Tempat PKL', $pengajuan->berkas_proposal],
-                'surat_jalan_pkl' => ['Surat Jalan PKL', $genericDocuments->get('surat_jalan_pkl')?->path_berkas],
-                'surat_balasan_instansi' => ['Surat Balasan Instansi', $genericDocuments->get('surat_balasan_instansi')?->path_berkas],
-                'acc_pembimbing_awal' => ['ACC Pembimbing', $genericDocuments->get('acc_pembimbing_awal')?->path_berkas],
-                ] as $kind => [$label, $path])
+                @foreach($berkasPendaftaran as $kind => [$label, $path])
                 <div class="col-md-6">
                     <form action="{{ route('pkl.mahasiswa.upload-berkas-satuan', $pengajuan->id) }}" method="POST" enctype="multipart/form-data" class="border rounded-3 p-3 h-100 document-upload-form">
                         @csrf
