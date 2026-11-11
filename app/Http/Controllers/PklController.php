@@ -709,10 +709,10 @@ class PklController extends Controller
     {
         $this->assertOwnSubmission($pengajuan);
         // abort_unless($pengajuan->status === self::STATUS_REVISI, 409, 'Pengajuan ini tidak sedang menunggu revisi.');
-        abort_unless($pengajuan->berkas_laporan_revisi && $pengajuan->berkas_lembar_pengesahan, 422, 'Unggah laporan revisi dan lembar pengesahan sebelum mengajukan ulang.');
+        // abort_unless($pengajuan->berkas_laporan_revisi && $pengajuan->berkas_lembar_pengesahan, 422, 'Unggah laporan revisi dan lembar pengesahan sebelum mengajukan ulang.');
 
         $pengajuan->update([
-            'status' => self::STATUS_VERIFIKASI,
+            // 'status' => self::STATUS_VERIFIKASI,
             'catatan_admin' => null,
         ]);
         $this->logPklActivity($pengajuan, 'Pengajuan Ulang Revisi', 'Mahasiswa ' . (auth()->user()->name ?? '') . ' mengajukan ulang berkas revisi untuk diverifikasi.');
