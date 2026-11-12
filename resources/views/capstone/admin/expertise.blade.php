@@ -246,12 +246,15 @@
             e.preventDefault();
             let id = $('#expertiseId').val();
             let url = id ? "{{ url('capstone/admin/expertises') }}/" + id : "{{ route('capstone.admin.expertises.store') }}";
-            let type = id ? 'PUT' : 'POST';
+            const formData = $(this).serializeArray();
+            if (id) {
+                formData.push({ name: '_method', value: 'PUT' });
+            }
 
             $.ajax({
                 url: url,
-                type: type,
-                data: $(this).serialize(),
+                type: 'POST',
+                data: $.param(formData),
                 success: function(res) {
                     $('#modalExpertise').modal('hide');
                     Swal.fire('Berhasil!', res.message, 'success');
@@ -292,13 +295,13 @@
                             lecturersHtml += '</div>';
                         }
 
-                        const actions = index === 0
-                            ? '<span class="badge bg-secondary">Master keahlian #1 · dikunci</span>'
-                            : `<div class="d-flex flex-column flex-sm-row justify-content-center gap-1">
-                                <button class="btn btn-sm btn-outline-info btn-manage-lecturers" data-id="${item.id}" data-name="${item.name}"><i class="ti ti-users"></i> Atur Dosen</button>
-                                <button class="btn btn-sm btn-outline-warning btn-edit" data-id="${item.id}" data-name="${item.name}" data-coordinator="${item.coordinator_id ?? ''}"><i class="ti ti-edit"></i> Edit</button>
-                                <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${item.id}"><i class="ti ti-trash"></i> Hapus</button>
-                            </div>`;
+                        const actions = `<div class="d-flex flex-column flex-sm-row justify-content-center gap-1">
+                            <button class="btn btn-sm btn-outline-info btn-manage-lecturers" data-id="${item.id}" data-name="${item.name}"><i class="ti ti-users"></i> Atur Dosen</button>
+                            <button class="btn btn-sm btn-outline-warning btn-edit" data-id="${item.id}" data-name="${item.name}" data-coordinator="${item.coordinator_id ?? ''}"><i class="ti ti-edit"></i> Edit</button>
+                            ${index === 0
+                                ? '<span class="badge bg-secondary align-self-center">Hapus dikunci</span>'
+                                : `<button class="btn btn-sm btn-outline-danger btn-delete" data-id="${item.id}"><i class="ti ti-trash"></i> Hapus</button>`}
+                        </div>`;
 
                         rows += `<tr>
                             <td>${index + 1}</td>

@@ -350,7 +350,6 @@ class CapstoneAdminController extends Controller
         ]);
 
         $expertise = CapstoneExpertise::findOrFail($id);
-        $this->abortIfProtectedExpertise($expertise);
         $expertise->update($validated);
 
         return response()->json([
@@ -404,7 +403,6 @@ class CapstoneAdminController extends Controller
         ]);
 
         $expertise = CapstoneExpertise::findOrFail($expertiseId);
-        $this->abortIfProtectedExpertise($expertise);
 
         // Cek apakah dosen sudah terdaftar di keahlian ini
         if (!$expertise->lecturers()->where('lecturer_id', $validated['lecturer_id'])->exists()) {
@@ -422,7 +420,6 @@ class CapstoneAdminController extends Controller
     {
         $this->authorizeCapstoneAdmin();
         $expertise = CapstoneExpertise::findOrFail($expertiseId);
-        $this->abortIfProtectedExpertise($expertise);
         $expertise->lecturers()->detach($lecturerId);
 
         return response()->json([
