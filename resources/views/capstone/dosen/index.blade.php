@@ -22,12 +22,13 @@
             <a class="btn btn-outline-primary btn-sm align-self-start" href="{{ route('capstone.dosen.scores.show', $group->id) }}" target="_blank" rel="noopener">Cetak / Unduh Nilai</a>
         </div>
         @if($isSupervisor)
-        <form class="form-group-title mt-3" data-id="{{ $group->id }}">
+        <form class="form-group-title mt-3" action="{{ route('capstone.dosen.title.update', $group->id) }}">
             @csrf
+            @method('PUT')
             <label class="form-label">Judul resmi Capstone Design</label>
             <div class="input-group">
-                <input name="title" class="form-control" value="{{ $group->title }}" required maxlength="255">
-                <button class="btn btn-outline-secondary">Simpan Judul</button>
+                <input name="title" class="form-control" value="{{ $group->title }}" required maxlength="255" placeholder="Masukkan judul resmi Capstone Design">
+                <button type="submit" class="btn btn-outline-secondary">Simpan Judul</button>
             </div>
         </form>
         @endif
@@ -79,8 +80,8 @@
         e.preventDefault();
         const form = $(this);
         $.ajax({
-            url: "{{ url('capstone/dosen/group-title') }}/" + form.data('id'),
-            type: 'PUT',
+            url: form.attr('action'),
+            type: 'POST',
             data: form.serialize(),
             success: res => Swal.fire('Berhasil', res.message, 'success'),
             error: err => Swal.fire('Gagal', err.responseJSON?.message || 'Judul gagal disimpan.', 'error')
