@@ -441,6 +441,7 @@
                         'Selesai'
                     ],
                     datasets: [{
+                        // Fix: Provide a flat array of numbers using correct Blade syntax
                         data: [{
                                 {
                                     $stats['pengajuan'] ?? 0
