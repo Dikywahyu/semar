@@ -331,23 +331,49 @@ class PklController extends Controller
             'penguji_ids' => ['required', 'array', 'min:1'],
             'penguji_ids.*' => ['required', 'distinct', Rule::exists('dosens', 'id_dosen')->where('aktif', true)],
         ]);
-        $tanggalSebelumnya = $pengajuan->usulan_tanggal_seminar?->format('Y-m-d H:i:s');
+        $tanggalSebelumnya = $pengajuan->tanggal_seminar?->format('Y-m-d H:i:s');
+        $ruanganSebelumnya = $pengajuan->ruangan_seminar;
         $usulanPenguji = collect($validated['penguji_ids'])->values()->map(
             fn($dosenId, $index) => [
                 'dosen_id' => (string) $dosenId,
                 'peran' => $index === 0 ? 'Ketua Penguji' : 'Anggota Penguji',
             ]
         )->all();
-        $pengajuan->update([
-            'usulan_tanggal_seminar' => $validated['tanggal_seminar'],
-            'usulan_ruangan_seminar' => $validated['ruangan_seminar'],
-            'catatan_usulan_jadwal' => $validated['catatan_usulan_jadwal'] ?? null,
-            'usulan_dosen_penguji' => $usulanPenguji,
-        ]);
-        $namaPenguji = Dosen::query()->whereIn('id_dosen', $validated['penguji_ids'])->pluck('nama_dosen')->implode(', ');
-        $this->logPklActivity($pengajuan, 'Usulan Mahasiswa', 'Mahasiswa ' . (auth()->user()->name ?? '') . ' mengusulkan atau meminta revisi jadwal ujian menjadi ' . $validated['tanggal_seminar'] . ' di ' . $validated['ruangan_seminar'] . '. Usulan dosen penguji: ' . $namaPenguji . (($validated['catatan_usulan_jadwal'] ?? '') !== '' ? '. Catatan: ' . $validated['catatan_usulan_jadwal'] : '') . '. Penetapan jadwal resmi dan penguji menunggu admin. Usulan sebelumnya: ' . ($tanggalSebelumnya ?: '-') . '.');
+        DB::transaction(function () use ($pengajuan, $validated, $usulanPenguji) {
+            $pengajuan->dosenPenguji()->sync(collect($usulanPenguji)->mapWithKeys(
+                fn($penguji) => [$penguji['dosen_id'] => ['peran' => $penguji['peran']]]
+            )->all());
+            $pengajuan->update([
+                'tanggal_seminar' => $validated['tanggal_seminar'],
+                'ruangan_seminar' => $validated['ruangan_seminar'],
+                'schedule_approved_by' => auth()->id(),
+                'schedule_approved_at' => now(),
+                'usulan_tanggal_seminar' => null,
+                'usulan_ruangan_seminar' => null,
+                'catatan_usulan_jadwal' => null,
+                'usulan_dosen_penguji' => null,
+            ]);
+        });
 
-        return back()->with('success', 'Usulan tanggal ujian tersimpan. Jadwal dan ruangan resmi akan ditetapkan admin.');
+        $isReschedule = $tanggalSebelumnya !== null || $ruanganSebelumnya !== null;
+        $namaPenguji = Dosen::query()->whereIn('id_dosen', $validated['penguji_ids'])->pluck('nama_dosen')->implode(', ');
+        $this->logPklActivity(
+            $pengajuan,
+            $isReschedule ? 'Jadwal Ujian Direvisi Mahasiswa' : 'Jadwal Ujian Ditetapkan Mahasiswa',
+            'Mahasiswa ' . (auth()->user()->name ?? '') . ($isReschedule ? ' mengubah' : ' menetapkan')
+                . ' jadwal ujian menjadi ' . $validated['tanggal_seminar'] . ' di ' . $validated['ruangan_seminar']
+                . '. Dewan penguji: ' . $namaPenguji
+                . (($validated['catatan_usulan_jadwal'] ?? '') !== '' ? '. Catatan: ' . $validated['catatan_usulan_jadwal'] : '')
+                . '. Jadwal resmi langsung diperbarui.'
+        );
+        $invitationSent = $this->sendExamInvitation($pengajuan);
+
+        return back()->with(
+            $invitationSent ? 'success' : 'warning',
+            $invitationSent
+                ? ($isReschedule ? 'Jadwal dan dewan penguji berhasil diperbarui. Undangan terbaru telah dikirim.' : 'Jadwal dan dewan penguji langsung ditetapkan. Undangan telah dikirim.')
+                : 'Jadwal dan dewan penguji berhasil ditetapkan, tetapi undangan belum terkirim karena email dosen belum tersedia.'
+        );
     }
 
     private function logPklActivity(PengajuanPkl $pengajuan, string $aksi, ?string $deskripsi = null): void
@@ -422,7 +448,7 @@ class PklController extends Controller
             ]);
         });
         $aksi = $isReschedule ? 'Jadwal Ujian Direvisi' : 'Jadwal Ujian Ditetapkan';
-        $deskripsi = 'Admin ' . (auth()->user()->name ?? '') . ($isReschedule ? ' mengubah jadwal ujian' : ' menetapkan jadwal ujian')
+        $deskripsi = (auth()->user()->name ?? 'Admin') . ($isReschedule ? ' mengubah jadwal ujian' : ' menetapkan jadwal ujian')
             . ' dari ' . ($tanggalSebelumnya ?: '-') . ' / ' . ($ruanganSebelumnya ?: '-')
             . ' menjadi ' . $pengajuan->tanggal_seminar->format('Y-m-d H:i') . ' / ' . $pengajuan->ruangan_seminar
             . (($validated['alasan'] ?? '') !== '' ? '. Alasan: ' . $validated['alasan'] : '') . '.';
@@ -929,8 +955,8 @@ class PklController extends Controller
         return back()->with(
             $invitationSent ? 'success' : 'warning',
             $invitationSent
-                ? 'Usulan mahasiswa diterapkan dan undangan dikirim ke dosen terkait.'
-                : 'Usulan jadwal tersimpan, tetapi undangan belum dapat dikirim karena email dosen belum tersedia.'
+                ? 'Jadwal resmi diperbarui dan undangan dikirim ke dosen terkait.'
+                : 'Jadwal resmi diperbarui, tetapi undangan belum dapat dikirim karena email dosen belum tersedia.'
         );
     }
 

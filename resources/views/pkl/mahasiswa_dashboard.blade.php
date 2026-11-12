@@ -375,7 +375,7 @@
                         <p class="text-white-50 mb-0">Kelola tahapan magang, pantau roadmap progres secara real-time, dan unggah berkas dengan mudah.</p>
                     </div>
                     @if($pengajuan?->schedule_approved_at)
-                    <p class="small text-muted">Jadwal ditetapkan oleh {{ $pengajuan->scheduleApprover?->name ?? 'Admin' }} ({{ $pengajuan->scheduleApprover?->getRoleNames()->implode(', ') ?: 'Admin' }}) pada {{ $pengajuan->schedule_approved_at->format('d M Y H:i') }}.</p>
+                    <p class="small text-muted">Terakhir diperbarui oleh {{ $pengajuan->scheduleApprover?->name ?? 'pengguna sistem' }} ({{ $pengajuan->scheduleApprover?->getRoleNames()->implode(', ') ?: 'aktor tidak tersedia' }}) pada {{ $pengajuan->schedule_approved_at->format('d M Y H:i') }}.</p>
                     @endif
                     @if($pengajuan &&$pengajuan->status == 'Pengajuan & Verifikasi Admin')
                     <div>
@@ -961,28 +961,28 @@
             </div>
             @else
             <div class="alert alert-light border text-muted small py-2 px-3 mb-3">
-                <i class="ti ti-info-circle me-1"></i> Jadwal seminar belum ditentukan oleh admin.
+                <i class="ti ti-info-circle me-1"></i> Jadwal seminar belum ditetapkan. Isi tanggal, ruangan, dan dewan penguji di bawah.
             </div>
             @endif
 
             @if($pengajuan->status === 'Dijadwalkan Ujian')
             <form action="{{ route('pkl.mahasiswa.usulkan-jadwal', $pengajuan->id) }}" method="POST" class="border rounded-3 p-3 mb-4 bg-light">
                 @csrf
-                <h6 class="fw-bold small mb-3">{{ $pengajuan->tanggal_seminar ? 'Usulkan Revisi Jadwal & Penguji' : 'Usulkan Jadwal & Penguji' }}</h6>
+                <h6 class="fw-bold small mb-3">{{ $pengajuan->tanggal_seminar ? 'Ubah Jadwal & Dewan Penguji' : 'Tetapkan Jadwal & Dewan Penguji' }}</h6>
                 <label class="form-label small">Tanggal dan waktu ujian</label>
-                <input type="datetime-local" name="tanggal_seminar" value="{{ $pengajuan->usulan_tanggal_seminar?->format('Y-m-d\TH:i') ?? $pengajuan->tanggal_seminar?->format('Y-m-d\TH:i') }}" class="form-control form-control-sm mb-2" min="{{ now()->addHour()->format('Y-m-d\TH:i') }}" required>
-                <label class="form-label small">Usulan ruang ujian</label>
-                <input type="text" name="ruangan_seminar" value="{{ $pengajuan->usulan_ruangan_seminar ?? $pengajuan->ruangan_seminar }}" class="form-control form-control-sm mb-2" maxlength="255" placeholder="Contoh: Ruang Sidang 2 / tautan konferensi" required>
-                <label class="form-label small">Usulan dosen penguji</label>
+                <input type="datetime-local" name="tanggal_seminar" value="{{ $pengajuan->tanggal_seminar?->format('Y-m-d\TH:i') ?? $pengajuan->usulan_tanggal_seminar?->format('Y-m-d\TH:i') }}" class="form-control form-control-sm mb-2" min="{{ now()->addHour()->format('Y-m-d\TH:i') }}" required>
+                <label class="form-label small">Ruang ujian</label>
+                <input type="text" name="ruangan_seminar" value="{{ $pengajuan->ruangan_seminar ?? $pengajuan->usulan_ruangan_seminar }}" class="form-control form-control-sm mb-2" maxlength="255" placeholder="Contoh: Ruang Sidang 2 / tautan konferensi" required>
+                <label class="form-label small">Dewan penguji</label>
                 <select name="penguji_ids[]" class="form-select form-select-sm mb-2 pkl-examiner-select" multiple data-placeholder="Pilih satu atau beberapa dosen penguji" required>
                     @foreach($dosensPenguji as $dosenPilihan)
-                    <option value="{{ $dosenPilihan->id_dosen }}" @selected(collect($pengajuan->usulan_dosen_penguji ?? [])->contains(fn ($penguji) => (string) data_get($penguji, 'dosen_id') === (string) $dosenPilihan->id_dosen) || collect($pengajuan->usulan_dosen_penguji ?? [])->isEmpty() && $pengajuan->dosenPenguji->contains('id_dosen', $dosenPilihan->id_dosen))>{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>
+                    <option value="{{ $dosenPilihan->id_dosen }}" @selected($pengajuan->dosenPenguji->contains('id_dosen', $dosenPilihan->id_dosen))>{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>
                     @endforeach
                 </select>
                 <label class="form-label small">Catatan (opsional)</label>
                 <textarea name="catatan_usulan_jadwal" class="form-control form-control-sm mb-2" rows="2" placeholder="Alasan atau waktu alternatif">{{ $pengajuan->catatan_usulan_jadwal }}</textarea>
-                <small class="text-muted d-block mb-2">Pilih satu atau beberapa calon penguji. Admin menetapkan/merevisi jadwal resmi, ruangan, dan susunan penguji.</small>
-                <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">Kirim Usulan Jadwal</button>
+                <small class="text-muted d-block mb-2">Jadwal dan dewan penguji langsung ditetapkan setelah disimpan. Anda atau admin dapat mengubahnya sebelum ujian dimulai.</small>
+                <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">{{ $pengajuan->tanggal_seminar ? 'Simpan Perubahan Jadwal' : 'Tetapkan Jadwal Ujian' }}</button>
             </form>
             @endif
             @if($pengajuan->tanggal_seminar && $pengajuan->ruangan_seminar)

@@ -31,7 +31,7 @@
                             <i class="ti ti-plus me-1"></i> Tambah Penguji
                         </button>
                     </div>
-                    <small class="text-muted d-block mb-3">Tinjau usulan penguji mahasiswa. Admin dapat mengubah susunan sebelum jadwal resmi ditetapkan.</small>
+                    <small class="text-muted d-block mb-3">Jadwal dan penguji yang tersimpan adalah jadwal resmi. Admin dapat memperbaruinya dan mengirim undangan terbaru.</small>
 
                     <div id="listPengujiContainer">
                         <!-- Baris penguji akan ditambahkan secara dinamis via JS -->
@@ -132,20 +132,20 @@
                     let data = response.data;
                     
                     $('#jadwal_id').val(data.id);
-                    const scheduleDate = data.usulan_tanggal_seminar || data.tanggal_seminar || '';
+                    const scheduleDate = data.tanggal_seminar || data.usulan_tanggal_seminar || '';
                     $('#tanggal_seminar').val(scheduleDate ? scheduleDate.replace(' ', 'T').slice(0, 16) : '');
-                    $('#ruangan_seminar').val(data.usulan_ruangan_seminar || data.ruangan_seminar || '');
+                    $('#ruangan_seminar').val(data.ruangan_seminar || data.usulan_ruangan_seminar || '');
 
                     // Reset container penguji
                     $('#listPengujiContainer').empty();
                     pengujiIndex = 0;
 
-                    const proposedExaminers = data.usulan_dosen_penguji || [];
-                    const assignedExaminers = proposedExaminers.length
-                        ? proposedExaminers.map(function(p) {
-                            return { id_dosen: p.dosen_id, pivot: { peran: p.peran } };
-                        })
-                        : (data.dosen_penguji || []);
+                    const assignedExaminers = data.dosen_penguji || [];
+                    if (assignedExaminers.length === 0 && data.usulan_dosen_penguji) {
+                        data.usulan_dosen_penguji.forEach(function(p) {
+                            assignedExaminers.push({ id_dosen: p.dosen_id, pivot: { peran: p.peran } });
+                        });
+                    }
                     if (assignedExaminers.length > 0) {
                         assignedExaminers.forEach(function(p) {
                             tambahBarisPenguji(p.id_dosen, p.pivot?.peran || 'Anggota Penguji');

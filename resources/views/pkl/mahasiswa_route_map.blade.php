@@ -296,23 +296,23 @@
                 @endforeach
             </div>
             <div class="space-y-4">
-                <div class="rounded-xl bg-slate-50 p-4"><h3 class="mb-3 text-sm font-bold">ACC Pembimbing & Usulan Jadwal</h3>
+                <div class="rounded-xl bg-slate-50 p-4"><h3 class="mb-3 text-sm font-bold">ACC Pembimbing & Jadwal Ujian</h3>
                     @if ($canPerformPembimbingActions)
                         <form action="{{ route('pkl.route-map.acc', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="mb-4">@csrf<input type="hidden" name="is_acc_seminar" value="1"><button class="rmap-btn rmap-btn-primary" type="submit">Berikan ACC Ujian Seminar</button></form>
                     @endif
                     @if ($showMahasiswa && $pkl && $pkl->status === 'Dijadwalkan Ujian')
                         <form action="{{ route('pkl.route-map.schedule.propose', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="space-y-3">@csrf
-                            <label class="block text-xs font-semibold text-slate-600">Usulan tanggal & waktu ujian</label><input class="rmap-input" type="datetime-local" name="tanggal_seminar" value="{{ $pkl->usulan_tanggal_seminar?->format('Y-m-d\TH:i') ?? $pkl->tanggal_seminar?->format('Y-m-d\TH:i') }}" min="{{ now()->addHour()->format('Y-m-d\TH:i') }}" required>
-                            <label class="block text-xs font-semibold text-slate-600">Usulan ruang seminar</label><input class="rmap-input" name="ruangan_seminar" value="{{ $pkl->usulan_ruangan_seminar ?? $pkl->ruangan_seminar }}" maxlength="255" placeholder="Contoh: Ruang Sidang 2 / tautan konferensi" required>
-                            <label class="block text-xs font-semibold text-slate-600">Usulan dosen penguji (pilih satu atau beberapa)</label>
+                            <label class="block text-xs font-semibold text-slate-600">Tanggal & waktu ujian</label><input class="rmap-input" type="datetime-local" name="tanggal_seminar" value="{{ $pkl->tanggal_seminar?->format('Y-m-d\TH:i') ?? $pkl->usulan_tanggal_seminar?->format('Y-m-d\TH:i') }}" min="{{ now()->addHour()->format('Y-m-d\TH:i') }}" required>
+                            <label class="block text-xs font-semibold text-slate-600">Ruang seminar</label><input class="rmap-input" name="ruangan_seminar" value="{{ $pkl->ruangan_seminar ?? $pkl->usulan_ruangan_seminar }}" maxlength="255" placeholder="Contoh: Ruang Sidang 2 / tautan konferensi" required>
+                            <label class="block text-xs font-semibold text-slate-600">Dewan penguji (pilih satu atau beberapa)</label>
                             <select class="rmap-input pkl-examiner-select" name="penguji_ids[]" multiple data-placeholder="Pilih satu atau beberapa dosen penguji" required>
                                 @foreach($dosensPenguji as $dosenPilihan)
-                                    <option value="{{ $dosenPilihan->id_dosen }}" @selected(collect($pkl->usulan_dosen_penguji ?? [])->contains(fn ($penguji) => (string) data_get($penguji, 'dosen_id') === (string) $dosenPilihan->id_dosen) || collect($pkl->usulan_dosen_penguji ?? [])->isEmpty() && $pkl->dosenPenguji->contains('id_dosen', $dosenPilihan->id_dosen))>{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>
+                                    <option value="{{ $dosenPilihan->id_dosen }}" @selected($pkl->dosenPenguji->contains('id_dosen', $dosenPilihan->id_dosen))>{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>
                                 @endforeach
                             </select>
                             <label class="block text-xs font-semibold text-slate-600">Catatan (opsional)</label><textarea class="rmap-input" name="catatan_usulan_jadwal" rows="2">{{ $pkl->catatan_usulan_jadwal }}</textarea>
-                            <button class="rmap-btn rmap-btn-primary" type="submit">Ajukan / Revisi Usulan Jadwal</button>
-                            <p class="mb-0 text-xs text-slate-500">Admin menetapkan atau merevisi jadwal resmi, ruangan, dan susunan penguji.</p>
+                            <button class="rmap-btn rmap-btn-primary" type="submit">{{ $pkl->tanggal_seminar ? 'Simpan Perubahan Jadwal' : 'Tetapkan Jadwal Ujian' }}</button>
+                            <p class="mb-0 text-xs text-slate-500">Jadwal dan dewan penguji langsung ditetapkan saat disimpan. Mahasiswa atau admin dapat mengubahnya sebelum ujian dimulai.</p>
                         </form>
                     @elseif ($showMahasiswa)
                         <p class="mb-0 text-xs text-slate-500">Ajukan PKL terlebih dahulu untuk mengusulkan jadwal seminar.</p>
@@ -323,17 +323,19 @@
                     @endif
                 </div>
                 @if ($pkl && auth()->user()?->hasAnyRole(['admin', 'Admin', 'Super Admin', 'Kaprodi']))
-                    <div class="rounded-xl bg-indigo-50/70 p-4"><h3 class="mb-3 text-sm font-bold">Penetapan Jadwal & Ruangan</h3>
-                        <form action="{{ route('pkl.route-map.schedule.set', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="space-y-3">@csrf
-                            <input class="rmap-input" type="datetime-local" name="tanggal_seminar" value="{{ $pkl->usulan_tanggal_seminar?->format('Y-m-d\TH:i') ?? $pkl->tanggal_seminar?->format('Y-m-d\TH:i') ?? '' }}" required><input class="rmap-input" name="ruangan_seminar" value="{{ $pkl->usulan_ruangan_seminar ?? $pkl->ruangan_seminar ?? '' }}" placeholder="Ruangan seminar" required>
-                            <label class="block text-xs font-semibold text-slate-600">Dosen penguji</label>
-                            <select class="rmap-input pkl-examiner-select" name="penguji_ids[]" multiple data-placeholder="Pilih dosen penguji" required>
-                                @foreach($dosensPenguji as $dosenPilihan)
-                                    <option value="{{ $dosenPilihan->id_dosen }}" @selected(collect($pkl->usulan_dosen_penguji ?? [])->contains(fn ($penguji) => (string) data_get($penguji, 'dosen_id') === (string) $dosenPilihan->id_dosen) || collect($pkl->usulan_dosen_penguji ?? [])->isEmpty() && $pkl->dosenPenguji->contains('id_dosen', $dosenPilihan->id_dosen))>{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>
-                                @endforeach
-                            </select>
-                            <button class="rmap-btn rmap-btn-primary" type="submit">Tetapkan Jadwal & Ruangan</button>
-                        </form>
+                    <div class="rounded-xl bg-indigo-50/70 p-4"><h3 class="mb-3 text-sm font-bold">Jadwal Resmi & Revisi</h3>
+                        @unless($pkl->tanggal_seminar && $pkl->ruangan_seminar)
+                            <form action="{{ route('pkl.route-map.schedule.set', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="space-y-3">@csrf
+                                <input class="rmap-input" type="datetime-local" name="tanggal_seminar" value="{{ $pkl->tanggal_seminar?->format('Y-m-d\TH:i') ?? $pkl->usulan_tanggal_seminar?->format('Y-m-d\TH:i') ?? '' }}" required><input class="rmap-input" name="ruangan_seminar" value="{{ $pkl->ruangan_seminar ?? $pkl->usulan_ruangan_seminar ?? '' }}" placeholder="Ruangan seminar" required>
+                                <label class="block text-xs font-semibold text-slate-600">Dosen penguji</label>
+                                <select class="rmap-input pkl-examiner-select" name="penguji_ids[]" multiple data-placeholder="Pilih dosen penguji" required>
+                                    @foreach($dosensPenguji as $dosenPilihan)
+                                        <option value="{{ $dosenPilihan->id_dosen }}" @selected($pkl->dosenPenguji->contains('id_dosen', $dosenPilihan->id_dosen))>{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>
+                                    @endforeach
+                                </select>
+                                <button class="rmap-btn rmap-btn-primary" type="submit">Tetapkan Jadwal & Ruangan</button>
+                            </form>
+                        @endunless
                         <div class="my-4 border-t border-indigo-100"></div><h4 class="mb-2 text-xs font-bold uppercase text-slate-600">Revisi / Penjadwalan Ulang</h4>
                         <form action="{{ route('pkl.route-map.schedule.set', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="space-y-3">@csrf<input type="hidden" name="penjadwalan_ulang" value="1">
                             <input class="rmap-input" type="datetime-local" name="tanggal_seminar_baru" required><input class="rmap-input" name="ruangan_seminar_baru" placeholder="Ruangan baru" required>
@@ -348,7 +350,7 @@
                         @if($pkl->tanggal_seminar && $pkl->ruangan_seminar)
                             <a class="rmap-btn rmap-btn-secondary mt-3 w-full" href="{{ route('pkl.invitation', $pkl->id) }}" target="_blank" rel="noopener">Cetak Undangan Ujian</a>
                             @if($pkl->schedule_approved_at)
-                                <p class="mt-2 mb-0 text-xs text-slate-500">Jadwal disetujui {{ $pkl->scheduleApprover?->name ?? 'Admin' }} ({{ $pkl->scheduleApprover?->getRoleNames()->implode(', ') ?: 'Admin' }}) · {{ $pkl->schedule_approved_at->format('d M Y H:i') }}</p>
+                                <p class="mt-2 mb-0 text-xs text-slate-500">Terakhir diperbarui oleh {{ $pkl->scheduleApprover?->name ?? 'pengguna sistem' }} ({{ $pkl->scheduleApprover?->getRoleNames()->implode(', ') ?: 'aktor tidak tersedia' }}) · {{ $pkl->schedule_approved_at->format('d M Y H:i') }}</p>
                             @endif
                         @endif
                     </div>

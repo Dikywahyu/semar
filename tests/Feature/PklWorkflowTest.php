@@ -9,6 +9,7 @@ use App\Models\Pkl\PengajuanPkl;
 use App\Models\Semester;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -82,8 +83,9 @@ class PklWorkflowTest extends TestCase
             ->assertJsonPath('data.komponens.0.id', $component->id);
     }
 
-    public function test_student_schedule_proposal_does_not_change_official_schedule_or_assign_room(): void
+    public function test_student_schedule_submission_becomes_the_official_schedule_and_assigns_examiners(): void
     {
+        Mail::fake();
         $studentUser = $this->userWithRole('Mahasiswa', [
             'email' => 'student@example.test',
             'identifier_number' => '20260013',
@@ -116,11 +118,13 @@ class PklWorkflowTest extends TestCase
             ->assertRedirect();
 
         $submission->refresh();
-        $this->assertNull($submission->tanggal_seminar);
-        $this->assertNull($submission->ruangan_seminar);
-        $this->assertEquals($proposedDate->format('Y-m-d H:i:s'), $submission->usulan_tanggal_seminar->format('Y-m-d H:i:s'));
-        $this->assertSame('Usulan Ruang Sidang 1', $submission->usulan_ruangan_seminar);
-        $this->assertSame($examiner->id_dosen, $submission->usulan_dosen_penguji[0]['dosen_id']);
+        $this->assertEquals($proposedDate->format('Y-m-d H:i:s'), $submission->tanggal_seminar->format('Y-m-d H:i:s'));
+        $this->assertSame('Usulan Ruang Sidang 1', $submission->ruangan_seminar);
+        $this->assertTrue($submission->dosenPenguji->contains('id_dosen', $examiner->id_dosen));
+        $this->assertNotNull($submission->schedule_approved_at);
+        $this->assertNull($submission->usulan_tanggal_seminar);
+        $this->assertNull($submission->usulan_ruangan_seminar);
+        $this->assertNull($submission->usulan_dosen_penguji);
     }
 
     private function userWithRole(string $roleName, array $attributes = []): User
