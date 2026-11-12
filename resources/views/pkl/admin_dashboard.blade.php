@@ -191,19 +191,19 @@
             <p class="text-secondary mb-0">Kelola pengajuan, logbook bimbingan, verifikasi berkas, dan jadwal seminar mahasiswa.</p>
         </div>
         <div>
-            <a href="{{ route('pkl.admin.komponen.index') }}" class="btn btn-outline-primary fw-semibold m-2">
+            <a href="{{ route('pkl.admin.komponen.index') }}" class="btn btn-outline-primary fw-semibold m-1">
                 <i class="ti ti-adjustments me-1"></i> Master Komponen Nilai
             </a>
-            <a href="{{ route('pkl.mahasiswa.index') }}" class="btn btn-outline-secondary fw-semibold m-2">
+            <a href="{{ route('pkl.mahasiswa.index') }}" class="btn btn-outline-secondary fw-semibold m-1">
                 <i class="ti ti-user me-1"></i> Bertindak sebagai Mahasiswa
             </a>
-            <a href="{{ route('pkl.dosen.index') }}" class="btn btn-outline-secondary fw-semibold m-2">
+            <a href="{{ route('pkl.dosen.index') }}" class="btn btn-outline-secondary fw-semibold m-1">
                 <i class="ti ti-chalkboard me-1"></i> Bertindak sebagai Dosen
             </a>
-            <a href="{{ route('pkl.admin.rekap-nilai') }}" class="btn btn-outline-success fw-semibold m-2">
+            <a href="{{ route('pkl.admin.rekap-nilai') }}" class="btn btn-outline-success fw-semibold m-1">
                 <i class="ti ti-file-spreadsheet me-1"></i> Rekap Nilai
             </a>
-            <button type="button" class="btn btn-primary fw-semibold shadow-sm m-2" data-bs-toggle="modal" data-bs-target="#modalTambahPkl">
+            <button type="button" class="btn btn-primary fw-semibold shadow-sm m-1" data-bs-toggle="modal" data-bs-target="#modalTambahPkl">
                 <i class="ti ti-plus me-2"></i> Pengajuan PKL Baru
             </button>
         </div>
