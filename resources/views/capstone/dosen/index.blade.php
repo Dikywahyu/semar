@@ -2,9 +2,24 @@
 
 @section('content')
 <div class="container-fluid py-4">
-    <div class="mb-4">
-        <h3 class="fw-bold">Panel Dosen Capstone Design</h3>
-        <p class="text-secondary">Tetapkan judul, input nilai kelompok, cetak rekap, dan berikan ACC final sebagai dosen pembimbing.</p>
+    <div class="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h3 class="fw-bold">Panel Dosen Capstone Design</h3>
+            <p class="text-secondary mb-0">Tetapkan judul, input nilai kelompok, cetak rekap, dan berikan ACC final sebagai dosen pembimbing.</p>
+        </div>
+        @if($isActingAsProfile)
+        <form method="GET" action="{{ route('capstone.dosen.index') }}" class="d-flex align-items-center gap-2">
+            <label for="capstoneDosenProfile" class="form-label mb-0 text-nowrap">Profil dosen</label>
+            <select id="capstoneDosenProfile" name="id_dosen" class="form-select" required>
+                @foreach($availableProfiles as $profile)
+                <option value="{{ $profile->id_dosen }}" @selected($profile->id_dosen === $dosen->id_dosen)>
+                    {{ $profile->nama_dosen }}{{ $profile->nidn ? ' (' . $profile->nidn . ')' : '' }}
+                </option>
+                @endforeach
+            </select>
+            <button type="submit" class="btn btn-primary text-nowrap">Ganti Dosen</button>
+        </form>
+        @endif
     </div>
     @forelse($groups as $group)
     @php

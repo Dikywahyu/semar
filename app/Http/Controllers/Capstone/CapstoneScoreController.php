@@ -58,7 +58,18 @@ class CapstoneScoreController extends Controller
             ]);
         }
 
-        return view('capstone.dosen.index', compact('groups', 'components', 'dosen'));
+        $isActingAsProfile = $this->canChooseCapstoneProfile();
+        $availableProfiles = $isActingAsProfile
+            ? Dosen::query()->where('aktif', true)->orderBy('nama_dosen')->get()
+            : collect();
+
+        return view('capstone.dosen.index', compact(
+            'groups',
+            'components',
+            'dosen',
+            'isActingAsProfile',
+            'availableProfiles'
+        ));
     }
 
     // --- MANAJEMEN KOMPONEN NILAI ---
