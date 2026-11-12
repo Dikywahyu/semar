@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Capstone\CapstoneGroup;
 use App\Models\Capstone\CapstoneGroupMember;
 use App\Models\Capstone\CapstoneExpertise;
+use App\Models\Semester;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -135,6 +136,7 @@ class CapstoneStudentController extends Controller
                 $group = CapstoneGroup::create($attributes + [
                     'leader_id' => $student->id,
                     'title' => null,
+                    'semester_master_id' => Semester::query()->where('aktif', true)->value('id'),
                 ]);
             }
 

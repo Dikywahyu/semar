@@ -12,7 +12,7 @@ class CapstonePlottingExport implements FromCollection, WithHeadings
     public function collection(): Collection
     {
         return CapstoneGroup::query()
-            ->with(['leader', 'expertise', 'supervisor', 'examiner'])
+            ->with(['leader', 'expertise', 'semesterMaster', 'supervisor', 'examiner'])
             ->orderBy('id')
             ->get()
             ->map(fn (CapstoneGroup $group) => [
@@ -21,6 +21,8 @@ class CapstonePlottingExport implements FromCollection, WithHeadings
                 'leader_name' => $group->leader?->name,
                 'expertise_id' => $group->expertise_id,
                 'expertise' => $group->expertise?->name,
+                'semester_master_id' => $group->semester_master_id,
+                'semester' => $group->semesterMaster?->nama_semester,
                 'supervisor_id' => $group->supervisor_id,
                 'supervisor_name' => $group->supervisor?->nama_dosen,
                 'examiner_id' => $group->examiner_id,
@@ -31,6 +33,6 @@ class CapstonePlottingExport implements FromCollection, WithHeadings
 
     public function headings(): array
     {
-        return ['group_id', 'leader_id', 'leader_name', 'expertise_id', 'expertise', 'supervisor_id', 'supervisor_name', 'examiner_id', 'examiner_name', 'project_location'];
+        return ['group_id', 'leader_id', 'leader_name', 'expertise_id', 'expertise', 'semester_master_id', 'semester', 'supervisor_id', 'supervisor_name', 'examiner_id', 'examiner_name', 'project_location'];
     }
 }

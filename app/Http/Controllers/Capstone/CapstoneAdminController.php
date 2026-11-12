@@ -11,6 +11,7 @@ use App\Models\Capstone\CapstoneGroup;
 use App\Models\Capstone\CapstoneExpertise;
 use App\Models\Capstone\CapstoneScoreComponent;
 use App\Models\Dosen\Dosen;
+use App\Models\Semester;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -118,10 +119,12 @@ class CapstoneAdminController extends Controller
         $validated = $request->validate([
             'leader_id' => 'required|exists:users,id',
             'expertise_id' => 'required|exists:capstone_expertises,id',
+            'semester_master_id' => 'nullable|exists:semesters,id',
             'supervisor_id' => 'nullable|exists:dosens,id_dosen',
             'examiner_id' => 'nullable|exists:dosens,id_dosen',
             'project_location' => 'nullable|string|max:255',
         ]);
+        $validated['semester_master_id'] = $validated['semester_master_id'] ?? Semester::query()->where('aktif', true)->value('id');
         $group = CapstoneGroup::create($validated + [
             'status_pendaftaran' => 'submitted',
             'title' => null,

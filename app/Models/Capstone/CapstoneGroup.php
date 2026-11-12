@@ -4,6 +4,7 @@ namespace App\Models\Capstone;
 
 use App\Models\User;
 use App\Models\Dosen\Dosen;
+use App\Models\Semester;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -45,6 +46,11 @@ class CapstoneGroup extends Model
     public function expertise(): BelongsTo
     {
         return $this->belongsTo(CapstoneExpertise::class, 'expertise_id');
+    }
+
+    public function semesterMaster(): BelongsTo
+    {
+        return $this->belongsTo(Semester::class, 'semester_master_id');
     }
 
     public function supervisor(): BelongsTo

@@ -8,6 +8,7 @@ use App\Models\Capstone\CapstoneGroup;
 use App\Models\Capstone\CapstoneScoreComponent;
 use App\Models\Capstone\CapstoneStudentScore;
 use App\Models\Dosen\Dosen;
+use App\Models\Semester;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -43,18 +44,30 @@ class CapstoneScoreController extends Controller
         abort_unless($dosen, 403, 'Profil dosen aktif untuk akun ini belum tersedia.');
         $dosenId = $dosen->id_dosen;
 
-        $groups = CapstoneGroup::with([
+        $selectedSemester = $request->input('semester_id');
+        if (filled($selectedSemester) && $selectedSemester !== 'unassigned') {
+            $request->validate(['semester_id' => ['integer', 'exists:semesters,id']]);
+        }
+        $groupsQuery = CapstoneGroup::with([
             'leader',
             'members.student',
             'expertise',
+            'semesterMaster',
             'supervisor',
             'examiner',
             'supervisorApprover',
             'studentScores.component',
         ])
-            ->where('supervisor_id', $dosenId)
-            ->orWhere('examiner_id', $dosenId)
-            ->get();
+            ->where(function ($query) use ($dosenId) {
+                $query->where('supervisor_id', $dosenId)
+                    ->orWhere('examiner_id', $dosenId);
+            });
+        if ($selectedSemester === 'unassigned') {
+            $groupsQuery->whereNull('semester_master_id');
+        } elseif (filled($selectedSemester)) {
+            $groupsQuery->where('semester_master_id', $selectedSemester);
+        }
+        $groups = $groupsQuery->orderByDesc('exam_date')->orderByDesc('created_at')->get();
 
         $components = CapstoneScoreComponent::all();
 
@@ -70,13 +83,19 @@ class CapstoneScoreController extends Controller
         $availableProfiles = $isActingAsProfile
             ? Dosen::query()->where('aktif', true)->orderBy('nama_dosen')->get()
             : collect();
+        $semesters = Semester::query()
+            ->orderByDesc('tahun_akademik')
+            ->orderBy('periode')
+            ->get();
 
         return view('capstone.dosen.index', compact(
             'groups',
             'components',
             'dosen',
             'isActingAsProfile',
-            'availableProfiles'
+            'availableProfiles',
+            'semesters',
+            'selectedSemester'
         ));
     }
 
