@@ -121,9 +121,11 @@ class CapstoneAdminController extends Controller
             'supervisor_id' => 'nullable|exists:dosens,id_dosen',
             'examiner_id' => 'nullable|exists:dosens,id_dosen',
             'project_location' => 'nullable|string|max:255',
-            'title' => 'nullable|string|max:255',
         ]);
-        $group = CapstoneGroup::create($validated + ['status_pendaftaran' => 'submitted']);
+        $group = CapstoneGroup::create($validated + [
+            'status_pendaftaran' => 'submitted',
+            'title' => null,
+        ]);
 
         return response()->json(['status' => 'success', 'message' => 'Plotting Capstone berhasil ditambahkan.', 'data' => $group]);
     }
@@ -286,34 +288,16 @@ class CapstoneAdminController extends Controller
     public function updateKomponen(Request $request, $id)
     {
         $this->authorizeCapstoneAdmin();
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'category' => 'required|in:pembimbing,penguji',
-            'percentage' => 'required|numeric|min:0|max:100'
-        ]);
-
-        $component = CapstoneScoreComponent::findOrFail($id);
-        $component->update($validated);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Komponen nilai berhasil diperbarui.',
-            'data' => $component
-        ]);
+        CapstoneScoreComponent::findOrFail($id);
+        abort(409, 'Komponen nilai yang sudah dibuat tidak dapat diubah.');
     }
 
     // 6. Hapus Komponen Nilai
     public function destroyKomponen($id)
     {
         $this->authorizeCapstoneAdmin();
-        $component = CapstoneScoreComponent::findOrFail($id);
-        abort_if($component->studentScores()->exists(), 409, 'Komponen sudah digunakan pada nilai mahasiswa dan tidak dapat dihapus agar riwayat nilai tetap terjaga.');
-        $component->delete();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Komponen nilai berhasil dihapus.'
-        ]);
+        CapstoneScoreComponent::findOrFail($id);
+        abort(409, 'Komponen nilai tidak dapat dihapus.');
     }
 
     // --- MASTER KEAHLIAN (EXPERTISES) ---
@@ -322,7 +306,7 @@ class CapstoneAdminController extends Controller
     public function expertiseIndex(Request $request)
     {
         $this->authorizeCapstoneAdmin();
-        $expertises = CapstoneExpertise::with(['coordinator', 'lecturers'])->get();
+        $expertises = CapstoneExpertise::with(['coordinator', 'lecturers'])->orderBy('id')->get();
         $dosens = Dosen::all();
 
         if ($request->ajax()) {
@@ -363,6 +347,7 @@ class CapstoneAdminController extends Controller
         ]);
 
         $expertise = CapstoneExpertise::findOrFail($id);
+        $this->abortIfProtectedExpertise($expertise);
         $expertise->update($validated);
 
         return response()->json([
@@ -378,6 +363,7 @@ class CapstoneAdminController extends Controller
         $this->authorizeCapstoneAdmin();
         DB::transaction(function () use ($id) {
             $expertise = CapstoneExpertise::lockForUpdate()->findOrFail($id);
+            $this->abortIfProtectedExpertise($expertise);
             $expertise->groups()->update(['expertise_id' => null]);
             $expertise->lecturers()->detach();
             $expertise->delete();
@@ -415,6 +401,7 @@ class CapstoneAdminController extends Controller
         ]);
 
         $expertise = CapstoneExpertise::findOrFail($expertiseId);
+        $this->abortIfProtectedExpertise($expertise);
 
         // Cek apakah dosen sudah terdaftar di keahlian ini
         if (!$expertise->lecturers()->where('lecturer_id', $validated['lecturer_id'])->exists()) {
@@ -432,11 +419,22 @@ class CapstoneAdminController extends Controller
     {
         $this->authorizeCapstoneAdmin();
         $expertise = CapstoneExpertise::findOrFail($expertiseId);
+        $this->abortIfProtectedExpertise($expertise);
         $expertise->lecturers()->detach($lecturerId);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Dosen berhasil dihapus dari bidang keahlian ini.'
         ]);
+    }
+
+    private function abortIfProtectedExpertise(CapstoneExpertise $expertise): void
+    {
+        $protectedId = CapstoneExpertise::query()->min('id');
+        abort_if(
+            $protectedId !== null && (int) $expertise->getKey() === (int) $protectedId,
+            409,
+            'Bidang keahlian nomor 1 dilindungi dan tidak dapat diubah atau dihapus.'
+        );
     }
 }

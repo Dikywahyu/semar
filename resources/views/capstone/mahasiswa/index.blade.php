@@ -133,7 +133,7 @@
         <div>
             <h3 class="fw-bold text-slate-800 mb-1 fs-5 fs-md-4">Dashboard Capstone Design (Mahasiswa)</h3>
             <p class="text-secondary small mb-0">
-                Kelola ajuan judul, keahlian, anggota kelompok, bimbingan, dan unggah berkas sidang akhir.
+                Kelola pendaftaran kelompok dan bidang keahlian, bimbingan, serta unggah berkas sidang akhir. Judul ditetapkan oleh dosen pembimbing.
                 @if(auth()->user()->hasRole(['Super Admin', 'BAAK', 'KPS']))
                 <br><span class="text-primary fw-semibold"><i class="ti ti-user-check"></i> Sedang melihat data: {{ $student->name ?? 'Mahasiswa' }}</span>
                 @endif
@@ -164,7 +164,7 @@
                         @foreach($invitations as $invitation)
                         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center bg-white p-3 rounded-3 shadow-sm border-start border-warning border-4">
                             <div>
-                                <h6 class="fw-bold mb-1">{{ optional($invitation->group)->title ?? 'Judul Tidak Tersedia' }}</h6>
+                                <h6 class="fw-bold mb-1">{{ optional($invitation->group)->title ?: 'Judul menunggu penetapan dosen pembimbing' }}</h6>
                                 <p class="small text-muted mb-0">
                                     <i class="ti ti-user me-1"></i> Ketua: <strong>{{ optional(optional($invitation->group)->leader)->name ?? 'Tidak diketahui' }}</strong> &nbsp;|&nbsp;
                                     <i class="ti ti-briefcase me-1"></i> Bidang: <strong>{{ optional(optional($invitation->group)->expertise)->name ?? 'Belum ditentukan' }}</strong>
@@ -206,7 +206,7 @@
         <div class="stepper-wrapper">
             <div class="stepper-item {{ $step1Class }}">
                 <div class="step-counter"><i class="ti ti-check"></i></div>
-                <div class="step-name">1. Bentuk Kelompok & Judul</div>
+                <div class="step-name">1. Pendaftaran Kelompok</div>
             </div>
             <div class="stepper-item {{ $step2Class }}">
                 <div class="step-counter">2</div>
@@ -227,7 +227,7 @@
             <div>
                 Status saat ini:
                 @if(!$hasGroup)
-                <strong class="text-primary">Silakan ajukan judul dan bentuk kelompok terlebih dahulu di form bawah.</strong>
+                <strong class="text-primary">Silakan bentuk kelompok dan pilih bidang keahlian. Judul akan dibuat dosen pembimbing setelah plotting.</strong>
                 @elseif(!$hasExamDate)
                 <strong class="text-warning">Kelompok aktif. Lakukan bimbingan dan unggah draft laporan/kartu konsultasi.</strong>
                 @elseif(!$isFinished)
@@ -245,13 +245,9 @@
             @if(!$hasGroup)
             <!-- FORM PENDAFTARAN KELOMPOK BARU -->
             <div class="card border-0 shadow-sm rounded-4 p-3 p-md-4 bg-white h-100">
-                <h5 class="fw-bold mb-3 fs-6 fs-md-5"><i class="ti ti-file-text me-2"></i>Ajuan Judul & Pilihan Keahlian</h5>
+                <h5 class="fw-bold mb-3 fs-6 fs-md-5"><i class="ti ti-file-text me-2"></i>Ajuan Kelompok & Bidang Keahlian</h5>
                 <form id="formPendaftaranCapstone">
                     @csrf
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Usulan Judul Capstone Design</label>
-                        <input type="text" name="title" id="inputTitle" class="form-control" required placeholder="Masukkan judul proyek capstone...">
-                    </div>
                     <div class="mb-3">
                         <label class="form-label small fw-semibold">Pilih Bidang Keahlian</label>
                         <!-- HAPUS form-select -->
@@ -280,10 +276,12 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="fw-bold mb-0 fs-6 fs-md-5"><i class="ti ti-users me-2 text-primary"></i>Informasi Kelompok Anda</h5>
                     <div class="d-flex gap-2">
-                        @if(in_array($group->status_pendaftaran, ['draft', 'submitted']) && $group->kpi_approval === 'pending' && !$group->acc_coordinator && !$group->acc_supervisor && !$group->acc_kps && !$group->members->contains('status', 'accepted'))
+                        @if(in_array($group->status_pendaftaran, ['draft', 'submitted']) && $group->kpi_approval === 'pending' && !$group->acc_coordinator && !$group->acc_supervisor && !$group->acc_kps && $group->members->where('status', 'accepted')->count() < 2)
                         <button type="button" class="btn btn-outline-warning btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#modalEditGroup">
                             <i class="ti ti-edit me-1"></i> Edit Ajuan
                         </button>
+                        @endif
+                        @if(in_array($group->status_pendaftaran, ['draft', 'submitted']) && $group->kpi_approval === 'pending' && !$group->acc_coordinator && !$group->acc_supervisor && !$group->acc_kps && !$group->members->contains('status', 'accepted'))
                         <button type="button" class="btn btn-outline-danger btn-sm fw-semibold" id="btnDeleteGroup" data-id="{{ $group->id }}">
                             <i class="ti ti-trash me-1"></i> Hapus Ajuan
                         </button>
@@ -293,7 +291,7 @@
 
                 <div class="mb-3">
                     <span class="text-muted small d-block">Judul Proyek:</span>
-                    <h6 class="fw-bold text-dark mb-0">{{ $group->title }}</h6>
+                    <h6 class="fw-bold text-dark mb-0">{{ $group->title ?: 'Menunggu judul dari dosen pembimbing' }}</h6>
                 </div>
 
                 <div class="mb-3">
@@ -461,7 +459,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold">Edit Ajuan Judul & Kelompok</h5>
+                <h5 class="modal-title fw-bold">Edit Ajuan Kelompok</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <form id="formEditPendaftaranCapstone">
@@ -470,10 +468,6 @@
                 <input type="hidden" name="group_id" value="{{ $group->id }}">
 
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Usulan Judul Capstone Design</label>
-                        <input type="text" name="title" id="inputTitleModal" class="form-control" value="{{ $group->title }}" required placeholder="Masukkan judul proyek capstone...">
-                    </div>
                     <div class="mb-3">
                         <label class="form-label small fw-semibold">Pilih Bidang Keahlian</label>
                         <select name="expertise_id" id="inputExpertiseModal" class="select2-expertise-modal w-100" required>
@@ -490,7 +484,9 @@
                         <select name="members[]" class="select2-members-modal w-100" multiple data-placeholder="-- Cari mahasiswa anggota --">
                             @php
                             // Ambil ID mahasiswa yang sudah tergabung selain ketua
-                            $selectedMemberIds = $group->members ? $group->members->pluck('student_id')->toArray() : [];
+                            $selectedMemberIds = $group->members
+                                ? $group->members->whereIn('status', ['accepted', 'pending'])->pluck('student_id')->toArray()
+                                : [];
                             @endphp
                             @foreach($availableStudents ?? [] as $student)
                             <option value="{{ $student->id }}" {{ in_array($student->id, $selectedMemberIds) ? 'selected' : '' }}>

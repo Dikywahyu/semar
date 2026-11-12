@@ -27,7 +27,7 @@
                 <button class="btn btn-outline-primary btn-sm">Import Excel</button>
             </form>
         </div>
-        <small class="text-muted mt-2">Format import: group_id (opsional), leader_id, expertise_id, supervisor_id, examiner_id, project_location, title. Baris dengan group_id akan memperbarui plotting.</small>
+        <small class="text-muted mt-2">Format import: group_id (opsional), leader_id, expertise_id, supervisor_id, examiner_id, project_location. Judul Capstone ditetapkan oleh dosen pembimbing pada menu dosen. Baris dengan group_id akan memperbarui plotting.</small>
         <form id="formManualPlotting" class="row g-2 mt-2">
             @csrf
             <div class="col-md-2"><input class="form-control" type="number" name="leader_id" placeholder="ID mahasiswa" required></div>
@@ -49,9 +49,8 @@
                     @foreach($dosens as $dosen)<option value="{{ $dosen->id_dosen }}">{{ $dosen->nama_dosen }}</option>@endforeach
                 </select>
             </div>
-            <div class="col-md-2"><input class="form-control" name="title" placeholder="Usulan judul"></div>
-            <div class="col-md-1"><input class="form-control" name="project_location" placeholder="Tempat"></div>
-            <div class="col-md-1"><button class="btn btn-primary btn-sm w-100">Tambah</button></div>
+            <div class="col-md-2"><input class="form-control" name="project_location" placeholder="Tempat"></div>
+            <div class="col-md-2"><button class="btn btn-primary btn-sm w-100">Tambah</button></div>
         </form>
     </div>
     @endif

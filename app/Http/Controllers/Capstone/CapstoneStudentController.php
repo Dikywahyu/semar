@@ -71,7 +71,6 @@ class CapstoneStudentController extends Controller
         abort_unless($student, 403);
 
         $validated = $request->validate([
-            'title' => 'nullable|string|max:255',
             'expertise_id' => 'required|exists:capstone_expertises,id',
             'members' => 'nullable|array|max:2',
             'members.*' => 'distinct|exists:users,id',
@@ -91,7 +90,6 @@ class CapstoneStudentController extends Controller
                     ->where('acc_supervisor', false)
                     ->where('acc_kps', false)
                     ->whereNull('exam_date')
-                    ->whereDoesntHave('members', fn ($query) => $query->where('status', 'accepted'))
                     ->firstOrFail();
             } else {
                 abort_if(
@@ -103,29 +101,47 @@ class CapstoneStudentController extends Controller
                 );
             }
 
-            foreach ($memberIds as $memberId) {
+            $acceptedMemberIds = $group
+                ? $group->members()->where('status', 'accepted')->pluck('student_id')->map(fn ($id) => (string) $id)
+                : collect();
+            $newMemberIds = collect($memberIds)
+                ->map(fn ($id) => (string) $id)
+                ->diff($acceptedMemberIds)
+                ->values();
+            abort_if(
+                $acceptedMemberIds->count() + $newMemberIds->count() > 2,
+                422,
+                'Kelompok maksimal terdiri dari tiga mahasiswa termasuk ketua.'
+            );
+
+            foreach ($newMemberIds as $memberId) {
                 abort_if(
-                    CapstoneGroup::where('leader_id', $memberId)
-                        ->orWhereHas('members', fn ($query) => $query->where('student_id', $memberId)->where('status', 'accepted'))
-                        ->exists(),
+                    CapstoneGroup::where(function ($query) use ($memberId) {
+                        $query->where('leader_id', $memberId)
+                            ->orWhereHas('members', fn ($query) => $query->where('student_id', $memberId)->where('status', 'accepted'));
+                    })->when($group, fn ($query) => $query->where('id', '<>', $group->id))->exists(),
                     409,
                     'Salah satu mahasiswa sudah tergabung di kelompok lain.'
                 );
             }
 
             $attributes = [
-                'title' => $validated['title'] ?? null,
                 'expertise_id' => $validated['expertise_id'],
                 'status_pendaftaran' => 'submitted',
             ];
             if ($group) {
                 $group->update($attributes);
             } else {
-                $group = CapstoneGroup::create($attributes + ['leader_id' => $student->id]);
+                $group = CapstoneGroup::create($attributes + [
+                    'leader_id' => $student->id,
+                    'title' => null,
+                ]);
             }
 
-            CapstoneGroupMember::where('capstone_group_id', $group->id)->delete();
-            foreach ($memberIds as $memberId) {
+            CapstoneGroupMember::where('capstone_group_id', $group->id)
+                ->where('status', '!=', 'accepted')
+                ->delete();
+            foreach ($newMemberIds as $memberId) {
                 CapstoneGroupMember::create([
                     'capstone_group_id' => $group->id,
                     'student_id' => $memberId,

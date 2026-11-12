@@ -86,7 +86,6 @@
                             <th class="py-3">No</th>
                             <th class="py-3">Nama Komponen</th>
                             <th class="py-3">Bobot (%)</th>
-                            <th class="py-3 text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="tableBodyPembimbing">
@@ -110,7 +109,6 @@
                             <th class="py-3">No</th>
                             <th class="py-3">Nama Komponen</th>
                             <th class="py-3">Bobot (%)</th>
-                            <th class="py-3 text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="tableBodyPenguji">
@@ -122,7 +120,7 @@
     </div>
 </div>
 
-<!-- Modal Tambah / Edit Komponen -->
+<!-- Modal Tambah Komponen -->
 <div class="modal fade" id="modalKomponen" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow">
@@ -201,26 +199,17 @@
 
         loadKomponenData();
 
-        // Reset form saat modal dibuka untuk tambah baru
-        $('#modalKomponen').on('show.bs.modal', function(event) {
-            let button = $(event.relatedTarget);
-            if (button.attr('id') === 'btnTambahKomponen') {
-                $('#modalTitle').text('Tambah Komponen Nilai');
-                $('#formKomponen')[0].reset();
-                $('#komponenId').val('');
-            }
+        $('#modalKomponen').on('show.bs.modal', function() {
+            $('#formKomponen')[0].reset();
         });
 
-        // Submit form tambah / edit via AJAX
+        // Komponen yang sudah ada hanya dapat dilihat; form ini khusus untuk penambahan.
         $('#formKomponen').on('submit', function(e) {
             e.preventDefault();
-            let id = $('#komponenId').val();
-            let url = id ? "{{ url('capstone/admin/komponen') }}/" + id : "{{ route('capstone.admin.komponen.store') }}";
-            let type = id ? 'PUT' : 'POST';
 
             $.ajax({
-                url: url,
-                type: type,
+                url: "{{ route('capstone.admin.komponen.store') }}",
+                type: 'POST',
                 data: $(this).serialize(),
                 success: function(res) {
                     $('#modalKomponen').modal('hide');
@@ -254,26 +243,17 @@
 
                 if (response.data && response.data.length > 0) {
                     response.data.forEach(function(item) {
-                        let actionButtons = `
-                            <td class="text-center">
-                                <button class="btn btn-sm btn-outline-warning btn-edit mb-1 mb-sm-0" data-id="${item.id}" data-name="${item.name}" data-category="${item.category}" data-percentage="${item.percentage}"><i class="ti ti-edit"></i> Edit</button>
-                                <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${item.id}"><i class="ti ti-trash"></i> Hapus</button>
-                            </td>
-                        `;
-
                         if (item.category === 'pembimbing') {
                             rowsPembimbing += `<tr>
                                 <td>${noPembimbing++}</td>
                                 <td><strong>${item.name}</strong></td>
                                 <td>${item.percentage}%</td>
-                                ${actionButtons}
                             </tr>`;
                         } else if (item.category === 'penguji') {
                             rowsPenguji += `<tr>
                                 <td>${noPenguji++}</td>
                                 <td><strong>${item.name}</strong></td>
                                 <td>${item.percentage}%</td>
-                                ${actionButtons}
                             </tr>`;
                         }
                     });
@@ -296,51 +276,6 @@
         });
     }
 
-    // Klik Tombol Edit
-    $(document).on('click', '.btn-edit', function() {
-        let id = $(this).data('id');
-        let name = $(this).data('name');
-        let category = $(this).data('category');
-        let percentage = $(this).data('percentage');
-
-        $('#modalTitle').text('Edit Komponen Nilai');
-        $('#komponenId').val(id);
-        $('#inputName').val(name);
-        $('#inputCategory').val(category);
-        $('#inputPercentage').val(percentage);
-
-        $('#modalKomponen').modal('show');
-    });
-
-    // Klik Tombol Hapus
-    $(document).on('click', '.btn-delete', function() {
-        let id = $(this).data('id');
-        Swal.fire({
-            title: 'Hapus komponen ini?',
-            text: "Data yang dihapus tidak dapat dikembalikan!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Ya, Hapus!',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: "{{ url('capstone/admin/komponen') }}/" + id,
-                    type: 'DELETE',
-                    data: {
-                        _token: '{{ csrf_token() }}'
-                    },
-                    success: function(res) {
-                        Swal.fire('Terhapus!', res.message, 'success');
-                        loadKomponenData();
-                    },
-                    error: function(err) {
-                        Swal.fire('Gagal', err.responseJSON?.message || 'Terjadi kesalahan saat menghapus data.', 'error');
-                    }
-                });
-            }
-        });
-    });
 </script>
 @endpush
 @endsection

@@ -18,7 +18,6 @@ class CapstonePlottingImport implements ToModel, WithHeadingRow, WithValidation
             'supervisor_id' => $row['supervisor_id'] ?? null,
             'examiner_id' => $row['examiner_id'] ?? null,
             'project_location' => $row['project_location'] ?? null,
-            'title' => $row['title'] ?? null,
             'status_pendaftaran' => 'submitted',
         ];
 
@@ -50,7 +49,6 @@ class CapstonePlottingImport implements ToModel, WithHeadingRow, WithValidation
             '*.supervisor_id' => ['nullable', 'exists:dosens,id_dosen'],
             '*.examiner_id' => ['nullable', 'exists:dosens,id_dosen'],
             '*.project_location' => ['nullable', 'string', 'max:255'],
-            '*.title' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

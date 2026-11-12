@@ -110,7 +110,7 @@ class CapstoneCoordinatorController extends Controller
         ]);
 
         $group = CapstoneGroup::findOrFail($groupId);
-        $this->authorizeGroupCoordinator($group);
+        $this->authorizeGroupPlotting($group);
         $supervisorChanged = $group->supervisor_id !== ($validated['supervisor_id'] ?? null);
         $group->update([
             'supervisor_id' => $validated['supervisor_id'] ?? null,
@@ -207,6 +207,15 @@ class CapstoneCoordinatorController extends Controller
             ),
             403
         );
+    }
+
+    private function authorizeGroupPlotting(CapstoneGroup $group): void
+    {
+        if (Auth::user()?->hasAnyRole(['Super Admin', 'KPS', 'Kaprodi'])) {
+            return;
+        }
+
+        $this->authorizeGroupCoordinator($group);
     }
 
     private function refreshFinalStatus(CapstoneGroup $group): void

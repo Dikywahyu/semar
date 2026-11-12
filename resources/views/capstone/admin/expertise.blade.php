@@ -292,17 +292,21 @@
                             lecturersHtml += '</div>';
                         }
 
+                        const actions = index === 0
+                            ? '<span class="badge bg-secondary">Master keahlian #1 · dikunci</span>'
+                            : `<div class="d-flex flex-column flex-sm-row justify-content-center gap-1">
+                                <button class="btn btn-sm btn-outline-info btn-manage-lecturers" data-id="${item.id}" data-name="${item.name}"><i class="ti ti-users"></i> Atur Dosen</button>
+                                <button class="btn btn-sm btn-outline-warning btn-edit" data-id="${item.id}" data-name="${item.name}" data-coordinator="${item.coordinator_id ?? ''}"><i class="ti ti-edit"></i> Edit</button>
+                                <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${item.id}"><i class="ti ti-trash"></i> Hapus</button>
+                            </div>`;
+
                         rows += `<tr>
                             <td>${index + 1}</td>
                             <td><strong>${item.name}</strong></td>
                             <td>${item.coordinator?.nama_dosen ?? '<span class="text-muted">Belum ditentukan</span>'}</td>
                             <td>${lecturersHtml}</td>
                             <td class="text-center">
-                                <div class="d-flex flex-column flex-sm-row justify-content-center gap-1">
-                                    <button class="btn btn-sm btn-outline-info btn-manage-lecturers" data-id="${item.id}" data-name="${item.name}"><i class="ti ti-users"></i> Atur Dosen</button>
-                                    <button class="btn btn-sm btn-outline-warning btn-edit" data-id="${item.id}" data-name="${item.name}" data-coordinator="${item.coordinator_id ?? ''}"><i class="ti ti-edit"></i> Edit</button>
-                                    <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${item.id}"><i class="ti ti-trash"></i> Hapus</button>
-                                </div>
+                                ${actions}
                             </td>
                         </tr>`;
                     });

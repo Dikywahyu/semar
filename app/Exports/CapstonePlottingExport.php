@@ -26,12 +26,11 @@ class CapstonePlottingExport implements FromCollection, WithHeadings
                 'examiner_id' => $group->examiner_id,
                 'examiner_name' => $group->examiner?->nama_dosen,
                 'project_location' => $group->project_location,
-                'title' => $group->title,
             ]);
     }
 
     public function headings(): array
     {
-        return ['group_id', 'leader_id', 'leader_name', 'expertise_id', 'expertise', 'supervisor_id', 'supervisor_name', 'examiner_id', 'examiner_name', 'project_location', 'title'];
+        return ['group_id', 'leader_id', 'leader_name', 'expertise_id', 'expertise', 'supervisor_id', 'supervisor_name', 'examiner_id', 'examiner_name', 'project_location'];
     }
 }
