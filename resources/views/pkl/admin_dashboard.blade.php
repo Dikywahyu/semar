@@ -428,14 +428,41 @@
         const chartElement = document.getElementById('pklStatusChart');
 
         if (chartElement) {
-            const chartData = [
-                {{ $stats['pengajuan'] ?? 0 }},
-                {{ $stats['pelaksanaan'] ?? 0 }},
-                {{ $stats['verifikasi'] ?? 0 }},
-                {{ $stats['ujian'] ?? 0 }},
-                {{ $stats['seminar'] ?? 0 }},
-                {{ $stats['revisi'] ?? 0 }},
-                {{ $stats['selesai'] ?? 0 }}
+            const chartData = [{
+                    {
+                        $stats['pengajuan'] ?? 0
+                    }
+                },
+                {
+                    {
+                        $stats['pelaksanaan'] ?? 0
+                    }
+                },
+                {
+                    {
+                        $stats['verifikasi'] ?? 0
+                    }
+                },
+                {
+                    {
+                        $stats['ujian'] ?? 0
+                    }
+                },
+                {
+                    {
+                        $stats['seminar'] ?? 0
+                    }
+                },
+                {
+                    {
+                        $stats['revisi'] ?? 0
+                    }
+                },
+                {
+                    {
+                        $stats['selesai'] ?? 0
+                    }
+                }
             ];
 
             const ctx = chartElement.getContext('2d');
@@ -519,7 +546,7 @@
             } else {
                 const groups = [{
                         key: 'previous',
-                        title: 'Berkas Sebelumnya',
+                        title: 'Berkas Pengajuan',
                         documents: documents.filter(document => document.group !== 'final')
                     },
                     {
