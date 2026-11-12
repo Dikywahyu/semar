@@ -1382,7 +1382,12 @@ class PklController extends Controller
             $request->session()->put('pkl.dosen_profile_id', $dosen->id_dosen);
         }
         $query = PengajuanPkl::query()
-            ->with(['mahasiswaRegistrasi', 'dosenPenguji', 'dosenPembimbing'])
+            ->with([
+                'mahasiswaRegistrasi',
+                'dosenPenguji',
+                'dosenPembimbing',
+                'detailNilai' => fn($query) => $query->where('dosen_id', $dosen->id_dosen),
+            ])
             ->where(function ($query) use ($dosen) {
                 $query->where('dosen_pembimbing_id', $dosen->id_dosen)
                     ->orWhereHas('dosenPenguji', fn($query) => $query->where('dosens.id_dosen', $dosen->id_dosen));
@@ -1449,7 +1454,7 @@ class PklController extends Controller
         }
         $komponen = $this->componentsForSubmission($pengajuan)
             ->whereIn('penilai', $categories->unique())
-            ->with('detailNilai')
+            ->orderBy('id')
             ->get();
         $existing = $pengajuan->detailNilai()->where('dosen_id', $dosen->id_dosen)->get()->keyBy('komponen_penilaian_pkl_id');
         $catatan = $pengajuan->logAktivitas()
@@ -1482,16 +1487,21 @@ class PklController extends Controller
             'nilai.' . $dosen->id_dosen . '.*' => ['required', 'numeric', 'between:0,100'],
             'catatan' => ['nullable', 'string', 'max:5000'],
         ]);
-        $components = KomponenPenilaianPkl::query()
-            ->whereIn('id', array_keys($validated['nilai'][$dosen->id_dosen]))
-            ->when($pengajuan->id_semester, fn($query) => $query->where('id_semester', $pengajuan->id_semester))
-            ->whereIn('penilai', collect([
+        $categories = collect([
                 $pengajuan->dosen_pembimbing_id === $dosen->id_dosen ? 'Pembimbing' : null,
                 $pengajuan->dosenPenguji()->where('dosens.id_dosen', $dosen->id_dosen)->exists() ? 'Penguji' : null,
-            ])->filter()->unique())
+            ])->filter()->unique();
+        $components = $this->componentsForSubmission($pengajuan)
+            ->whereIn('penilai', $categories)
             ->get()
             ->keyBy('id');
-        abort_unless($components->count() === count($validated['nilai'][$dosen->id_dosen]), 422, 'Komponen nilai tidak valid.');
+        $expectedIds = $components->keys()->map(fn($id) => (string) $id)->all();
+        $submittedIds = array_map('strval', array_keys($validated['nilai'][$dosen->id_dosen]));
+        abort_unless(
+            $components->isNotEmpty() && ! array_diff($submittedIds, $expectedIds) && ! array_diff($expectedIds, $submittedIds),
+            422,
+            'Nilai harus diisi sesuai seluruh komponen penilaian aktif untuk semester dan peran Anda.'
+        );
 
         DB::transaction(function () use ($validated, $dosen, $pengajuan) {
             foreach ($validated['nilai'][$dosen->id_dosen] as $componentId => $score) {
@@ -1605,16 +1615,19 @@ class PklController extends Controller
     private function componentsForSubmission(PengajuanPkl $pengajuan)
     {
         return KomponenPenilaianPkl::query()
-            ->when($pengajuan->semester_master_id || $pengajuan->id_semester, function ($query) use ($pengajuan) {
+            ->when($pengajuan->semester_master_id, function ($query) use ($pengajuan) {
                 $query->where(function ($query) use ($pengajuan) {
-                    if ($pengajuan->semester_master_id) {
-                        $query->where('semester_master_id', $pengajuan->semester_master_id);
-                    }
+                    $query->where('semester_master_id', $pengajuan->semester_master_id);
                     if ($pengajuan->id_semester) {
-                        $query->orWhere('id_semester', $pengajuan->id_semester);
+                        $query->orWhere(function ($query) use ($pengajuan) {
+                            $query->whereNull('semester_master_id')
+                                ->where('id_semester', $pengajuan->id_semester);
+                        });
                     }
                 });
-            }, fn($query) => $query->whereRaw('1 = 0'));
+            }, fn($query) => $pengajuan->id_semester
+                ? $query->whereNull('semester_master_id')->where('id_semester', $pengajuan->id_semester)
+                : $query->whereRaw('1 = 0'));
     }
 
     private function weightedFinalScore(PengajuanPkl $pengajuan): ?float

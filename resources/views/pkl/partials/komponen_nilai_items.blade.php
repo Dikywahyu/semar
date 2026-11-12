@@ -1,16 +1,3 @@
-@php
-    // Fallback jika $dosenId dari controller bernilai null
-    if (empty($dosenId)) {
-        $userId = Auth::id();
-        $userClaim = \App\Models\Otentikasi\UserClaim::where('user_id', $userId)
-            ->where('role_type', 'dosen')
-            ->where('status_claim', 'approved')
-            ->first();
-
-        $dosenId = $userClaim ? ($userClaim->feeder_id ?? $userClaim->feeder_id ?? $userClaim->feeder_id) : (auth()->user()->dosen->id_dosen ?? '');
-    }
-@endphp
-
 @forelse($komponen as $item)
     <div class="mb-3 p-3 border rounded-3 bg-light-subtle">
         <label class="form-label fw-bold text-dark mb-1">
@@ -21,12 +8,7 @@
             <p class="small text-muted mb-2">{{ $item->deskripsi }}</p>
         @endif
         
-        @php
-            // Filter nilai yang diisi khusus oleh Dosen ini
-            $existingDetail = $item->detailNilai
-                ->where('dosen_id', $dosenId)
-                ->first();
-        @endphp
+        @php($existingDetail = $existingNilai->get($item->id))
 
         <!-- Format input name: nilai[dosen_id][komponen_id] -->
         <input type="number" 
@@ -34,7 +16,7 @@
                class="form-control" 
                min="0" max="100" step="0.01" 
                value="{{ $existingDetail->nilai_angka ?? '' }}" 
-               placeholder="Masukkan nilai (0 - 100)" 
+               placeholder="{{ $existingDetail ? 'Nilai tersimpan - edit jika perlu' : 'Masukkan nilai (0 - 100)' }}"
                required>
     </div>
 @empty

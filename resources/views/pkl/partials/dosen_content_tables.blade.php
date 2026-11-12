@@ -349,8 +349,8 @@ return $dateA->timestamp <=> $dateB->timestamp;
                             </div>
 
                             <div class="mt-auto pt-2 border-top">
-                                <button type="button" class="btn btn-sm btn-success fw-semibold w-100 btn-nilai-seminar" data-id="{{ $item->id }}">
-                                    <i class="ti ti-award me-1"></i> Beri Nilai Ujian
+                                <button type="button" class="btn btn-sm {{ $item->detailNilai->isNotEmpty() ? 'btn-outline-success' : 'btn-success' }} fw-semibold w-100 btn-nilai-seminar" data-id="{{ $item->id }}">
+                                    <i class="ti ti-award me-1"></i> {{ $item->detailNilai->isNotEmpty() ? 'Lihat / Edit Nilai' : 'Beri Nilai Ujian' }}
                                 </button>
                             </div>
                         </div>
@@ -394,8 +394,8 @@ return $dateA->timestamp <=> $dateB->timestamp;
                                     <span class="badge bg-warning-subtle text-warning-emphasis border">{{ $item->pivot->peran ?? 'Penguji' }}</span>
                                 </td>
                                 <td>
-                                    <button type="button" class="btn btn-sm btn-success fw-semibold btn-nilai-seminar" data-id="{{ $item->id }}">
-                                        <i class="ti ti-award me-1"></i> Beri Nilai Ujian
+                                    <button type="button" class="btn btn-sm {{ $item->detailNilai->isNotEmpty() ? 'btn-outline-success' : 'btn-success' }} fw-semibold btn-nilai-seminar" data-id="{{ $item->id }}">
+                                        <i class="ti ti-award me-1"></i> {{ $item->detailNilai->isNotEmpty() ? 'Lihat / Edit Nilai' : 'Beri Nilai Ujian' }}
                                     </button>
                                 </td>
                             </tr>
