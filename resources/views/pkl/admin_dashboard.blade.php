@@ -428,41 +428,15 @@
         const chartElement = document.getElementById('pklStatusChart');
 
         if (chartElement) {
-            const chartData = [{
-                    {
-                        $stats['pengajuan'] ?? 0
-                    }
-                },
-                {
-                    {
-                        $stats['pelaksanaan'] ?? 0
-                    }
-                },
-                {
-                    {
-                        $stats['verifikasi'] ?? 0
-                    }
-                },
-                {
-                    {
-                        $stats['ujian'] ?? 0
-                    }
-                },
-                {
-                    {
-                        $stats['seminar'] ?? 0
-                    }
-                },
-                {
-                    {
-                        $stats['revisi'] ?? 0
-                    }
-                },
-                {
-                    {
-                        $stats['selesai'] ?? 0
-                    }
-                }
+            const chartStats = @json($stats);
+            const chartData = [
+                chartStats.pengajuan || 0,
+                chartStats.pelaksanaan || 0,
+                chartStats.verifikasi || 0,
+                chartStats.ujian || 0,
+                chartStats.seminar || 0,
+                chartStats.revisi || 0,
+                chartStats.selesai || 0
             ];
 
             const ctx = chartElement.getContext('2d');
