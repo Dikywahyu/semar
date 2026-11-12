@@ -43,7 +43,15 @@ class CapstoneScoreController extends Controller
         abort_unless($dosen, 403, 'Profil dosen aktif untuk akun ini belum tersedia.');
         $dosenId = $dosen->id_dosen;
 
-        $groups = CapstoneGroup::with(['leader', 'members.student', 'studentScores.component'])
+        $groups = CapstoneGroup::with([
+            'leader',
+            'members.student',
+            'expertise',
+            'supervisor',
+            'examiner',
+            'supervisorApprover',
+            'studentScores.component',
+        ])
             ->where('supervisor_id', $dosenId)
             ->orWhere('examiner_id', $dosenId)
             ->get();
