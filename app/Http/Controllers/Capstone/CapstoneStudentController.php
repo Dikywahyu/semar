@@ -48,7 +48,10 @@ class CapstoneStudentController extends Controller
             ->get();
 
         $expertises = CapstoneExpertise::all();
-        $availableStudents = User::role(['mahasiswa', 'Mahasiswa'])->where('id', '!=', $userId)->get();
+        $availableStudents = User::role(['mahasiswa', 'Mahasiswa'])
+            ->where('id', '!=', $userId)
+            ->orderBy('name')
+            ->get(['id', 'name', 'identifier_number']);
 
         if ($request->ajax()) {
             return response()->json([
@@ -70,7 +73,7 @@ class CapstoneStudentController extends Controller
         $validated = $request->validate([
             'title' => 'nullable|string|max:255',
             'expertise_id' => 'required|exists:capstone_expertises,id',
-            'members' => 'nullable|array|max:1',
+            'members' => 'nullable|array|max:2',
             'members.*' => 'distinct|exists:users,id',
             'group_id' => 'nullable|exists:capstone_groups,id' // Validasi group_id untuk proses update
         ]);
@@ -147,23 +150,33 @@ class CapstoneStudentController extends Controller
         $student = $this->capstoneStudent($request);
         abort_unless($student, 403);
 
-        $member = CapstoneGroupMember::where('id', $memberId)
-            ->where('student_id', $student->id)
-            ->firstOrFail();
+        DB::transaction(function () use ($memberId, $student, $request) {
+            $member = CapstoneGroupMember::where('id', $memberId)
+                ->where('student_id', $student->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        abort_unless($member->status === 'pending', 409, 'Undangan ini sudah pernah direspons.');
-        if ($request->input('status') === 'accepted') {
-            abort_if(
-                CapstoneGroup::where('leader_id', $student->id)
-                    ->orWhereHas('members', fn ($query) => $query->where('student_id', $student->id)->where('status', 'accepted'))
-                    ->exists(),
-                409,
-                'Anda sudah menjadi anggota kelompok lain.'
-            );
-            abort_if($member->group()->withCount(['members' => fn ($query) => $query->where('status', 'accepted')])->firstOrFail()->members_count >= 1, 409, 'Kelompok sudah mencapai batas dua mahasiswa.');
-        }
+            abort_unless($member->status === 'pending', 409, 'Undangan ini sudah pernah direspons.');
+            if ($request->input('status') === 'accepted') {
+                abort_if(
+                    CapstoneGroup::where('leader_id', $student->id)
+                        ->orWhereHas('members', fn ($query) => $query->where('student_id', $student->id)->where('status', 'accepted'))
+                        ->exists(),
+                    409,
+                    'Anda sudah menjadi anggota kelompok lain.'
+                );
+                $group = CapstoneGroup::whereKey($member->capstone_group_id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+                abort_if(
+                    $group->members()->where('status', 'accepted')->count() >= 2,
+                    409,
+                    'Kelompok sudah mencapai batas tiga mahasiswa termasuk ketua.'
+                );
+            }
 
-        $member->update(['status' => $request->status]);
+            $member->update(['status' => $request->input('status')]);
+        });
 
         return response()->json([
             'status' => 'success',

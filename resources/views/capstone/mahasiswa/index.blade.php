@@ -28,6 +28,25 @@
         padding-bottom: 0.2rem;
     }
 
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__rendered {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
+        max-width: 100%;
+        overflow-wrap: anywhere;
+        white-space: normal;
+    }
+
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__display {
+        white-space: normal;
+    }
+
     /* Memastikan dropdown Select2 muncul di atas modal Bootstrap */
     .select2-container {
         z-index: 99999 !important;
@@ -244,14 +263,13 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">Tambah 1 Anggota Kelompok (maksimal 2 mahasiswa termasuk ketua)</label>
-                        <!-- HAPUS form-select -->
+                        <label class="form-label small fw-semibold">Tambah Anggota Kelompok (maksimal 3 mahasiswa termasuk ketua)</label>
                         <select name="members[]" class="select2-members w-100" multiple data-placeholder="-- Cari mahasiswa anggota --">
                             @foreach($availableStudents ?? [] as $student)
-                            <option value="{{ $student->id }}">{{ $student->name }} ({{ $student->email }})</option>
+                            <option value="{{ $student->id }}">{{ $student->name }}{{ $student->identifier_number ? ' (' . $student->identifier_number . ')' : '' }}</option>
                             @endforeach
                         </select>
-                        <div class="form-text small text-muted mt-1">Anggota harus menyetujui undangan sebelum resmi bergabung.</div>
+                        <div class="form-text small text-muted mt-1">Pilih maksimal 2 teman. Anggota harus menyetujui undangan sebelum resmi bergabung.</div>
                     </div>
                     <button type="submit" class="btn btn-primary w-100 fw-semibold mt-2"><i class="ti ti-device-floppy me-1"></i> Simpan Ajuan Kelompok</button>
                 </form>
@@ -468,7 +486,7 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">Ubah Anggota Kelompok (maksimal 1 anggota tambahan)</label>
+                        <label class="form-label small fw-semibold">Ubah Anggota Kelompok (maksimal 2 anggota tambahan)</label>
                         <select name="members[]" class="select2-members-modal w-100" multiple data-placeholder="-- Cari mahasiswa anggota --">
                             @php
                             // Ambil ID mahasiswa yang sudah tergabung selain ketua
@@ -476,7 +494,7 @@
                             @endphp
                             @foreach($availableStudents ?? [] as $student)
                             <option value="{{ $student->id }}" {{ in_array($student->id, $selectedMemberIds) ? 'selected' : '' }}>
-                                {{ $student->name }} ({{ $student->email }})
+                                {{ $student->name }}{{ $student->identifier_number ? ' (' . $student->identifier_number . ')' : '' }}
                             </option>
                             @endforeach
                         </select>
@@ -586,7 +604,7 @@
         if ($('.select2-members').length) {
             $('.select2-members').select2({
                 theme: 'bootstrap-5',
-                maximumSelectionLength: 1,
+                maximumSelectionLength: 2,
                 width: '100%'
             });
         }
@@ -607,7 +625,7 @@
             });
             $('.select2-members-modal').select2({
                 theme: 'bootstrap-5',
-                maximumSelectionLength: 1,
+                maximumSelectionLength: 2,
                 width: '100%',
                 dropdownParent: $('#modalEditGroup')
             });
