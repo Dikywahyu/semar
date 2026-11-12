@@ -122,12 +122,37 @@
         color: #212529;
         font-weight: 600;
     }
+
+    /* Styling Kartu Checklist Berkas Individual */
+    .doc-item-card {
+        border: 1px solid #e2e8f0;
+        border-left-width: 4px;
+        border-radius: 12px;
+        transition: all 0.2s ease;
+        background-color: #ffffff;
+    }
+
+    .doc-item-card:hover {
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+    }
+
+    .doc-item-card.is-uploaded {
+        border-left-color: #198754;
+        background-color: #f8fdf9;
+    }
+
+    .doc-item-card.is-missing {
+        border-left-color: #cbd5e1;
+    }
+
+    .doc-item-card.is-optional {
+        border-left-color: #0dcaf0;
+    }
 </style>
 @endpush
 
 @section('content')
 <div class="container-fluid py-4 px-3 px-md-4">
-    <!-- Header Page -->
     <!-- Header Page -->
     <div class="mb-4 pt-2 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
         <div>
@@ -241,7 +266,7 @@
 
     <div class="row g-4">
         <!-- Kolom Kiri: Form Pengajuan (Belum Ada) / Kartu Informasi Kelompok (Sudah Ada) -->
-        <div class="col-lg-6">
+        <div class="col-lg-5">
             @if(!$hasGroup)
             <!-- FORM PENDAFTARAN KELOMPOK BARU -->
             <div class="card border-0 shadow-sm rounded-4 p-3 p-md-4 bg-white h-100">
@@ -250,7 +275,6 @@
                     @csrf
                     <div class="mb-3">
                         <label class="form-label small fw-semibold">Pilih Bidang Keahlian</label>
-                        <!-- HAPUS form-select -->
                         <select name="expertise_id" id="inputExpertise" class="select2-expertise w-100" required>
                             <option value="">-- Pilih Keahlian --</option>
                             @foreach($expertises ?? [] as $exp)
@@ -272,20 +296,20 @@
             </div>
             @else
             <!-- KARTU INFORMASI KELOMPOK (SUDAH MENGAJUKAN) -->
-            <div class="card border-0 shadow-sm rounded-4 p-3 p-md-4 bg-white h-100">
+            <div class="card border-0 shadow-sm rounded-4 p-3 p-md-4 bg-white">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="fw-bold mb-0 fs-6 fs-md-5"><i class="ti ti-users me-2 text-primary"></i>Informasi Kelompok Anda</h5>
                     <div class="d-flex gap-2">
                         @if(in_array($group->status_pendaftaran, ['draft', 'submitted']) && $group->kpi_approval === 'pending' && !$group->acc_coordinator && !$group->acc_supervisor && !$group->acc_kps && $group->members->where('status', 'accepted')->count() < 2)
-                        <button type="button" class="btn btn-outline-warning btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#modalEditGroup">
+                            <button type="button" class="btn btn-outline-warning btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#modalEditGroup">
                             <i class="ti ti-edit me-1"></i> Edit Ajuan
-                        </button>
-                        @endif
-                        @if(in_array($group->status_pendaftaran, ['draft', 'submitted']) && $group->kpi_approval === 'pending' && !$group->acc_coordinator && !$group->acc_supervisor && !$group->acc_kps && !$group->members->contains('status', 'accepted'))
-                        <button type="button" class="btn btn-outline-danger btn-sm fw-semibold" id="btnDeleteGroup" data-id="{{ $group->id }}">
-                            <i class="ti ti-trash me-1"></i> Hapus Ajuan
-                        </button>
-                        @endif
+                            </button>
+                            @endif
+                            @if(in_array($group->status_pendaftaran, ['draft', 'submitted']) && $group->kpi_approval === 'pending' && !$group->acc_coordinator && !$group->acc_supervisor && !$group->acc_kps && !$group->members->contains('status', 'accepted'))
+                            <button type="button" class="btn btn-outline-danger btn-sm fw-semibold" id="btnDeleteGroup" data-id="{{ $group->id }}">
+                                <i class="ti ti-trash me-1"></i> Hapus Ajuan
+                            </button>
+                            @endif
                     </div>
                 </div>
 
@@ -322,17 +346,11 @@
                     </li>
                     @endforeach
                 </ul>
-            </div>
-            @endif
-        </div>
 
-        <!-- Kolom Kanan: Status ACC Multi-Pihak & Upload Berkas -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm rounded-4 p-3 p-md-4 bg-white h-100">
-                <h5 class="fw-bold mb-3 fs-6 fs-md-5"><i class="ti ti-cloud-upload me-2"></i>Status ACC & Unggah Berkas</h5>
+                <hr class="my-3">
 
                 <!-- Box Status ACC Multi-Pihak -->
-                <div class="card bg-light border-0 shadow-none p-3 mb-4 rounded-3">
+                <div class="card bg-light border-0 shadow-none p-3 mb-3 rounded-3">
                     <h6 class="fw-bold text-secondary small mb-2 text-uppercase">Status Persetujuan Sidang:</h6>
                     <div class="row text-center g-2">
                         <div class="col-4 border-end">
@@ -354,98 +372,182 @@
                             </span>
                         </div>
                     </div>
-                    <div class="small mt-3">
+                    <div class="small mt-3 text-muted">
                         <div>Koordinator: {{ $group?->acc_coordinator ? $group->coordinator_approved_by_role : ($group?->coordinator_approved_by_role ? 'Riwayat ACC: '.$group->coordinator_approved_by_role : 'Belum ACC') }}{{ $group?->coordinatorApprover ? ' — '.$group->coordinatorApprover->name : '' }}</div>
                         <div>Pembimbing: {{ $group?->acc_supervisor ? $group->supervisor_approved_by_role : ($group?->supervisor_approved_by_role ? 'Riwayat ACC: '.$group->supervisor_approved_by_role : 'Belum ACC') }}{{ $group?->supervisorApprover ? ' — '.$group->supervisorApprover->name : '' }}</div>
                         <div>KPS: {{ $group?->acc_kps ? $group->kps_approved_by_role : ($group?->kps_approved_by_role ? 'Riwayat ACC: '.$group->kps_approved_by_role : 'Belum ACC') }}{{ $group?->kpsApprover ? ' — '.$group->kpsApprover->name : '' }}</div>
                     </div>
                 </div>
 
-                @if($hasGroup)
-                <form id="formProposeSchedule" class="border rounded-3 p-3 mb-4">
+                <!-- Usulan Jadwal Ujian -->
+                <form id="formProposeSchedule" class="border rounded-3 p-3 bg-light bg-opacity-50">
                     @csrf
-                    <h6 class="fw-semibold">Usulan Jadwal Ujian</h6>
+                    <h6 class="fw-semibold mb-2">Usulan Jadwal Ujian</h6>
                     <div class="row g-2">
-                        <div class="col-md-6"><label class="form-label small">Tanggal</label><input type="date" name="exam_date" class="form-control" min="{{ now()->addDay()->toDateString() }}" value="{{ $group->proposed_exam_date }}" required></div>
-                        <div class="col-md-6"><label class="form-label small">Waktu</label><input type="time" name="exam_time" class="form-control" value="{{ $group->proposed_exam_time }}" required></div>
+                        <div class="col-md-6"><label class="form-label small mb-1">Tanggal</label><input type="date" name="exam_date" class="form-control form-control-sm" min="{{ now()->addDay()->toDateString() }}" value="{{ $group->proposed_exam_date }}" required></div>
+                        <div class="col-md-6"><label class="form-label small mb-1">Waktu</label><input type="time" name="exam_time" class="form-control form-control-sm" value="{{ $group->proposed_exam_time }}" required></div>
                     </div>
                     <p class="small text-muted mt-2 mb-2">Jadwal resmi dan ruangan ditetapkan Admin setelah koordinasi dengan dosen pembimbing.</p>
-                    <button class="btn btn-outline-primary btn-sm" type="submit">Kirim / Revisi Usulan</button>
-                    @if($group->exam_date && $group->exam_room)
-                    <span class="badge bg-success ms-2">Jadwal: {{ $group->exam_date }} {{ $group->exam_time }} — {{ $group->exam_room }}</span>
-                    @endif
-                </form>
-                @endif
-
-                <form id="formUploadSidang" enctype="multipart/form-data">
-                    @csrf
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Pilih Jenis Berkas yang Akan Diunggah</label>
-                        <select name="file_type" id="selectFileType" class="form-select" required>
-                            <option value="">-- Pilih Jenis Berkas --</option>
-                            <option value="consultation_card">Kartu Konsultasi / Bimbingan (PDF/Gambar)</option>
-                            <option value="draft_report">Draft Laporan Proposal (PDF)</option>
-                            <option value="berita_acara">Berita Acara Ujian (PDF/Gambar)</option>
-                            <option value="lembar_revisi">Lembar Pengesahan Revisi (PDF)</option>
-                            <option value="final_report">Laporan Final / Buku Capstone (PDF)</option>
-                            <option value="agreement">Kesepakatan Bersama CD (PDF)</option>
-                            <option value="drawings">Gambar (PDF/DWG/DXF/ZIP)</option>
-                            <option value="rab">RAB (PDF/Excel/CSV)</option>
-                            <option value="structural_calculation">Perhitungan Struktural (opsional)</option>
-                            <option value="recap_score">Rekapitulasi Nilai (PDF)</option>
-                        </select>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <button class="btn btn-outline-primary btn-sm" type="submit">Kirim / Revisi Usulan</button>
+                        @if($group->exam_date && $group->exam_room)
+                        <span class="badge bg-success">Jadwal: {{ $group->exam_date }} {{ $group->exam_time }} — {{ $group->exam_room }}</span>
+                        @endif
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Pilih File Berkas</label>
-                        <input type="file" name="document_file" id="inputDocumentFile" class="form-control" required accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf,.xlsx,.xls,.csv,.zip">
-                        <div class="form-text small text-muted">Pastikan format file sesuai dengan ketentuan.</div>
-                    </div>
-                    <button type="submit" class="btn btn-success w-100 fw-semibold"><i class="ti ti-upload me-1"></i> Unggah Berkas Pilihan</button>
                 </form>
+            </div>
+            @endif
+        </div>
 
-
-                <!-- Daftar Berkas yang Sudah Diunggah -->
-                @if($hasGroup)
-                <h6 class="fw-bold text-secondary small mb-2 text-uppercase mt-4">Daftar Berkas Terunggah:</h6>
+        <!-- Kolom Kanan: Checklist Unggah Berkas Individual -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 p-3 p-md-4 bg-white h-100">
                 @php
-                $uploadedFiles = [
-                'consultation_card' => ['label' => 'Kartu Konsultasi / Bimbingan', 'file' => $group->consultation_card_file ?? null],
-                'draft_report' => ['label' => 'Draft Laporan Proposal', 'file' => $group->draft_report_file ?? null],
-                'berita_acara' => ['label' => 'Berita Acara Ujian', 'file' => $group->berita_acara_file ?? null],
-                'lembar_revisi' => ['label' => 'Lembar Revisi', 'file' => $group->lembar_revisi_file ?? null],
-                'final_report' => ['label' => 'Laporan Final', 'file' => $group->final_report_file ?? null],
-                'recap_score' => ['label' => 'Rekapitulasi Nilai', 'file' => $group->recap_score_file ?? null],
-                'agreement' => ['label' => 'Kesepakatan Bersama CD', 'file' => $group->agreement_file ?? null],
-                'drawings' => ['label' => 'Gambar', 'file' => $group->drawings_file ?? null],
-                'rab' => ['label' => 'RAB', 'file' => $group->rab_file ?? null],
-                'structural_calculation' => ['label' => 'Perhitungan Struktural (Opsional)', 'file' => $group->structural_calculation_file ?? null],
+                $documentChecklist = [
+                'consultation_card' => [
+                'label' => 'Kartu Konsultasi / Bimbingan',
+                'format' => 'PDF / Gambar (JPG, PNG)',
+                'accept' => '.pdf,.jpg,.jpeg,.png',
+                'optional' => false,
+                'file' => $group->consultation_card_file ?? null,
+                ],
+                'draft_report' => [
+                'label' => 'Draft Laporan Proposal',
+                'format' => 'PDF',
+                'accept' => '.pdf',
+                'optional' => false,
+                'file' => $group->draft_report_file ?? null,
+                ],
+                'berita_acara' => [
+                'label' => 'Berita Acara Ujian',
+                'format' => 'PDF / Gambar (JPG, PNG)',
+                'accept' => '.pdf,.jpg,.jpeg,.png',
+                'optional' => false,
+                'file' => $group->berita_acara_file ?? null,
+                ],
+                'lembar_revisi' => [
+                'label' => 'Lembar Pengesahan Revisi',
+                'format' => 'PDF',
+                'accept' => '.pdf',
+                'optional' => false,
+                'file' => $group->lembar_revisi_file ?? null,
+                ],
+                'final_report' => [
+                'label' => 'Laporan Final / Buku Capstone',
+                'format' => 'PDF',
+                'accept' => '.pdf',
+                'optional' => false,
+                'file' => $group->final_report_file ?? null,
+                ],
+                'agreement' => [
+                'label' => 'Kesepakatan Bersama CD',
+                'format' => 'PDF',
+                'accept' => '.pdf',
+                'optional' => false,
+                'file' => $group->agreement_file ?? null,
+                ],
+                'drawings' => [
+                'label' => 'Gambar Kerja / Desain',
+                'format' => 'PDF / DWG / DXF / ZIP',
+                'accept' => '.pdf,.dwg,.dxf,.zip',
+                'optional' => false,
+                'file' => $group->drawings_file ?? null,
+                ],
+                'rab' => [
+                'label' => 'Rencana Anggaran Biaya (RAB)',
+                'format' => 'PDF / Excel (XLSX, XLS) / CSV',
+                'accept' => '.pdf,.xlsx,.xls,.csv',
+                'optional' => false,
+                'file' => $group->rab_file ?? null,
+                ],
+                'recap_score' => [
+                'label' => 'Rekapitulasi Nilai',
+                'format' => 'PDF',
+                'accept' => '.pdf',
+                'optional' => false,
+                'file' => $group->recap_score_file ?? null,
+                ],
+                'structural_calculation' => [
+                'label' => 'Perhitungan Struktural',
+                'format' => 'PDF / Excel / ZIP (Opsional)',
+                'accept' => '.pdf,.xlsx,.xls,.csv,.zip',
+                'optional' => true,
+                'file' => $group->structural_calculation_file ?? null,
+                ],
                 ];
-                @endphp
-                <ul class="list-group mb-4 small shadow-sm">
-                    @foreach($uploadedFiles as $type => $data)
-                    @if($data['file'])
-                    <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
-                        <span class="fw-medium text-dark"><i class="ti ti-file-check text-success me-2 fs-5"></i> {{ $data['label'] }}</span>
-                        <div class="d-flex gap-1">
-                            <!-- Tombol Lihat (Otomatis buka tab baru PDF/Gambar) -->
-                            <a href="{{ route('capstone.file.view', ['path' => $data['file']]) }}" target="_blank" class="btn btn-sm btn-info text-white py-1 px-2" title="Lihat Berkas">
-                                <i class="ti ti-eye"></i>
-                            </a>
-                            <!-- Tombol Hapus -->
-                            <button type="button" class="btn btn-sm btn-danger py-1 px-2 btn-delete-file" data-type="{{ $type }}" title="Hapus Berkas">
-                                <i class="ti ti-trash"></i>
-                            </button>
-                        </div>
-                    </li>
-                    @endif
-                    @endforeach
 
-                    @if(collect($uploadedFiles)->where('file', '!=', null)->isEmpty())
-                    <li class="list-group-item text-center text-muted py-3 bg-light">Belum ada berkas yang diunggah.</li>
+                $mandatoryDocs = collect($documentChecklist)->where('optional', false);
+                $uploadedMandatoryCount = $mandatoryDocs->where('file', '!=', null)->count();
+                $totalMandatoryCount = $mandatoryDocs->count();
+                @endphp
+
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <div>
+                        <h5 class="fw-bold mb-1 fs-6 fs-md-5"><i class="ti ti-cloud-upload me-2 text-primary"></i>Kelengkapan Berkas Capstone</h5>
+                        <p class="small text-muted mb-0">Unggah masing-masing berkas pada slot di bawah ini.</p>
+                    </div>
+                    @if($hasGroup)
+                    <span class="badge {{ $uploadedMandatoryCount === $totalMandatoryCount ? 'bg-success' : 'bg-primary-subtle text-primary' }} px-3 py-2 rounded-pill fw-semibold">
+                        <i class="ti ti-checklist me-1"></i> {{ $uploadedMandatoryCount }} / {{ $totalMandatoryCount }} Berkas Wajib
+                    </span>
                     @endif
-                </ul>
-                <div class="alert alert-info py-2 small mb-4">
-                    <i class="ti ti-info-circle me-1"></i> <strong>Cara Mengganti:</strong> Untuk mengganti berkas, cukup unggah ulang berkas pada jenis yang sama di bawah, sistem akan menimpanya.
+                </div>
+
+                @if(!$hasGroup)
+                <div class="alert alert-warning py-3 small mb-0">
+                    <i class="ti ti-alert-triangle me-1"></i> Anda harus mengajukan kelompok terlebih dahulu sebelum dapat mengunggah berkas.
+                </div>
+                @else
+                <div class="d-flex flex-column gap-3">
+                    @foreach($documentChecklist as $type => $doc)
+                    @php
+                    $isUploaded = !empty($doc['file']);
+                    $cardStateClass = $isUploaded ? 'is-uploaded' : ($doc['optional'] ? 'is-optional' : 'is-missing');
+                    @endphp
+                    <div class="doc-item-card {{ $cardStateClass }} p-3">
+                        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+                            <div>
+                                <div class="d-flex align-items-center gap-2">
+                                    @if($isUploaded)
+                                    <i class="ti ti-circle-check-filled text-success fs-5"></i>
+                                    @else
+                                    <i class="ti ti-circle-dashed text-secondary fs-5"></i>
+                                    @endif
+                                    <span class="fw-bold text-dark">{{ $doc['label'] }}</span>
+                                </div>
+                                <small class="text-muted d-block ms-4">Format: {{ $doc['format'] }}</small>
+                            </div>
+
+                            <div class="d-flex align-items-center gap-1">
+                                @if($isUploaded)
+                                <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1 me-1">Sudah Diunggah</span>
+                                <a href="{{ route('capstone.file.view', ['path' => $doc['file']]) }}" target="_blank" class="btn btn-sm btn-info text-white py-1 px-2" title="Lihat Berkas">
+                                    <i class="ti ti-eye"></i> Lihat
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 btn-delete-file" data-type="{{ $type }}" title="Hapus Berkas">
+                                    <i class="ti ti-trash"></i>
+                                </button>
+                                @elseif($doc['optional'])
+                                <span class="badge bg-info-subtle text-info rounded-pill px-2 py-1">Opsional</span>
+                                @else
+                                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2 py-1">Belum Diunggah</span>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- Form Upload Individual per Berkas -->
+                        <form class="form-single-upload mt-2 pt-2 border-top border-light-subtle" data-type="{{ $type }}" enctype="multipart/form-data">
+                            @csrf
+                            <input type="hidden" name="file_type" value="{{ $type }}">
+                            <div class="input-group input-group-sm">
+                                <input type="file" name="document_file" class="form-control" accept="{{ $doc['accept'] }}" required>
+                                <button type="submit" class="btn {{ $isUploaded ? 'btn-outline-success' : 'btn-primary' }} fw-semibold px-3 btn-upload-submit">
+                                    <i class="ti ti-upload me-1"></i> {{ $isUploaded ? 'Ganti File' : 'Unggah' }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    @endforeach
                 </div>
                 @endif
             </div>
@@ -464,7 +566,6 @@
             </div>
             <form id="formEditPendaftaranCapstone">
                 @csrf
-                <!-- TAMBAHKAN INI: Agar backend tahu ID kelompok mana yang sedang diedit -->
                 <input type="hidden" name="group_id" value="{{ $group->id }}">
 
                 <div class="modal-body">
@@ -483,10 +584,9 @@
                         <label class="form-label small fw-semibold">Ubah Anggota Kelompok (maksimal 2 anggota tambahan)</label>
                         <select name="members[]" class="select2-members-modal w-100" multiple data-placeholder="-- Cari mahasiswa anggota --">
                             @php
-                            // Ambil ID mahasiswa yang sudah tergabung selain ketua
                             $selectedMemberIds = $group->members
-                                ? $group->members->whereIn('status', ['accepted', 'pending'])->pluck('student_id')->toArray()
-                                : [];
+                            ? $group->members->whereIn('status', ['accepted', 'pending'])->pluck('student_id')->toArray()
+                            : [];
                             @endphp
                             @foreach($availableStudents ?? [] as $student)
                             <option value="{{ $student->id }}" {{ in_array($student->id, $selectedMemberIds) ? 'selected' : '' }}>
@@ -570,7 +670,6 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
-                        // Sesuaikan URL ini dengan prefix route mahasiswa Anda
                         url: "{{ url('capstone/mahasiswa/invitation') }}/" + invitationId,
                         type: 'POST',
                         data: {
@@ -596,7 +695,7 @@
             });
         });
 
-        // Inisialisasi Select2 untuk form luar (Jika ada)
+        // Inisialisasi Select2 untuk form luar
         if ($('.select2-members').length) {
             $('.select2-members').select2({
                 theme: 'bootstrap-5',
@@ -612,7 +711,6 @@
         }
 
         // Inisialisasi Select2 khusus di dalam Modal Edit
-        // Di-inisialisasi saat halaman load dengan dropdownParent diset ke modal
         if ($('#modalEditGroup').length) {
             $('.select2-expertise-modal').select2({
                 theme: 'bootstrap-5',
@@ -669,7 +767,9 @@
             $.ajax({
                 url: "{{ url('capstone/mahasiswa/group') }}/" + groupId,
                 type: 'DELETE',
-                data: {_token: '{{ csrf_token() }}'},
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
                 success: function(res) {
                     Swal.fire('Berhasil', res.message, 'success').then(() => location.reload());
                 },
@@ -702,10 +802,12 @@
         });
     }
 
-    // Submit Unggah Berkas
-    // Proses Submit Unggah Berkas
-    $('#formUploadSidang').on('submit', function(e) {
+    // Proses Submit Unggah Berkas Individual per Slot
+    $(document).on('submit', '.form-single-upload', function(e) {
         e.preventDefault();
+        let form = $(this);
+        let btn = form.find('.btn-upload-submit');
+        let originalBtnHtml = btn.html();
         let formData = new FormData(this);
         let groupId = "{{ $group->id ?? '' }}";
 
@@ -714,6 +816,8 @@
             return;
         }
 
+        btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Mengunggah...');
+
         $.ajax({
             url: "{{ url('capstone/mahasiswa/upload-sidang') }}/" + groupId,
             type: 'POST',
@@ -721,7 +825,6 @@
             contentType: false,
             processData: false,
             success: function(res) {
-                // PERBAIKAN: Gunakan format SweetAlert dengan timer dan penambahan location.reload()
                 Swal.fire({
                     icon: 'success',
                     title: 'Berhasil!',
@@ -729,10 +832,11 @@
                     timer: 1500,
                     showConfirmButton: false
                 }).then(() => {
-                    location.reload(); // Ini akan merefresh halaman agar daftar berkas langsung terupdate
+                    location.reload();
                 });
             },
             error: function(err) {
+                btn.prop('disabled', false).html(originalBtnHtml);
                 Swal.fire('Gagal', err.responseJSON?.message || 'Terjadi kesalahan saat mengunggah berkas', 'error');
             }
         });
