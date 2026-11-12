@@ -26,7 +26,9 @@
             <div class="p-3 rounded-3 bg-light h-100">
                 <div class="small text-muted mb-1">Jadwal Ujian</div>
                 @if($group->exam_date)
-                    @php($examDateTime = \Carbon\Carbon::parse($group->exam_date . ' ' . ($group->exam_time ?? '00:00')))
+                    @php
+                        $examDateTime = \Carbon\Carbon::parse($group->exam_date . ' ' . ($group->exam_time ?? '00:00'));
+                    @endphp
                     <div class="fw-semibold"><i class="ti ti-calendar-event text-primary me-1"></i>{{ $examDateTime->translatedFormat('d M Y') }} · {{ $examDateTime->format('H:i') }}</div>
                     <div class="small text-secondary mt-1"><i class="ti ti-map-pin text-danger me-1"></i>{{ $group->exam_room ?: 'Ruangan belum ditetapkan Admin' }}</div>
                 @elseif($group->proposed_exam_date)
