@@ -441,43 +441,15 @@
                         'Selesai'
                     ],
                     datasets: [{
-                        // Fix: Provide a flat array of numbers using correct Blade syntax
-                        data: [{
-                                {
-                                    $stats['pengajuan'] ?? 0
-                                }
-                            },
-                            {
-                                {
-                                    $stats['pelaksanaan'] ?? 0
-                                }
-                            },
-                            {
-                                {
-                                    $stats['verifikasi'] ?? 0
-                                }
-                            },
-                            {
-                                {
-                                    $stats['ujian'] ?? 0
-                                }
-                            },
-                            {
-                                {
-                                    $stats['seminar'] ?? 0
-                                }
-                            },
-                            {
-                                {
-                                    $stats['revisi'] ?? 0
-                                }
-                            },
-                            {
-                                {
-                                    $stats['selesai'] ?? 0
-                                }
-                            }
-                        ],
+                        data: @json([
+                            $stats['pengajuan'] ?? 0,
+                            $stats['pelaksanaan'] ?? 0,
+                            $stats['verifikasi'] ?? 0,
+                            $stats['ujian'] ?? 0,
+                            $stats['seminar'] ?? 0,
+                            $stats['revisi'] ?? 0,
+                            $stats['selesai'] ?? 0,
+                        ]),
                         backgroundColor: [
                             '#64748b', '#2563eb', '#f59e0b', '#0891b2', '#7e22ce', '#dc2626', '#16a34a'
                         ],
