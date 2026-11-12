@@ -428,6 +428,18 @@
         const chartElement = document.getElementById('pklStatusChart');
         if (chartElement) {
             const ctx = chartElement.getContext('2d');
+
+            // SOLUSI: Parse data array dari PHP ke variabel murni JS agar linter VS Code tidak error.
+            const chartDataArray = @json([
+                $stats['pengajuan'] ?? 0,
+                $stats['pelaksanaan'] ?? 0,
+                $stats['verifikasi'] ?? 0,
+                $stats['ujian'] ?? 0,
+                $stats['seminar'] ?? 0,
+                $stats['revisi'] ?? 0,
+                $stats['selesai'] ?? 0
+            ]);
+
             pklStatusChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
@@ -441,15 +453,7 @@
                         'Selesai'
                     ],
                     datasets: [{
-                        data: @json([
-                            $stats['pengajuan'] ?? 0,
-                            $stats['pelaksanaan'] ?? 0,
-                            $stats['verifikasi'] ?? 0,
-                            $stats['ujian'] ?? 0,
-                            $stats['seminar'] ?? 0,
-                            $stats['revisi'] ?? 0,
-                            $stats['selesai'] ?? 0,
-                        ]),
+                        data: chartDataArray, // Masukkan variabel yang dideklarasikan di atas
                         backgroundColor: [
                             '#64748b', '#2563eb', '#f59e0b', '#0891b2', '#7e22ce', '#dc2626', '#16a34a'
                         ],
@@ -764,8 +768,6 @@
             fetchTableData();
         });
 
-
-
         $('#filterForm').on('submit', function(e) {
             e.preventDefault();
             fetchTableData();
@@ -780,11 +782,6 @@
         $(document).on('keyup', 'input[name="keyword"]', function() {
             clearTimeout(searchTimer);
             searchTimer = setTimeout(fetchTableData, 500);
-        });
-
-        $('#filterForm').on('submit', function(e) {
-            e.preventDefault();
-            fetchTableData();
         });
     });
 </script>
