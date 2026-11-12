@@ -11,30 +11,179 @@
 <div class="container-fluid py-4" style="background: linear-gradient(135deg, #f6f8fd 0%, #f1f5f9 100%); min-height: 100vh;">
 
     <style>
-        .pkl-pipeline-card { border:0; border-radius:1rem; box-shadow:0 5px 18px rgba(30,50,85,.06); }
-        .pkl-pipeline { display:grid; grid-template-columns:repeat(7,minmax(105px,1fr)); gap:.4rem; overflow-x:auto; padding:1rem .25rem .2rem; }
-        .pkl-pipeline-step { min-width:105px; position:relative; text-align:center; border:0; padding:0 .15rem .45rem; background:transparent; cursor:pointer; border-radius:.8rem; transition:transform .2s ease,background-color .2s ease; }
-        .pkl-pipeline-step:hover,.pkl-pipeline-step:focus-visible { transform:translateY(-4px); background:#f5f8ff; outline:0; }
-        .pkl-pipeline-step:not(:last-child):after { content:""; height:3px; background:#e1e8f1; position:absolute; left:calc(50% + 1.2rem); right:calc(-50% + 1.2rem); top:1rem; }
-        .pkl-pipeline-icon { position:relative; z-index:1; display:grid; place-items:center; margin:auto; width:2.25rem; height:2.25rem; border:2px solid #e1e8f1; border-radius:50%; background:white; color:#8090a6; }
-        .pkl-pipeline-step:nth-child(1) .pkl-pipeline-icon { border-color:#ff9f0a; color:#ee8800; background:#fffaf0; }
-        .pkl-pipeline-step:nth-child(2) .pkl-pipeline-icon { border-color:#5b8def; color:#4d7fe0; background:#f2f6ff; }
-        .pkl-pipeline-step:nth-child(3) .pkl-pipeline-icon { border-color:#ff9f0a; color:#ee8800; background:#fffaf0; }
-        .pkl-pipeline-step:nth-child(4) .pkl-pipeline-icon { border-color:#fb7185; color:#f05268; background:#fff3f4; }
-        .pkl-pipeline-step:nth-child(5) .pkl-pipeline-icon { border-color:#8b72ef; color:#795be0; background:#f7f4ff; }
-        .pkl-pipeline-step:nth-child(6) .pkl-pipeline-icon { border-color:#ff9f0a; color:#ee8800; background:#fffaf0; }
-        .pkl-pipeline-step:nth-child(7) .pkl-pipeline-icon { border-color:#14c9a5; color:#0da987; background:#effdfa; }
-        .pkl-pipeline-step.is-action .pkl-pipeline-icon:after { content:""; position:absolute; width:.62rem; height:.62rem; top:-.15rem; right:-.15rem; border-radius:50%; background:#fb5a65; border:2px solid white; box-shadow:0 0 0 3px rgba(251,90,101,.12); animation:pkl-pulse 1.8s infinite; }
-        .pkl-pipeline-step.is-action .pkl-pipeline-icon { border-color:#f59e0b; color:#ed8b00; }
-        .pkl-pipeline-step.is-done .pkl-pipeline-icon,.pkl-pipeline-step:last-child .pkl-pipeline-icon { border-color:#14c9a5; color:#0da987; }
-        .pkl-pipeline-count { margin:.35rem 0 .15rem; font-size:1.45rem; line-height:1.2; font-weight:800; color:#27364b; }
-        .pkl-pipeline-label { max-width:130px; margin:auto; color:#66758a; font-size:.65rem; font-weight:800; line-height:1.35; text-transform:uppercase; }
-        .pkl-pipeline-step:nth-child(1) .pkl-pipeline-label,.pkl-pipeline-step:nth-child(3) .pkl-pipeline-label,.pkl-pipeline-step:nth-child(4) .pkl-pipeline-label,.pkl-pipeline-step:nth-child(6) .pkl-pipeline-label { color:#e78300; }
-        .pkl-pipeline-step:nth-child(7) .pkl-pipeline-label,.pkl-pipeline-step:nth-child(7) .pkl-pipeline-count { color:#08b99a; }
-        @keyframes pkl-pulse { 0%,100% { box-shadow:0 0 0 2px rgba(251,90,101,.15); } 50% { box-shadow:0 0 0 6px rgba(251,90,101,.04); } }
-        @media(max-width:767px) { .pkl-pipeline { grid-template-columns:repeat(7,105px); } }
+        .pkl-pipeline-card {
+            border: 0;
+            border-radius: 1rem;
+            box-shadow: 0 5px 18px rgba(30, 50, 85, .06);
+        }
+
+        .pkl-pipeline {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(105px, 1fr));
+            gap: .4rem;
+            overflow-x: auto;
+            padding: 1rem .25rem .2rem;
+        }
+
+        .pkl-pipeline-step {
+            min-width: 105px;
+            position: relative;
+            text-align: center;
+            border: 0;
+            padding: 0 .15rem .45rem;
+            background: transparent;
+            cursor: pointer;
+            border-radius: .8rem;
+            transition: transform .2s ease, background-color .2s ease;
+        }
+
+        .pkl-pipeline-step:hover,
+        .pkl-pipeline-step:focus-visible {
+            transform: translateY(-4px);
+            background: #f5f8ff;
+            outline: 0;
+        }
+
+        .pkl-pipeline-step:not(:last-child):after {
+            content: "";
+            height: 3px;
+            background: #e1e8f1;
+            position: absolute;
+            left: calc(50% + 1.2rem);
+            right: calc(-50% + 1.2rem);
+            top: 1rem;
+        }
+
+        .pkl-pipeline-icon {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            place-items: center;
+            margin: auto;
+            width: 2.25rem;
+            height: 2.25rem;
+            border: 2px solid #e1e8f1;
+            border-radius: 50%;
+            background: white;
+            color: #8090a6;
+        }
+
+        .pkl-pipeline-step:nth-child(1) .pkl-pipeline-icon {
+            border-color: #ff9f0a;
+            color: #ee8800;
+            background: #fffaf0;
+        }
+
+        .pkl-pipeline-step:nth-child(2) .pkl-pipeline-icon {
+            border-color: #5b8def;
+            color: #4d7fe0;
+            background: #f2f6ff;
+        }
+
+        .pkl-pipeline-step:nth-child(3) .pkl-pipeline-icon {
+            border-color: #ff9f0a;
+            color: #ee8800;
+            background: #fffaf0;
+        }
+
+        .pkl-pipeline-step:nth-child(4) .pkl-pipeline-icon {
+            border-color: #fb7185;
+            color: #f05268;
+            background: #fff3f4;
+        }
+
+        .pkl-pipeline-step:nth-child(5) .pkl-pipeline-icon {
+            border-color: #8b72ef;
+            color: #795be0;
+            background: #f7f4ff;
+        }
+
+        .pkl-pipeline-step:nth-child(6) .pkl-pipeline-icon {
+            border-color: #ff9f0a;
+            color: #ee8800;
+            background: #fffaf0;
+        }
+
+        .pkl-pipeline-step:nth-child(7) .pkl-pipeline-icon {
+            border-color: #14c9a5;
+            color: #0da987;
+            background: #effdfa;
+        }
+
+        .pkl-pipeline-step.is-action .pkl-pipeline-icon:after {
+            content: "";
+            position: absolute;
+            width: .62rem;
+            height: .62rem;
+            top: -.15rem;
+            right: -.15rem;
+            border-radius: 50%;
+            background: #fb5a65;
+            border: 2px solid white;
+            box-shadow: 0 0 0 3px rgba(251, 90, 101, .12);
+            animation: pkl-pulse 1.8s infinite;
+        }
+
+        .pkl-pipeline-step.is-action .pkl-pipeline-icon {
+            border-color: #f59e0b;
+            color: #ed8b00;
+        }
+
+        .pkl-pipeline-step.is-done .pkl-pipeline-icon,
+        .pkl-pipeline-step:last-child .pkl-pipeline-icon {
+            border-color: #14c9a5;
+            color: #0da987;
+        }
+
+        .pkl-pipeline-count {
+            margin: .35rem 0 .15rem;
+            font-size: 1.45rem;
+            line-height: 1.2;
+            font-weight: 800;
+            color: #27364b;
+        }
+
+        .pkl-pipeline-label {
+            max-width: 130px;
+            margin: auto;
+            color: #66758a;
+            font-size: .65rem;
+            font-weight: 800;
+            line-height: 1.35;
+            text-transform: uppercase;
+        }
+
+        .pkl-pipeline-step:nth-child(1) .pkl-pipeline-label,
+        .pkl-pipeline-step:nth-child(3) .pkl-pipeline-label,
+        .pkl-pipeline-step:nth-child(4) .pkl-pipeline-label,
+        .pkl-pipeline-step:nth-child(6) .pkl-pipeline-label {
+            color: #e78300;
+        }
+
+        .pkl-pipeline-step:nth-child(7) .pkl-pipeline-label,
+        .pkl-pipeline-step:nth-child(7) .pkl-pipeline-count {
+            color: #08b99a;
+        }
+
+        @keyframes pkl-pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 2px rgba(251, 90, 101, .15);
+            }
+
+            50% {
+                box-shadow: 0 0 0 6px rgba(251, 90, 101, .04);
+            }
+        }
+
+        @media(max-width:767px) {
+            .pkl-pipeline {
+                grid-template-columns: repeat(7, 105px);
+            }
+        }
     </style>
-    
+
     <!-- Header Page -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -42,34 +191,34 @@
             <p class="text-secondary mb-0">Kelola pengajuan, logbook bimbingan, verifikasi berkas, dan jadwal seminar mahasiswa.</p>
         </div>
         <div>
-            <a href="{{ route('pkl.admin.komponen.index') }}" class="btn btn-outline-primary fw-semibold me-2">
+            <a href="{{ route('pkl.admin.komponen.index') }}" class="btn btn-outline-primary fw-semibold m-2">
                 <i class="ti ti-adjustments me-1"></i> Master Komponen Nilai
             </a>
-            <a href="{{ route('pkl.mahasiswa.index') }}" class="btn btn-outline-secondary fw-semibold me-2">
+            <a href="{{ route('pkl.mahasiswa.index') }}" class="btn btn-outline-secondary fw-semibold m-2">
                 <i class="ti ti-user me-1"></i> Bertindak sebagai Mahasiswa
             </a>
-            <a href="{{ route('pkl.dosen.index') }}" class="btn btn-outline-secondary fw-semibold me-2">
+            <a href="{{ route('pkl.dosen.index') }}" class="btn btn-outline-secondary fw-semibold m-2">
                 <i class="ti ti-chalkboard me-1"></i> Bertindak sebagai Dosen
             </a>
-            <a href="{{ route('pkl.admin.rekap-nilai') }}" class="btn btn-outline-success fw-semibold me-2">
+            <a href="{{ route('pkl.admin.rekap-nilai') }}" class="btn btn-outline-success fw-semibold m-2">
                 <i class="ti ti-file-spreadsheet me-1"></i> Rekap Nilai
             </a>
-            <button type="button" class="btn btn-primary fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalTambahPkl">
+            <button type="button" class="btn btn-primary fw-semibold shadow-sm m-2" data-bs-toggle="modal" data-bs-target="#modalTambahPkl">
                 <i class="ti ti-plus me-2"></i> Pengajuan PKL Baru
             </button>
         </div>
     </div>
 
     @php
-        $pipelineItems = [
-            ['CP 1: Pengajuan Awal', $stats['pengajuan'] ?? 0, 'ti ti-file-plus', 'Pengajuan & Verifikasi Admin'],
-            ['Pelaksanaan PKL', $stats['pelaksanaan'] ?? 0, 'ti ti-briefcase', 'Pelaksanaan PKL & Bimbingan'],
-            ['CP 2: Verifikasi Berkas Ujian', $stats['verifikasi'] ?? 0, 'ti ti-checklist', 'Verifikasi Berkas Admin'],
-            ['Dijadwalkan Ujian', $stats['ujian'] ?? 0, 'ti ti-calendar-event', 'Dijadwalkan Ujian'],
-            ['Ujian Seminar Berlangsung', $stats['seminar'] ?? 0, 'ti ti-award', 'Ujian Seminar & Penilaian'],
-            ['CP 3: Cek Revisi Laporan', $stats['revisi'] ?? 0, 'ti ti-writing', 'Revisi Laporan'],
-            ['Selesai & Lulus', $stats['selesai'] ?? 0, 'ti ti-circle-check', 'Selesai'],
-        ];
+    $pipelineItems = [
+    ['CP 1: Pengajuan Awal', $stats['pengajuan'] ?? 0, 'ti ti-file-plus', 'Pengajuan & Verifikasi Admin'],
+    ['Pelaksanaan PKL', $stats['pelaksanaan'] ?? 0, 'ti ti-briefcase', 'Pelaksanaan PKL & Bimbingan'],
+    ['CP 2: Verifikasi Berkas Ujian', $stats['verifikasi'] ?? 0, 'ti ti-checklist', 'Verifikasi Berkas Admin'],
+    ['Dijadwalkan Ujian', $stats['ujian'] ?? 0, 'ti ti-calendar-event', 'Dijadwalkan Ujian'],
+    ['Ujian Seminar Berlangsung', $stats['seminar'] ?? 0, 'ti ti-award', 'Ujian Seminar & Penilaian'],
+    ['CP 3: Cek Revisi Laporan', $stats['revisi'] ?? 0, 'ti ti-writing', 'Revisi Laporan'],
+    ['Selesai & Lulus', $stats['selesai'] ?? 0, 'ti ti-circle-check', 'Selesai'],
+    ];
     @endphp
     <section class="card pkl-pipeline-card mb-4 p-3 p-md-4">
         <div class="d-flex align-items-center justify-content-between gap-2">
@@ -78,11 +227,11 @@
         </div>
         <div class="pkl-pipeline">
             @foreach($pipelineItems as $index => [$label, $count, $icon, $statusValue])
-                <button type="button" class="pkl-pipeline-step {{ in_array($index, [0, 2, 3, 5], true) && $count > 0 ? 'is-action' : '' }} {{ $index === 6 ? 'is-done' : '' }}" data-pkl-status="{{ $statusValue }}" aria-label="Filter status {{ $statusValue }}">
-                    <div class="pkl-pipeline-icon"><i class="{{ $icon }} fs-5"></i></div>
-                    <div class="pkl-pipeline-count">{{ $count }}</div>
-                    <div class="pkl-pipeline-label">{{ $label }}</div>
-                </button>
+            <button type="button" class="pkl-pipeline-step {{ in_array($index, [0, 2, 3, 5], true) && $count > 0 ? 'is-action' : '' }} {{ $index === 6 ? 'is-done' : '' }}" data-pkl-status="{{ $statusValue }}" aria-label="Filter status {{ $statusValue }}">
+                <div class="pkl-pipeline-icon"><i class="{{ $icon }} fs-5"></i></div>
+                <div class="pkl-pipeline-count">{{ $count }}</div>
+                <div class="pkl-pipeline-label">{{ $label }}</div>
+            </button>
             @endforeach
         </div>
     </section>
@@ -112,11 +261,11 @@
                         <select name="id_semester" class="form-select select2">
                             <option value="">-- Semua Semester --</option>
                             @isset($semesters)
-                                @foreach($semesters as $sem)
-                                    <option value="{{ $sem->kode_semester }}" {{ request('id_semester') == $sem->kode_semester ? 'selected' : '' }}>
-                                        {{ $sem->nama_semester }} {{ $sem->aktif ? '(Aktif)' : '' }}
-                                    </option>
-                                @endforeach
+                            @foreach($semesters as $sem)
+                            <option value="{{ $sem->kode_semester }}" {{ request('id_semester') == $sem->kode_semester ? 'selected' : '' }}>
+                                {{ $sem->nama_semester }} {{ $sem->aktif ? '(Aktif)' : '' }}
+                            </option>
+                            @endforeach
                             @endisset
                         </select>
                     </div>
@@ -137,7 +286,7 @@
                         <label class="form-label small fw-semibold">Cari Instansi / Mahasiswa</label>
                         <input type="text" name="keyword" class="form-control" value="{{ request('keyword') }}" placeholder="Nama instansi / NIM...">
                     </div>
-                    <div class="d-grid gap-2 mt-4"> 
+                    <div class="d-grid gap-2 mt-4">
                         <a href="{{ route('pkl.admin.index') }}" class="btn btn-light border text-secondary">Reset Filter</a>
                     </div>
                 </form>
@@ -170,7 +319,7 @@
                         <select name="mahasiswa_registrasi_id" class="form-select select2-mahasiswa" required>
                             <option value="">-- Pilih Mahasiswa --</option>
                             @foreach($mahasiswas as $mahasiswa)
-                                <option value="{{ $mahasiswa->id_registrasi_mahasiswa }}">{{ $mahasiswa->nama_mahasiswa }} ({{ $mahasiswa->nim }})</option>
+                            <option value="{{ $mahasiswa->id_registrasi_mahasiswa }}">{{ $mahasiswa->nama_mahasiswa }} ({{ $mahasiswa->nim }})</option>
                             @endforeach
                         </select>
                     </div>
@@ -223,18 +372,18 @@
                     </div>
 
                     <div class="verification-controls">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Keputusan Verifikasi <span class="text-danger">*</span></label>
-                        <select name="keputusan" id="selectKeputusan" class="form-select" required>
-                            <option value="disetujui">Setujui Berkas (Lanjut ke Penjadwalan Ujian)</option>
-                            <option value="ditolak">Tolak Berkas / Minta Perbaikan</option>
-                        </select>
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Keputusan Verifikasi <span class="text-danger">*</span></label>
+                            <select name="keputusan" id="selectKeputusan" class="form-select" required>
+                                <option value="disetujui">Setujui Berkas (Lanjut ke Penjadwalan Ujian)</option>
+                                <option value="ditolak">Tolak Berkas / Minta Perbaikan</option>
+                            </select>
+                        </div>
 
-                    <div class="mb-3" id="wrapperCatatan" style="display: none;">
-                        <label class="form-label fw-semibold">Alasan Penolakan / Catatan Perbaikan <span class="text-danger">*</span></label>
-                        <textarea name="catatan_admin" id="inputCatatan" class="form-control" rows="3" placeholder="Tuliskan bagian dokumen mana yang harus direvisi oleh mahasiswa..."></textarea>
-                    </div>
+                        <div class="mb-3" id="wrapperCatatan" style="display: none;">
+                            <label class="form-label fw-semibold">Alasan Penolakan / Catatan Perbaikan <span class="text-danger">*</span></label>
+                            <textarea name="catatan_admin" id="inputCatatan" class="form-control" rows="3" placeholder="Tuliskan bagian dokumen mana yang harus direvisi oleh mahasiswa..."></textarea>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-top px-4 py-3 bg-light">
@@ -257,14 +406,19 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-    document.querySelectorAll('.pkl-pipeline-step').forEach(function (step) {
-        step.addEventListener('click', function () {
+    document.querySelectorAll('.pkl-pipeline-step').forEach(function(step) {
+        step.addEventListener('click', function() {
             const statusFilter = document.querySelector('#filterForm select[name="status"]');
             if (!statusFilter) return;
 
             statusFilter.value = step.dataset.pklStatus;
-            statusFilter.dispatchEvent(new Event('change', { bubbles: true }));
-            document.querySelector('#tableContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            statusFilter.dispatchEvent(new Event('change', {
+                bubbles: true
+            }));
+            document.querySelector('#tableContainer')?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
         });
     });
 
@@ -279,22 +433,49 @@
                 data: {
                     labels: [
                         'Pengajuan & Verifikasi Admin',
-                        'Pelaksanaan PKL & Bimbingan', 
-                        'Verifikasi Berkas Admin', 
-                        'Dijadwalkan Ujian', 
+                        'Pelaksanaan PKL & Bimbingan',
+                        'Verifikasi Berkas Admin',
+                        'Dijadwalkan Ujian',
                         'Ujian Seminar & Penilaian',
                         'Revisi Laporan',
                         'Selesai'
                     ],
                     datasets: [{
-                        data: [
-                            {{ $stats['pengajuan'] ?? 0 }}, 
-                            {{ $stats['pelaksanaan'] ?? 0 }}, 
-                            {{ $stats['verifikasi'] ?? 0 }}, 
-                            {{ $stats['ujian'] ?? 0 }}, 
-                            {{ $stats['seminar'] ?? 0 }}, 
-                            {{ $stats['revisi'] ?? 0 }}, 
-                            {{ $stats['selesai'] ?? 0 }}
+                        data: [{
+                                {
+                                    $stats['pengajuan'] ?? 0
+                                }
+                            },
+                            {
+                                {
+                                    $stats['pelaksanaan'] ?? 0
+                                }
+                            },
+                            {
+                                {
+                                    $stats['verifikasi'] ?? 0
+                                }
+                            },
+                            {
+                                {
+                                    $stats['ujian'] ?? 0
+                                }
+                            },
+                            {
+                                {
+                                    $stats['seminar'] ?? 0
+                                }
+                            },
+                            {
+                                {
+                                    $stats['revisi'] ?? 0
+                                }
+                            },
+                            {
+                                {
+                                    $stats['selesai'] ?? 0
+                                }
+                            }
                         ],
                         backgroundColor: [
                             '#64748b', '#2563eb', '#f59e0b', '#0891b2', '#7e22ce', '#dc2626', '#16a34a'
@@ -309,7 +490,14 @@
                     plugins: {
                         legend: {
                             position: 'right',
-                            labels: { font: { family: 'Inter', size: 11 }, usePointStyle: true, padding: 12 }
+                            labels: {
+                                font: {
+                                    family: 'Inter',
+                                    size: 11
+                                },
+                                usePointStyle: true,
+                                padding: 12
+                            }
                         }
                     }
                 }
@@ -348,20 +536,41 @@
             $('#btnAdminFinalApproval').data('id', submissionId);
 
             if (!documents.length) {
-                list.append($('<div>', { class: 'list-group-item text-muted', text: 'Belum ada berkas yang diunggah.' }));
+                list.append($('<div>', {
+                    class: 'list-group-item text-muted',
+                    text: 'Belum ada berkas yang diunggah.'
+                }));
             } else {
-                const groups = [
-                    { key: 'previous', title: 'Berkas Sebelumnya', documents: documents.filter(document => document.group !== 'final') },
-                    { key: 'final', title: 'Berkas Baru · Tahap Revisi Laporan', documents: documents.filter(document => document.group === 'final') }
+                const groups = [{
+                        key: 'previous',
+                        title: 'Berkas Sebelumnya',
+                        documents: documents.filter(document => document.group !== 'final')
+                    },
+                    {
+                        key: 'final',
+                        title: 'Berkas Baru · Tahap Revisi Laporan',
+                        documents: documents.filter(document => document.group === 'final')
+                    }
                 ];
                 groups.forEach(function(group) {
                     if (!group.documents.length) return;
-                    list.append($('<div>', { class: 'list-group-item bg-light fw-bold', text: group.title }));
+                    list.append($('<div>', {
+                        class: 'list-group-item bg-light fw-bold',
+                        text: group.title
+                    }));
                     group.documents.forEach(function(document) {
-                        const row = $('<div>', { class: 'list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2' });
+                        const row = $('<div>', {
+                            class: 'list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2'
+                        });
                         const title = $('<div>').append(
-                            $('<div>', { class: 'fw-semibold', text: document.label }),
-                            $('<small>', { class: 'text-muted', text: 'Status: ' + (document.status || 'Tersimpan') })
+                            $('<div>', {
+                                class: 'fw-semibold',
+                                text: document.label
+                            }),
+                            $('<small>', {
+                                class: 'text-muted',
+                                text: 'Status: ' + (document.status || 'Tersimpan')
+                            })
                         );
                         row.append(title);
                         if (document.url) {
@@ -373,7 +582,10 @@
                                 text: 'Lihat Berkas'
                             }));
                         } else {
-                            row.append($('<span>', { class: 'badge bg-secondary-subtle text-secondary', text: 'Belum diunggah' }));
+                            row.append($('<span>', {
+                                class: 'badge bg-secondary-subtle text-secondary',
+                                text: 'Belum diunggah'
+                            }));
                         }
                         list.append(row);
                     });
@@ -453,7 +665,7 @@
                 manage: '.btn-kelola',
                 schedule: '.btn-jadwal',
                 grades: '.btn-penilaian-dinamis'
-            }[action];
+            } [action];
             if (target) {
                 row.find(target).first().trigger('click');
             }
@@ -518,18 +730,18 @@
         function fetchTableData() {
             if (isFetching) return; // Hentikan jika request sebelumnya masih berjalan
             isFetching = true;
-    
+
             let status = $('select[name="status"]').val();
             let idSemester = $('select[name="id_semester"]').val();
             let keyword = $('input[name="keyword"]').val();
-    
+
             $.ajax({
                 url: "{{ route('pkl.admin.index') }}",
                 type: 'GET',
-                data: { 
-                    status: status, 
-                    id_semester: idSemester, 
-                    keyword: keyword 
+                data: {
+                    status: status,
+                    id_semester: idSemester,
+                    keyword: keyword
                 },
                 dataType: 'json',
                 success: function(response) {
@@ -538,7 +750,7 @@
                         $('#tableContainer .table-responsive, #tableContainer .mt-4').remove();
                         $('#tableContainer').append(response.html);
                     }
-    
+
                     // Update Widget Kartu & Chart.js
                     if (response.stats) {
                         let s = response.stats;
@@ -549,7 +761,7 @@
                         $('#stat-seminar').text(s.seminar ?? 0);
                         $('#stat-revisi').text(s.revisi ?? 0);
                         $('#stat-selesai').text(s.selesai ?? 0);
-    
+
                         if (pklStatusChart) {
                             pklStatusChart.data.datasets[0].data = [
                                 s.pengajuan ?? 0,
@@ -572,15 +784,15 @@
                 }
             });
         }
-    
+
         // 2. TRIGGER EVENT FILTER
         // Gunakan event 'change' langsung pada elemen form filter (bukan terikat dokumen global)
         $('#filterForm select[name="status"], #filterForm select[name="id_semester"]').off('change').on('change', function() {
             fetchTableData();
         });
-    
-        
-    
+
+
+
         $('#filterForm').on('submit', function(e) {
             e.preventDefault();
             fetchTableData();
