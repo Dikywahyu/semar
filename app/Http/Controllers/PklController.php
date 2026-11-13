@@ -906,6 +906,109 @@ class PklController extends Controller
         return back()->with('success', 'Data pengajuan PKL berhasil diperbarui.');
     }
 
+    public function adminDestroy(Request $request, PengajuanPkl $pengajuan): JsonResponse|RedirectResponse
+    {
+        $this->authorizeAdmin();
+
+        $filePaths = [];
+
+        // 1. Kumpulkan file langsung dari kolom-kolom tabel pengajuan_pkl
+        $directFileFields = [
+            'berkas_proposal',
+            'berkas_logbook',
+            'berkas_kartu_bimbingan',
+            'berkas_draft_laporan',
+            'berkas_nilai_pamong',
+            'berkas_persetujuan_pamong',
+            'berkas_laporan_revisi',
+            'berkas_lembar_pengesahan',
+            'berkas_bukti_survei',
+            'berkas_surat_balasan',
+        ];
+
+        foreach ($directFileFields as $field) {
+            $val = $pengajuan->{$field} ?? null;
+            if (!empty($val) && is_string($val)) {
+                $filePaths[] = $val;
+            }
+        }
+
+        // 2. Kumpulkan file dari relasi berkasSeminar (tabel berkas_seminar_pkl)
+        $berkasSeminar = $pengajuan->berkasSeminar()->pluck('path_berkas')->all();
+        foreach ($berkasSeminar as $path) {
+            if (!empty($path) && is_string($path)) {
+                $filePaths[] = $path;
+            }
+        }
+
+        // 3. Kumpulkan file lampiran bimbingan jika ada
+        $pengajuan->load(['bimbingan.tanggapan']);
+        foreach ($pengajuan->bimbingan as $bimbingan) {
+            foreach ($bimbingan->tanggapan as $tanggapan) {
+                if (!empty($tanggapan->berkas_lampiran) && is_string($tanggapan->berkas_lampiran)) {
+                    $filePaths[] = $tanggapan->berkas_lampiran;
+                }
+            }
+        }
+
+        $filePaths = array_unique(array_filter($filePaths));
+
+        // Hapus relasi dan data pengajuan dalam transaksi database
+        DB::transaction(function () use ($pengajuan) {
+            $pengajuan->dosenPenguji()->detach();
+            $pengajuan->detailNilai()->delete();
+            $pengajuan->penilaian()->delete();
+            $pengajuan->berkasSeminar()->delete();
+
+            foreach ($pengajuan->bimbingan as $bimbingan) {
+                $bimbingan->tanggapan()->delete();
+                $bimbingan->delete();
+            }
+
+            $pengajuan->logAktivitas()->delete();
+            $pengajuan->delete();
+        });
+
+        // Hapus fisik berkas dari disk penyimpanan
+        foreach ($filePaths as $filePath) {
+            $normalizedPath = str_replace('\\', '/', $filePath);
+
+            if (Str::startsWith($normalizedPath, ['http://', 'https://'])) {
+                continue;
+            }
+
+            if (Storage::disk('local')->exists($normalizedPath)) {
+                Storage::disk('local')->delete($normalizedPath);
+            }
+            if (Storage::disk('public')->exists($normalizedPath)) {
+                Storage::disk('public')->delete($normalizedPath);
+            }
+
+            $possiblePaths = [
+                storage_path('app/' . $normalizedPath),
+                storage_path('app/private/' . $normalizedPath),
+                storage_path('app/public/' . $normalizedPath),
+                public_path('storage/' . $normalizedPath),
+            ];
+
+            foreach ($possiblePaths as $fullPath) {
+                if (file_exists($fullPath) && is_file($fullPath)) {
+                    @unlink($fullPath);
+                }
+            }
+        }
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data pengajuan PKL beserta seluruh berkas yang diunggah berhasil dihapus.',
+                'stats' => $this->statusStats(),
+            ]);
+        }
+
+        return back()->with('success', 'Data pengajuan PKL beserta seluruh berkas yang diunggah berhasil dihapus.');
+    }
+
     public function adminApplyStudentProposals(PengajuanPkl $pengajuan): RedirectResponse
     {
         $this->authorizeAdmin();

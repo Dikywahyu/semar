@@ -95,12 +95,17 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-top px-4 py-3">
-                    <button type="button" class="btn btn-light border text-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" id="btnSubmitKelola" class="btn btn-primary fw-semibold px-4">
-                        <span class="btn-text">Simpan Perubahan</span>
-                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                <div class="modal-footer border-top px-4 py-3 d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-danger" id="btnHapusPklModal">
+                        <i class="ti ti-trash me-1"></i> Hapus Pengajuan
                     </button>
+                    <div>
+                        <button type="button" class="btn btn-light border text-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" id="btnSubmitKelola" class="btn btn-primary fw-semibold px-4">
+                            <span class="btn-text">Simpan Perubahan</span>
+                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -162,6 +167,7 @@
 
                     let updateUrl = "{{ url('pkl/admin/pengajuan') }}/" + data.id + "/update";
                     $('#formKelolaPkl').attr('action', updateUrl);
+                    $('#modalKelolaPkl').data('student-name', data.mahasiswa_registrasi?.nama_mahasiswa || data.nama_instansi);
 
                     $('#modalKelolaPkl').modal('show');
                 },

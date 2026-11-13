@@ -234,6 +234,12 @@
                                 title="Lihat seluruh berkas mahasiswa">
                             <i class="ti ti-file-check"></i> Cek Berkas
                         </button>
+                        <button type="button" class="btn btn-sm btn-light border text-danger btn-hapus-pkl" 
+                                data-id="{{ $item->id }}" 
+                                data-nama="{{ $item->mahasiswaRegistrasi->nama_mahasiswa ?? '-' }}"
+                                title="Hapus Data PKL & Seluruh Berkas">
+                            <i class="ti ti-trash"></i>
+                        </button>
                     </div>
                 </td>
             </tr>

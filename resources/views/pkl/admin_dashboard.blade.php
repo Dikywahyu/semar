@@ -786,9 +786,72 @@
             searchTimer = setTimeout(fetchTableData, 500);
         });
 
-        $('#filterForm').on('submit', function(e) {
-            e.preventDefault();
-            fetchTableData();
+        // 4. FUNGSI & TRIGGER HAPUS DATA PKL & SELURUH BERKAS
+        function confirmDeletePkl(id, nama, modalToClose = null) {
+            Swal.fire({
+                title: 'Hapus Data PKL?',
+                html: `Apakah Anda yakin ingin menghapus data PKL untuk <b>${nama}</b>?<br><br><span class="text-danger small"><i class="ti ti-alert-triangle me-1"></i>Seluruh berkas dokumen yang telah diunggah serta riwayat penilaian/bimbingan terkait data ini akan dihapus secara permanen dari server.</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6e7881',
+                confirmButtonText: '<i class="ti ti-trash me-1"></i> Ya, Hapus Permanen',
+                cancelButtonText: 'Batal',
+                reverseButtons: true
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                Swal.fire({
+                    title: 'Menghapus...',
+                    text: 'Sedang menghapus data PKL dan seluruh berkas terkait...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                $.ajax({
+                    url: "{{ url('pkl/admin/pengajuan') }}/" + id,
+                    type: 'DELETE',
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if (modalToClose) {
+                            $(modalToClose).modal('hide');
+                        }
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil Dihapus!',
+                            text: response.message || 'Data PKL beserta seluruh berkas berhasil dihapus.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                        fetchTableData();
+                    },
+                    error: function(xhr) {
+                        let errorMsg = xhr.responseJSON?.message || 'Terjadi kesalahan saat menghapus data PKL.';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal Menghapus',
+                            text: errorMsg
+                        });
+                    }
+                });
+            });
+        }
+
+        $(document).on('click', '.btn-hapus-pkl', function() {
+            let id = $(this).data('id');
+            let nama = $(this).data('nama') || 'mahasiswa ini';
+            confirmDeletePkl(id, nama);
+        });
+
+        $(document).on('click', '#btnHapusPklModal', function() {
+            let id = $('#edit_id').val();
+            let nama = $('#modalKelolaPkl').data('student-name') || 'mahasiswa ini';
+            if (!id) return;
+            confirmDeletePkl(id, nama, '#modalKelolaPkl');
         });
     });
 </script>

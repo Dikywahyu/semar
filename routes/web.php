@@ -314,6 +314,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/admin/pengajuan', [PklController::class, 'adminStore'])->name('admin.pengajuan.store');
         Route::get('/admin/pengajuan/{pengajuan}/edit', [PklController::class, 'adminEdit'])->name('admin.pengajuan.edit');
         Route::post('/admin/pengajuan/{pengajuan}/update', [PklController::class, 'adminUpdate'])->name('admin.pengajuan.update');
+        Route::delete('/admin/pengajuan/{pengajuan}', [PklController::class, 'adminDestroy'])->name('admin.pengajuan.destroy');
         Route::post('/admin/verifikasi-berkas-seminar/{pengajuan}', [PklController::class, 'verifyDocuments'])->name('admin.verifikasi-berkas');
         Route::post('/admin/selesaikan-pkl/{pengajuan}', [PklController::class, 'adminFinalizePkl'])->name('admin.selesaikan');
         Route::post('/admin/terapkan-usulan-mahasiswa/{pengajuan}', [PklController::class, 'adminApplyStudentProposals'])->name('admin.terapkan-usulan-mahasiswa');
