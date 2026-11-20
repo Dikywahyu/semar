@@ -308,6 +308,44 @@
     });
 </script>
 @endpush
+
+@if($canAccSeminar)
+    <section class="card border-0 shadow-sm rounded-4 p-4 mb-4 border-start border-4 {{ $pengajuan->is_acc_seminar ? 'border-success' : 'border-warning' }} bg-white">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <h5 class="fw-bold mb-1"><i class="ti ti-check-check text-{{ $pengajuan->is_acc_seminar ? 'success' : 'warning' }} me-2"></i>ACC Pembimbing (Pra-Ujian / Seminar)</h5>
+                @if($pengajuan->is_acc_seminar)
+                    <p class="text-success mb-0 small">
+                        <i class="ti ti-circle-check me-1"></i>Berkas telah <strong>di-ACC</strong> oleh <strong>{{ $pengajuan->seminarApprover?->name ?? 'Dosen Pembimbing' }}</strong> ({{ $pengajuan->seminarApprover?->getRoleNames()->implode(', ') ?: 'Dosen' }}) pada {{ $pengajuan->acc_seminar_at?->format('d M Y, H:i') }} WIB.
+                    </p>
+                @else
+                    <p class="text-muted mb-0 small">
+                        Persetujuan (ACC) dari Dosen Pembimbing / Kaprodi / Admin menandakan berkas praujian mahasiswa telah disetujui untuk penjadwalan ujian seminar PKL.
+                    </p>
+                @endif
+            </div>
+            <div>
+                @if($pengajuan->is_acc_seminar)
+                    <form action="{{ route('pkl.dosen.acc-pembimbing', $pengajuan->id) }}" method="POST" class="d-inline">
+                        @csrf
+                        <input type="hidden" name="revoke" value="1">
+                        <button type="submit" class="btn btn-outline-danger btn-sm fw-semibold" onclick="return confirm('Apakah Anda yakin ingin mencabut ACC Pembimbing ini?')">
+                            <i class="ti ti-x me-1"></i> Cabut ACC Pembimbing
+                        </button>
+                    </form>
+                @else
+                    <form action="{{ route('pkl.dosen.acc-pembimbing', $pengajuan->id) }}" method="POST" class="d-inline">
+                        @csrf
+                        <button type="submit" class="btn btn-success fw-semibold shadow-sm">
+                            <i class="ti ti-check me-1"></i> Berikan ACC Pembimbing
+                        </button>
+                    </form>
+                @endif
+            </div>
+        </div>
+    </section>
+@endif
+
 @if($pengajuan->tanggal_seminar && $pengajuan->ruangan_seminar)
     <section class="card border-0 shadow-sm rounded-4 p-4 mb-4">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">

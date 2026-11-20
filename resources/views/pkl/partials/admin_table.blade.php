@@ -76,6 +76,20 @@
                     <i class="ti ti-external-link ms-1 small text-muted" aria-hidden="true"></i>
                     </button>
 
+                    @if($item->is_acc_seminar)
+                        <div class="mt-1">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 11px;" title="Di-ACC oleh {{ $item->seminarApprover?->name ?? 'Dosen Pembimbing' }} ({{ $item->seminarApprover?->getRoleNames()->implode(', ') ?: 'Dosen' }}) pada {{ $item->acc_seminar_at?->format('d/m/Y H:i') }}">
+                                <i class="ti ti-check me-1"></i> ACC Pembimbing: {{ $item->seminarApprover?->name ?? 'Dosen' }}
+                            </span>
+                        </div>
+                    @elseif(in_array($item->status, ['Pelaksanaan PKL & Bimbingan', 'Verifikasi Berkas Admin', 'Dijadwalkan Ujian'], true))
+                        <div class="mt-1">
+                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 11px;">
+                                <i class="ti ti-clock me-1"></i> Menunggu ACC Pembimbing
+                            </span>
+                        </div>
+                    @endif
+
                     @if($item->catatan_admin)
                         <div class="mt-1">
                             <span class="badge bg-danger text-white" style="font-size: 10px;" title="{{ $item->catatan_admin }}">
@@ -136,7 +150,6 @@
                                 'proposal' => 'Proposal ke Tempat PKL',
                                 'surat_jalan_pkl' => 'Surat Jalan PKL',
                                 'surat_balasan_instansi' => 'Surat Balasan Instansi',
-                                'acc_pembimbing_awal' => 'ACC Pembimbing Awal',
                                 'berkas_bukti_survei' => 'Bukti Survei PKL',
                                 'berkas_surat_balasan' => 'Surat Balasan Instansi (Arsip Lama)',
                                 'berkas_logbook' => 'Logbook PKL',
@@ -152,7 +165,6 @@
                                 'permohonan_revisi' => 'Formulir Permohonan Revisi',
                                 'laporan_final' => 'Laporan Final',
                                 'lampiran_teknis' => 'Lampiran Teknis',
-                                'acc_pembimbing_akhir' => 'ACC Pembimbing Akhir',
                                 'rekap_nilai' => 'Rekap Nilai',
                                 'berkas_laporan_revisi' => 'Laporan Revisi',
                                 'berkas_lembar_pengesahan' => 'Lembar Pengesahan',
@@ -164,7 +176,6 @@
                                 'permohonan_revisi',
                                 'laporan_final',
                                 'lampiran_teknis',
-                                'acc_pembimbing_akhir',
                                 'rekap_nilai',
                             ];
                             $documents = $item->berkasSeminar
@@ -225,6 +236,14 @@
                         <button type="button" class="btn btn-sm btn-light border text-info btn-jadwal" data-id="{{ $item->id }}" title="Atur Jadwal & Penguji">
                             <i class="ti ti-calendar-event"></i>
                         </button>
+                        @if(!$item->is_acc_seminar && in_array($item->status, ['Pelaksanaan PKL & Bimbingan', 'Verifikasi Berkas Admin', 'Dijadwalkan Ujian'], true))
+                            <form action="{{ route('pkl.admin.acc-pembimbing', $item->id) }}" method="POST" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-light border text-success" title="Berikan ACC Pembimbing" onclick="return confirm('Berikan ACC Pembimbing untuk mahasiswa {{ $item->mahasiswaRegistrasi->nama_mahasiswa ?? '' }}?')">
+                                    <i class="ti ti-check" style="font-weight: bold;"></i> ACC
+                                </button>
+                            </form>
+                        @endif
                         <button type="button" class="btn btn-sm btn-info text-white fw-semibold btn-verifikasi-berkas shadow-sm" 
                                 data-id="{{ $item->id }}" 
                                 data-nama="{{ $item->mahasiswaRegistrasi->nama_mahasiswa ?? '-' }}"

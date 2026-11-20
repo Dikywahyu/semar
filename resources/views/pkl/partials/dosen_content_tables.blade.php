@@ -245,13 +245,35 @@ return $dateA->timestamp <=> $dateB->timestamp;
                                 @endif
                             </td>
                             <td>
-                                <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">{{ $item->status }}</span>
+                                <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill mb-1 d-inline-block">{{ $item->status }}</span>
+                                @if($item->is_acc_seminar)
+                                    <div>
+                                        <span class="badge bg-success-subtle text-success small border border-success-subtle" title="Di-ACC oleh {{ $item->seminarApprover?->name ?? 'Dosen' }} pada {{ $item->acc_seminar_at?->format('d/m/Y H:i') }}">
+                                            <i class="ti ti-check me-1"></i>ACC Pembimbing
+                                        </span>
+                                    </div>
+                                @elseif(in_array($item->status, ['Pelaksanaan PKL & Bimbingan', 'Verifikasi Berkas Admin', 'Dijadwalkan Ujian'], true))
+                                    <div>
+                                        <span class="badge bg-warning-subtle text-warning-emphasis small border border-warning-subtle">
+                                            <i class="ti ti-clock me-1"></i>Belum ACC
+                                        </span>
+                                    </div>
+                                @endif
                             </td>
                             <td>
                                 <div class="d-flex align-items-center gap-1">
                                     <a href="{{ route('pkl.dosen.bimbingan.detail', $item->id) }}" class="btn btn-sm btn-outline-primary fw-semibold" title="Detail Bimbingan">
                                         <i class="ti ti-file-text me-1"></i> Detail
                                     </a>
+
+                                    @if(!$item->is_acc_seminar && in_array($item->status, ['Pelaksanaan PKL & Bimbingan', 'Verifikasi Berkas Admin', 'Dijadwalkan Ujian'], true))
+                                    <form action="{{ route('pkl.dosen.acc-pembimbing', $item->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-success fw-semibold" title="Berikan ACC Pembimbing" onclick="return confirm('Berikan ACC Pembimbing untuk mahasiswa {{ $item->mahasiswaRegistrasi->nama_mahasiswa ?? '' }}?')">
+                                            <i class="ti ti-check me-1"></i> ACC
+                                        </button>
+                                    </form>
+                                    @endif
 
                                     <button type="button" class="btn btn-sm btn-warning fw-semibold text-dark btn-nilai-pembimbing"
                                         data-id="{{ $item->id }}"

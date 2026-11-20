@@ -452,7 +452,6 @@
                         'berkas_proposal' => ['Proposal ke Tempat PKL', '.pdf'],
                         'surat_jalan_pkl' => ['Surat Jalan PKL', '.pdf,.jpg,.jpeg,.png'],
                         'surat_balasan_instansi' => ['Surat Balasan Instansi', '.pdf,.jpg,.jpeg,.png'],
-                        'acc_pembimbing_awal' => ['ACC Pembimbing', '.pdf,.jpg,.jpeg,.png'],
                         ] as $field => [$label, $accept])
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-semibold text-secondary small">{{ $label }} <span class="text-danger">*</span></label>
@@ -618,19 +617,17 @@
         return route('pkl.mahasiswa.upload-dokumen', $pengajuan->id);
         };
         $dokumenPendaftaranLengkap = filled($pengajuan->berkas_proposal)
-            && collect(['surat_jalan_pkl', 'surat_balasan_instansi', 'acc_pembimbing_awal'])
+            && collect(['surat_jalan_pkl', 'surat_balasan_instansi'])
                 ->every(fn($kind) => filled($genericDocuments->get($kind)?->path_berkas));
         $berkasPendaftaran = [
             'proposal' => ['Proposal ke Tempat PKL', $pengajuan->berkas_proposal],
             'surat_jalan_pkl' => ['Surat Jalan PKL', $genericDocuments->get('surat_jalan_pkl')?->path_berkas],
             'surat_balasan_instansi' => ['Surat Balasan Instansi', $genericDocuments->get('surat_balasan_instansi')?->path_berkas],
-            'acc_pembimbing_awal' => ['ACC Pembimbing', $genericDocuments->get('acc_pembimbing_awal')?->path_berkas],
         ];
         $arsipLabels = [
             'proposal' => 'Proposal ke Tempat PKL',
             'surat_jalan_pkl' => 'Surat Jalan PKL',
             'surat_balasan_instansi' => 'Surat Balasan Instansi',
-            'acc_pembimbing_awal' => 'ACC Pembimbing Awal',
             'berkas_bukti_survei' => 'Bukti Survei PKL',
             'berkas_surat_balasan' => 'Surat Balasan Instansi (Arsip Lama)',
             'berkas_logbook' => 'Logbook PKL',
@@ -645,7 +642,6 @@
             'permohonan_revisi' => 'Formulir Permohonan Revisi',
             'laporan_final' => 'Laporan Final',
             'lampiran_teknis' => 'Lampiran Teknis (Gambar AutoCAD / RAB)',
-            'acc_pembimbing_akhir' => 'ACC Pembimbing Akhir',
             'rekap_nilai' => 'Rekap Nilai',
             'berkas_laporan_revisi' => 'Laporan Revisi',
             'berkas_lembar_pengesahan' => 'Lembar Pengesahan',
@@ -663,7 +659,6 @@
             'berkas_proposal' => ['Proposal ke Tempat PKL', 'proposal'],
             'surat_jalan_pkl' => ['Surat Jalan PKL', 'surat_jalan_pkl'],
             'surat_balasan_instansi' => ['Surat Balasan Instansi', 'surat_balasan_instansi'],
-            'acc_pembimbing_awal' => ['ACC Pembimbing Awal', 'acc_pembimbing_awal'],
             'berkas_bukti_survei' => ['Bukti Survei PKL', 'berkas_bukti_survei'],
             'berkas_surat_balasan' => ['Surat Balasan Instansi (Arsip Lama)', 'berkas_surat_balasan'],
             'berkas_logbook' => ['Logbook PKL', 'berkas_logbook'],
@@ -731,7 +726,7 @@
             </form>
             @else
             <p class="text-muted small mb-2">Lengkapi formulir dan unggah seluruh berkas pendaftaran sebelum memilih pembimbing.</p>
-            <div class="small text-muted">Syarat: Proposal ke Tempat PKL, Surat Jalan PKL, Surat Balasan Instansi, dan ACC Pembimbing.</div>
+            <div class="small text-muted">Syarat: Proposal ke Tempat PKL, Surat Jalan PKL, dan Surat Balasan Instansi.</div>
             @endif
         </div>
         @endif
@@ -748,7 +743,6 @@
                 'permohonan_revisi' => 'Formulir Permohonan Revisi (Setelah Ujian)',
                 'laporan_final' => 'Laporan Final',
                 'lampiran_teknis' => 'Lampiran Teknis (Gambar AutoCAD / RAB)',
-                'acc_pembimbing_akhir' => 'ACC Pembimbing Akhir',
                 'rekap_nilai' => 'Rekap Nilai',
                 ] as $kind => $label)
                 @php $doc = $genericDocuments->get($kind); @endphp
@@ -780,7 +774,6 @@
                     'permohonan_revisi',
                     'laporan_final',
                     'lampiran_teknis',
-                    'acc_pembimbing_akhir',
                     'rekap_nilai',
                 ];
                 $berkasLama = $arsipDokumen->reject(fn ($document, $kind) => in_array($kind, $berkasTahapAkhir, true));
@@ -873,12 +866,31 @@
             </div>
 
             <div class="row g-3">
+                <div class="col-md-12">
+                    <div class="p-3 rounded-3 border d-flex flex-wrap justify-content-between align-items-center gap-2 {{ $pengajuan->is_acc_seminar ? 'bg-success-subtle border-success-subtle' : 'bg-warning-subtle border-warning-subtle' }}">
+                        <div>
+                            <div class="fw-bold text-dark small"><i class="ti ti-check-check me-1 {{ $pengajuan->is_acc_seminar ? 'text-success' : 'text-warning-emphasis' }}"></i>Persetujuan (ACC) Pembimbing</div>
+                            <div class="small text-muted">Menandakan berkas seminar telah disetujui oleh Dosen Pembimbing, Kaprodi, atau Admin.</div>
+                        </div>
+                        <div>
+                            @if($pengajuan->is_acc_seminar)
+                                <span class="badge bg-success text-white px-3 py-2 rounded-pill fw-semibold">
+                                    <i class="ti ti-circle-check me-1"></i>Sudah di-ACC oleh {{ $pengajuan->seminarApprover?->name ?? 'Dosen Pembimbing' }} ({{ $pengajuan->seminarApprover?->getRoleNames()->implode(', ') ?: 'Dosen' }}) · {{ $pengajuan->acc_seminar_at?->format('d M Y H:i') }}
+                                </span>
+                            @else
+                                <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-semibold">
+                                    <i class="ti ti-clock me-1"></i>Menunggu ACC Pembimbing
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
                 @php
                 $berkasList = [
                 'berkas_proposal' => ['label' => 'Proposal ke Tempat PKL', 'value' => $pengajuan->berkas_proposal],
                 'surat_jalan_pkl' => ['label' => 'Surat Jalan PKL', 'value' => $genericDocuments->get('surat_jalan_pkl')?->path_berkas],
                 'surat_balasan_instansi' => ['label' => 'Surat Balasan Instansi', 'value' => $genericDocuments->get('surat_balasan_instansi')?->path_berkas],
-                'acc_pembimbing_awal' => ['label' => 'ACC Pembimbing Awal', 'value' => $genericDocuments->get('acc_pembimbing_awal')?->path_berkas],
                 'berkas_draft_laporan' => ['label' => 'Draft Laporan PKL', 'value' => $pengajuan->berkas_draft_laporan],
                 'berkas_kartu_bimbingan' => ['label' => 'Kartu Konsultasi / Bimbingan', 'value' => $pengajuan->berkas_kartu_bimbingan],
                 'transkrip_sementara' => ['label' => 'Transkrip Sementara', 'value' => $genericDocuments->get('transkrip_sementara')?->path_berkas],

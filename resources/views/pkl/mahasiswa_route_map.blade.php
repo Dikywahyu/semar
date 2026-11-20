@@ -33,7 +33,6 @@
         'proposal' => 'Berkas Proposal',
         'surat_jalan_pkl' => 'Surat Jalan PKL',
         'surat_balasan_instansi' => 'Surat Balasan Instansi',
-        'acc_pembimbing_awal' => 'ACC Pembimbing Awal',
     ];
     $dokumenTahap2 = [
         'draft_laporan' => 'Draft Laporan',
@@ -297,8 +296,12 @@
             </div>
             <div class="space-y-4">
                 <div class="rounded-xl bg-slate-50 p-4"><h3 class="mb-3 text-sm font-bold">ACC Pembimbing & Jadwal Ujian</h3>
-                    @if ($canPerformPembimbingActions)
-                        <form action="{{ route('pkl.route-map.acc', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="mb-4">@csrf<input type="hidden" name="is_acc_seminar" value="1"><button class="rmap-btn rmap-btn-primary" type="submit">Berikan ACC Ujian Seminar</button></form>
+                    @if ($canPerformPembimbingActions || $isAcademicViewer)
+                        @if($pkl?->is_acc_seminar)
+                            <form action="{{ route('pkl.route-map.acc', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="mb-4">@csrf<input type="hidden" name="revoke" value="1"><button class="rmap-btn rmap-btn-secondary text-xs" type="submit">Cabut ACC Ujian Seminar</button></form>
+                        @else
+                            <form action="{{ route('pkl.route-map.acc', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="mb-4">@csrf<input type="hidden" name="is_acc_seminar" value="1"><button class="rmap-btn rmap-btn-primary" type="submit">Berikan ACC Ujian Seminar</button></form>
+                        @endif
                     @endif
                     @if ($showMahasiswa && $pkl && $pkl->status === 'Dijadwalkan Ujian')
                         <form action="{{ route('pkl.route-map.schedule.propose', ['pengajuan' => $pkl?->getKey()]) }}" method="POST" class="space-y-3">@csrf
@@ -373,7 +376,7 @@
             @if (!$showMahasiswa || in_array($pkl?->status, ['Revisi Laporan', 'Selesai'], true))
             <div class="rounded-xl border border-slate-200 p-4"><h3 class="mb-3 text-sm font-bold">Dokumen Akhir PKL</h3>
                 @if ($showMahasiswa && $pkl?->status === 'Revisi Laporan')
-                    @foreach ([['formulir_pendaftaran_ujian','Formulir Pendaftaran Ujian'],['berita_acara_ujian','Berita Acara Ujian'],['formulir_nilai','Formulir Nilai'],['permohonan_revisi','Formulir Permohonan Revisi'],['laporan_final','Laporan Final'],['lampiran_teknis','Lampiran Teknis (AutoCAD / RAB)'],['acc_pembimbing_akhir','ACC Pembimbing Akhir'],['rekap_nilai','Rekap Nilai']] as [$key,$label])
+                    @foreach ([['formulir_pendaftaran_ujian','Formulir Pendaftaran Ujian'],['berita_acara_ujian','Berita Acara Ujian'],['formulir_nilai','Formulir Nilai'],['permohonan_revisi','Formulir Permohonan Revisi'],['laporan_final','Laporan Final'],['lampiran_teknis','Lampiran Teknis (AutoCAD / RAB)'],['rekap_nilai','Rekap Nilai']] as [$key,$label])
                         @php $doc = $pkl?->berkasSeminar?->firstWhere('jenis_berkas', $key); @endphp
                         <form action="{{ $routeMapUpload3 }}" method="POST" enctype="multipart/form-data" class="mb-3 rounded-lg border border-slate-200 p-3">@csrf<input type="hidden" name="jenis_dokumen" value="{{ $key }}">
                             <label class="mb-2 block text-xs font-semibold text-slate-600">{{ $label }}<input class="rmap-input mt-1" type="file" name="file" accept="{{ $key === 'lampiran_teknis' ? '.pdf,.jpg,.jpeg,.png,.dwg,.dxf,.xls,.xlsx,.csv,.zip' : '.pdf,.jpg,.jpeg,.png' }}" required></label>
@@ -386,7 +389,6 @@
                             'proposal' => 'Proposal ke Tempat PKL',
                             'surat_jalan_pkl' => 'Surat Jalan PKL',
                             'surat_balasan_instansi' => 'Surat Balasan Instansi',
-                            'acc_pembimbing_awal' => 'ACC Pembimbing Awal',
                             'berkas_bukti_survei' => 'Bukti Survei PKL',
                             'berkas_surat_balasan' => 'Surat Balasan Instansi (Arsip Lama)',
                             'draft_laporan' => 'Draft Laporan PKL',
@@ -401,7 +403,6 @@
                             'permohonan_revisi' => 'Formulir Permohonan Revisi',
                             'laporan_final' => 'Laporan Final',
                             'lampiran_teknis' => 'Lampiran Teknis',
-                            'acc_pembimbing_akhir' => 'ACC Pembimbing Akhir',
                             'rekap_nilai' => 'Rekap Nilai',
                             'berkas_laporan_revisi' => 'Laporan Revisi',
                             'berkas_lembar_pengesahan' => 'Lembar Pengesahan',
@@ -413,7 +414,6 @@
                             'berkas_proposal' => 'proposal',
                             'surat_jalan_pkl' => 'surat_jalan_pkl',
                             'surat_balasan_instansi' => 'surat_balasan_instansi',
-                            'acc_pembimbing_awal' => 'acc_pembimbing_awal',
                             'berkas_draft_laporan' => 'draft_laporan',
                             'berkas_kartu_bimbingan' => 'kartu_konsultasi',
                             'berkas_logbook' => 'berkas_logbook',

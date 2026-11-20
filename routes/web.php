@@ -308,6 +308,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dosen/bimbingan/{pengajuan}', [PklController::class, 'dosenDetail'])->name('dosen.bimbingan.detail');
         Route::get('/dosen/komponen-penilaian/{pengajuan}', [PklController::class, 'dosenComponents'])->name('dosen.komponen-penilaian');
         Route::post('/dosen/penilaian/{pengajuan}', [PklController::class, 'dosenSaveGrades'])->name('dosen.penilaian');
+        Route::post('/dosen/{pengajuan}/acc-pembimbing', [PklController::class, 'routeMapAcc'])->name('dosen.acc-pembimbing');
         Route::post('/dosen/{pengajuan}/final-approval', [PklController::class, 'dosenFinalApproval'])->name('dosen.final-approval');
 
         Route::get('/admin', [PklController::class, 'adminIndex'])->name('admin.index');
@@ -316,6 +317,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/admin/pengajuan/{pengajuan}/update', [PklController::class, 'adminUpdate'])->name('admin.pengajuan.update');
         Route::delete('/admin/pengajuan/{pengajuan}', [PklController::class, 'adminDestroy'])->name('admin.pengajuan.destroy');
         Route::post('/admin/verifikasi-berkas-seminar/{pengajuan}', [PklController::class, 'verifyDocuments'])->name('admin.verifikasi-berkas');
+        Route::post('/admin/{pengajuan}/acc-pembimbing', [PklController::class, 'routeMapAcc'])->name('admin.acc-pembimbing');
         Route::post('/admin/selesaikan-pkl/{pengajuan}', [PklController::class, 'adminFinalizePkl'])->name('admin.selesaikan');
         Route::post('/admin/terapkan-usulan-mahasiswa/{pengajuan}', [PklController::class, 'adminApplyStudentProposals'])->name('admin.terapkan-usulan-mahasiswa');
         Route::post('/admin/set-jadwal-penguji/{pengajuan}', [PklController::class, 'setSchedule'])->name('admin.jadwal');

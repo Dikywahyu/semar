@@ -161,9 +161,9 @@ class PklController extends Controller
         abort_unless(in_array($pengajuan->status, $allowedStageStatus, true), 409, 'Unggahan dokumen tidak tersedia pada status PKL saat ini.');
 
         $fields = match ($tahap) {
-            1 => ['proposal', 'surat_jalan_pkl', 'surat_balasan_instansi', 'acc_pembimbing_awal'],
+            1 => ['proposal', 'surat_jalan_pkl', 'surat_balasan_instansi'],
             2 => ['draft_laporan', 'kartu_bimbingan', 'transkrip_sementara'],
-            3 => ['formulir_pendaftaran_ujian', 'berita_acara_ujian', 'formulir_nilai', 'permohonan_revisi', 'laporan_final', 'lampiran_teknis', 'acc_pembimbing_akhir', 'rekap_nilai'],
+            3 => ['formulir_pendaftaran_ujian', 'berita_acara_ujian', 'formulir_nilai', 'permohonan_revisi', 'laporan_final', 'lampiran_teknis', 'rekap_nilai'],
             default => abort(404),
         };
         $jenis = (string) $request->input('jenis_dokumen');
@@ -213,7 +213,7 @@ class PklController extends Controller
         $this->assertOwnSubmission($pengajuan);
         abort_unless($pengajuan->status === self::STATUS_PENGAJUAN, 409, 'Pembimbing hanya dapat diusulkan sebelum pelaksanaan PKL dimulai.');
         abort_unless(! $pengajuan->dosen_pembimbing_id, 409, 'Dosen pembimbing sudah ditetapkan. Hubungi Super Admin atau Kaprodi jika perlu diubah.');
-        abort_unless($this->hasInitialRegistrationDocuments($pengajuan), 409, 'Lengkapi formulir dan unggah Proposal, Surat Jalan PKL, Surat Balasan Instansi, serta ACC Pembimbing sebelum memilih dosen pembimbing.');
+        abort_unless($this->hasInitialRegistrationDocuments($pengajuan), 409, 'Lengkapi formulir dan unggah Proposal, Surat Jalan PKL, dan Surat Balasan Instansi sebelum memilih dosen pembimbing.');
         $validated = $request->validate([
             'dosen_pembimbing_id' => ['required', Rule::exists('dosens', 'id_dosen')->where('aktif', true)],
         ]);
@@ -234,7 +234,7 @@ class PklController extends Controller
             return false;
         }
 
-        $requiredDocuments = ['surat_jalan_pkl', 'surat_balasan_instansi', 'acc_pembimbing_awal'];
+        $requiredDocuments = ['surat_jalan_pkl', 'surat_balasan_instansi'];
 
         return $pengajuan->berkasSeminar()
             ->whereIn('jenis_berkas', $requiredDocuments)
@@ -292,11 +292,34 @@ class PklController extends Controller
         return back()->with('success', 'Status berkas diperbarui.');
     }
 
-    public function routeMapAcc(PengajuanPkl $pengajuan): RedirectResponse
+    public function routeMapAcc(Request $request, PengajuanPkl $pengajuan): JsonResponse|RedirectResponse
     {
-        $this->authorizeLecturerAction();
-        $dosen = $this->currentDosen();
-        abort_unless($pengajuan->dosen_pembimbing_id === $dosen->id_dosen, 403);
+        $user = auth()->user();
+        $isPrivileged = $user?->hasAnyRole(['Super Admin', 'Kaprodi', 'Admin']) || $user?->can('academic-edit');
+        $dosen = $this->actingDosenProfile();
+        $isAssignedPembimbing = $dosen && $pengajuan->dosen_pembimbing_id === $dosen->id_dosen;
+        abort_unless($isAssignedPembimbing || $isPrivileged, 403, 'Hanya dosen pembimbing, Kaprodi, atau Admin yang dapat memberikan ACC.');
+
+        $revoke = $request->boolean('revoke') || $request->input('is_acc_seminar') === '0';
+        if ($revoke) {
+            $pengajuan->update([
+                'is_acc_seminar' => false,
+                'acc_seminar_by' => null,
+                'acc_seminar_at' => null,
+            ]);
+            $this->logPklActivity($pengajuan, 'Cabut ACC Pembimbing', ($user?->name ?? 'Pengguna') . ' mencabut status ACC pembimbing.');
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'ACC pembimbing berhasil dicabut.',
+                    'is_acc_seminar' => false,
+                ]);
+            }
+
+            return back()->with('warning', 'ACC pembimbing berhasil dicabut.');
+        }
+
         $wasAcc = (bool) $pengajuan->is_acc_seminar;
         $pengajuan->update([
             'is_acc_seminar' => true,
@@ -305,10 +328,20 @@ class PklController extends Controller
         ]);
         $this->advanceAfterExamDocuments($pengajuan);
         if (! $wasAcc) {
-            $this->logPklActivity($pengajuan, 'ACC Seminar', 'Dosen pembimbing ' . (auth()->user()->name ?? '') . ' menyetujui pendaftaran ujian seminar.');
+            $roleName = $user?->getRoleNames()->first() ?: ($isAssignedPembimbing ? 'Dosen Pembimbing' : 'Admin');
+            $this->logPklActivity($pengajuan, 'ACC Pembimbing', ($user?->name ?? 'Pengguna') . ' (' . $roleName . ') menyetujui berkas dan memberikan ACC pembimbing.');
         }
 
-        return back()->with('success', 'ACC seminar berhasil diberikan.');
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'ACC pembimbing berhasil diberikan.',
+                'is_acc_seminar' => true,
+                'approver' => $user?->name ?? 'Pengguna',
+            ]);
+        }
+
+        return back()->with('success', 'ACC pembimbing berhasil diberikan.');
     }
 
     public function routeMapProposeSchedule(Request $request, PengajuanPkl $pengajuan): RedirectResponse
@@ -511,34 +544,27 @@ class PklController extends Controller
         abort_unless($this->isAssignedDosen($pengajuan, $dosen), 403);
         abort_unless($pengajuan->berkas_laporan_revisi, 409, 'Laporan revisi belum diunggah.');
         $this->logPklActivity($pengajuan, 'Revisi Divalidasi', 'Dosen ' . (auth()->user()->name ?? '') . ' memvalidasi berkas revisi pasca-ujian.');
-        abort_unless($this->completePklIfReady($pengajuan), 409, 'Kelulusan menunggu seluruh dokumen akhir, ACC pembimbing yang valid, dan nilai pembimbing.');
+        abort_unless($this->completePklIfReady($pengajuan), 409, 'Kelulusan menunggu seluruh dokumen akhir dan nilai pembimbing.');
 
         return back()->with('success', 'Revisi divalidasi.');
     }
 
     public function routeMapComplete(PengajuanPkl $pengajuan): RedirectResponse
     {
-        $this->authorizeLecturerAction();
-        $dosen = $this->currentDosen();
-        abort_unless($pengajuan->dosen_pembimbing_id === $dosen->id_dosen, 403);
+        $user = auth()->user();
+        $isAdmin = $user?->hasAnyRole(['Super Admin', 'Kaprodi', 'Admin']) || $user?->can('academic-edit');
+        $dosen = $this->actingDosenProfile();
+        $isAssignedPembimbing = $dosen && $pengajuan->dosen_pembimbing_id === $dosen->id_dosen;
+        abort_unless($isAssignedPembimbing || $isAdmin, 403);
         abort_unless(in_array($pengajuan->status, [self::STATUS_SEMINAR, self::STATUS_REVISI, self::STATUS_SELESAI], true), 409, 'ACC kelulusan akhir hanya dapat diberikan setelah ujian.');
         abort_unless($this->hasFinalDocumentsAndScore($pengajuan), 409, 'ACC final menunggu seluruh dokumen akhir dan input nilai pembimbing.');
         $pengajuan->update([
             'final_approved_by' => auth()->id(),
             'final_approved_at' => now(),
         ]);
-        $pengajuan->berkasSeminar()
-            ->where('jenis_berkas', 'acc_pembimbing_akhir')
-            ->update([
-                'status_verifikasi' => 'Valid',
-                'catatan_verifikator' => null,
-                'verified_by' => auth()->id(),
-                'verified_at' => now(),
-                'approved_by' => auth()->id(),
-                'approved_at' => now(),
-            ]);
-        $this->logPklActivity($pengajuan, 'ACC Final PKL', 'Dosen pembimbing ' . (auth()->user()->name ?? '') . ' memberikan ACC final kelulusan PKL.');
-        abort_unless($this->completePklIfReady($pengajuan), 409, 'Kelulusan menunggu seluruh dokumen akhir, ACC pembimbing yang valid, dan nilai pembimbing.');
+        $roleName = $user?->getRoleNames()->first() ?: ($isAssignedPembimbing ? 'Dosen Pembimbing' : 'Admin');
+        $this->logPklActivity($pengajuan, 'ACC Final PKL', ($user?->name ?? 'Pengguna') . ' (' . $roleName . ') memberikan ACC final kelulusan PKL.');
+        abort_unless($this->completePklIfReady($pengajuan), 409, 'Kelulusan menunggu seluruh dokumen akhir dan nilai pembimbing.');
 
         return back()->with('success', 'ACC final berhasil disimpan dan status mahasiswa menjadi Lulus PKL.');
     }
@@ -563,7 +589,7 @@ class PklController extends Controller
         $this->authorizeStudentAction();
         $mahasiswa = $this->currentMahasiswa();
         abort_if($mahasiswa->pengajuanPkl()->exists(), 409, 'Anda sudah memiliki pengajuan PKL.');
-        $fileFields = ['berkas_proposal', 'surat_jalan_pkl', 'surat_balasan_instansi', 'acc_pembimbing_awal'];
+        $fileFields = ['berkas_proposal', 'surat_jalan_pkl', 'surat_balasan_instansi'];
 
         $validated = $request->validate([
             'nama_instansi' => ['required', 'string', 'max:255'],
@@ -574,9 +600,8 @@ class PklController extends Controller
             'berkas_proposal' => ['nullable', 'file', 'mimes:pdf', 'max:2048'],
             'surat_jalan_pkl' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
             'surat_balasan_instansi' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
-            'acc_pembimbing_awal' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
         ]);
-        foreach (['berkas_proposal', 'surat_jalan_pkl', 'surat_balasan_instansi', 'acc_pembimbing_awal'] as $field) {
+        foreach (['berkas_proposal', 'surat_jalan_pkl', 'surat_balasan_instansi'] as $field) {
             abort_if($request->hasFile($field) && $request->file($field)->getSize() > 2 * 1024 * 1024, 422, 'Setiap berkas pendaftaran maksimal 2MB.');
         }
 
@@ -669,7 +694,6 @@ class PklController extends Controller
             'berkas_proposal',
             'surat_jalan_pkl',
             'surat_balasan_instansi',
-            'acc_pembimbing_awal',
             'berkas_kartu_bimbingan',
             'berkas_draft_laporan',
             'transkrip_sementara',
@@ -679,12 +703,11 @@ class PklController extends Controller
             'permohonan_revisi',
             'laporan_final',
             'lampiran_teknis',
-            'acc_pembimbing_akhir',
             'rekap_nilai',
         ];
         abort_unless(in_array($request->input('field'), $allowedFields, true), 422, 'Jenis berkas tidak valid.');
         $field = (string) $request->input('field');
-        $earlyStageFields = ['berkas_proposal', 'surat_jalan_pkl', 'surat_balasan_instansi', 'acc_pembimbing_awal'];
+        $earlyStageFields = ['berkas_proposal', 'surat_jalan_pkl', 'surat_balasan_instansi'];
         $preExamFields = ['berkas_kartu_bimbingan', 'berkas_draft_laporan', 'transkrip_sementara'];
         $isFinalDocument = ! in_array($field, array_merge($earlyStageFields, $preExamFields), true);
         $allowedStatuses = $isFinalDocument
@@ -704,7 +727,7 @@ class PklController extends Controller
             ],
         ]);
 
-        if (in_array($validated['field'], ['surat_jalan_pkl', 'surat_balasan_instansi', 'acc_pembimbing_awal', 'transkrip_sementara'], true)) {
+        if (in_array($validated['field'], ['surat_jalan_pkl', 'surat_balasan_instansi', 'transkrip_sementara'], true)) {
             $berkas = $this->storePklDocument($pengajuan, $validated['field'], $request->file('file'));
         } else {
             if (in_array($validated['field'], ['berkas_proposal', 'berkas_draft_laporan', 'berkas_kartu_bimbingan'], true)) {
@@ -1133,7 +1156,6 @@ class PklController extends Controller
             'permohonan_revisi',
             'laporan_final',
             'lampiran_teknis',
-            'acc_pembimbing_akhir',
             'rekap_nilai',
         ];
 
@@ -1528,14 +1550,19 @@ class PklController extends Controller
         $dosen = $this->actingDosenProfile();
         $isAssignedDosen = $dosen && $this->isAssignedDosen($pengajuan, $dosen);
         abort_unless($isAdmin || $isAssignedDosen, 403);
-        $canApproveFinal = $isAssignedDosen && $pengajuan->dosen_pembimbing_id === $dosen->id_dosen;
+        $isAssignedPembimbing = $dosen && $pengajuan->dosen_pembimbing_id === $dosen->id_dosen;
+        $canAccSeminar = $isAssignedPembimbing || $isAdmin;
+        $canApproveFinal = ($isAssignedPembimbing || $isAdmin) && in_array($pengajuan->status, [self::STATUS_SEMINAR, self::STATUS_REVISI, self::STATUS_SELESAI], true);
         $pengajuan->load([
             'mahasiswaRegistrasi',
             'logAktivitas.aktor',
             'bimbingan.tanggapan.pengirim',
+            'seminarApprover',
+            'finalApprover',
+            'berkasSeminar',
         ]);
 
-        return view('pkl.dosen_bimbingan_detail', compact('pengajuan', 'isAdmin', 'canApproveFinal'));
+        return view('pkl.dosen_bimbingan_detail', compact('pengajuan', 'isAdmin', 'canApproveFinal', 'canAccSeminar'));
     }
 
     public function dosenFinalApproval(PengajuanPkl $pengajuan): RedirectResponse
@@ -1984,14 +2011,12 @@ class PklController extends Controller
             'transkrip_sementara' => ['label' => 'Transkrip Sementara', 'stage' => 2],
             'surat_jalan_pkl' => ['label' => 'Surat Jalan PKL', 'stage' => 1],
             'surat_balasan_instansi' => ['label' => 'Surat Balasan Instansi', 'stage' => 1],
-            'acc_pembimbing_awal' => ['label' => 'ACC Pembimbing Awal', 'stage' => 1],
             'formulir_pendaftaran_ujian' => ['label' => 'Formulir Pendaftaran Ujian', 'stage' => 3],
             'berita_acara_ujian' => ['label' => 'Berita Acara Ujian', 'stage' => 3],
             'formulir_nilai' => ['label' => 'Formulir Nilai', 'stage' => 3],
             'permohonan_revisi' => ['label' => 'Formulir Permohonan Revisi', 'stage' => 3],
             'laporan_final' => ['label' => 'Laporan Final', 'stage' => 3],
             'lampiran_teknis' => ['label' => 'Lampiran Teknis (Gambar AutoCAD / RAB)', 'stage' => 3],
-            'acc_pembimbing_akhir' => ['label' => 'ACC Pembimbing Akhir', 'stage' => 3],
             'rekap_nilai' => ['label' => 'Rekap Nilai', 'stage' => 3],
         ];
     }
@@ -2031,7 +2056,6 @@ class PklController extends Controller
             'permohonan_revisi',
             'laporan_final',
             'lampiran_teknis',
-            'acc_pembimbing_akhir',
             'rekap_nilai',
         ];
         $documents = $pengajuan->berkasSeminar()->whereIn('jenis_berkas', $requiredFinalDocuments)->get()->keyBy('jenis_berkas');
@@ -2064,7 +2088,6 @@ class PklController extends Controller
             'permohonan_revisi',
             'laporan_final',
             'lampiran_teknis',
-            'acc_pembimbing_akhir',
             'rekap_nilai',
         ];
         $documents = $pengajuan->berkasSeminar()
