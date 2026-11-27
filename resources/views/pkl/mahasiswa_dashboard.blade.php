@@ -1002,7 +1002,7 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h5 class="fw-bold mb-1"><i class="ti ti-clock-check me-1"></i> Pelaksanaan PKL Berlangsung</h5>
-                    <p class="text-white-50 small mb-0">Jika masa magang di instansi sudah selesai, klik tombol di samping untuk lanjut ke pemberkasan seminar.</p>
+                    <p class="small mb-0">Jika masa magang di instansi sudah selesai, klik tombol di samping untuk lanjut ke pemberkasan seminar.</p>
                 </div>
                 <div>
                     <button type="button" class="btn btn-light text-success fw-bold px-4 py-2 rounded-pill shadow-sm" id="btnSelesaiPkl" data-id="{{ $pengajuan->id }}">
