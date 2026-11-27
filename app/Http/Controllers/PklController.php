@@ -225,6 +225,15 @@ class PklController extends Controller
         return false;
     }
 
+    private function ensurePembimbingIsPenguji(PengajuanPkl $pengajuan): void
+    {
+        if ($pengajuan->dosen_pembimbing_id) {
+            $pengajuan->dosenPenguji()->syncWithoutDetaching([
+                $pengajuan->dosen_pembimbing_id => ['peran' => 'Ketua Penguji']
+            ]);
+        }
+    }
+
     public function mahasiswaPlotPembimbing(Request $request, PengajuanPkl $pengajuan): RedirectResponse
     {
         $this->authorizeStudentAction();
@@ -241,6 +250,7 @@ class PklController extends Controller
             'dosen_pembimbing_id' => $dosen->id_dosen,
             'status' => self::STATUS_PELAKSANAAN,
         ]);
+        $this->ensurePembimbingIsPenguji($pengajuan);
         $this->logPklActivity($pengajuan, 'Plotting Pembimbing oleh Mahasiswa', 'Mahasiswa ' . (auth()->user()->name ?? '') . ' mengusulkan dan menetapkan pembimbing ' . $dosen->nama_dosen . '. Admin dapat mengubah penetapan ini.');
         $this->logPklActivity($pengajuan, 'Perubahan Status PKL', 'Status berubah dari ' . self::STATUS_PENGAJUAN . ' menjadi ' . self::STATUS_PELAKSANAAN . ' setelah mahasiswa memilih dosen pembimbing.');
 
@@ -789,6 +799,9 @@ class PklController extends Controller
             'berkas_kartu_bimbingan',
             'berkas_draft_laporan',
             'transkrip_sementara',
+            'krs',
+            'lampiran_gambar_kerja',
+            'lampiran_rab',
             'formulir_pendaftaran_ujian',
             'berita_acara_ujian',
             'formulir_nilai',
@@ -800,26 +813,33 @@ class PklController extends Controller
         abort_unless(in_array($request->input('field'), $allowedFields, true), 422, 'Jenis berkas tidak valid.');
         $field = (string) $request->input('field');
         $earlyStageFields = ['berkas_proposal', 'surat_jalan_pkl', 'surat_balasan_instansi'];
-        $preExamFields = ['berkas_kartu_bimbingan', 'berkas_draft_laporan', 'transkrip_sementara'];
+        $preExamFields = [
+            'berkas_kartu_bimbingan',
+            'berkas_draft_laporan',
+            'transkrip_sementara',
+            'krs',
+            'lampiran_gambar_kerja',
+            'lampiran_rab',
+        ];
         $isFinalDocument = ! in_array($field, array_merge($earlyStageFields, $preExamFields), true);
         $allowedStatuses = $isFinalDocument
             ? [self::STATUS_REVISI]
-            : ($field === 'transkrip_sementara' || in_array($field, ['berkas_kartu_bimbingan', 'berkas_draft_laporan'], true)
+            : (in_array($field, $preExamFields, true)
                 ? [self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI]
                 : [self::STATUS_PENGAJUAN, self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI]);
         abort_unless(in_array($pengajuan->status, $allowedStatuses, true), 409, 'Berkas belum dapat diunggah pada tahap ini.');
-        $technicalAttachment = $field === 'lampiran_teknis';
+        $technicalAttachment = in_array($field, ['lampiran_teknis', 'lampiran_gambar_kerja', 'lampiran_rab'], true);
         $validated = $request->validate([
             'field' => ['required', Rule::in($allowedFields)],
             'file' => [
                 'required',
                 'file',
                 'mimes:' . ($technicalAttachment ? 'pdf,jpg,jpeg,png,dwg,dxf,xls,xlsx,csv,zip' : 'pdf,jpg,jpeg,png'),
-                'max:' . ($technicalAttachment ? 20480 : ($isFinalDocument ? 10240 : 2048)),
+                'max:' . ($technicalAttachment ? 20480 : ($isFinalDocument ? 10240 : 5120)),
             ],
         ]);
 
-        if (in_array($validated['field'], ['surat_jalan_pkl', 'surat_balasan_instansi', 'transkrip_sementara'], true)) {
+        if (in_array($validated['field'], ['surat_jalan_pkl', 'surat_balasan_instansi', 'transkrip_sementara', 'krs', 'lampiran_gambar_kerja', 'lampiran_rab'], true)) {
             $berkas = $this->storePklDocument($pengajuan, $validated['field'], $request->file('file'));
         } else {
             if (in_array($validated['field'], ['berkas_proposal', 'berkas_draft_laporan', 'berkas_kartu_bimbingan'], true)) {
@@ -870,20 +890,27 @@ class PklController extends Controller
         $student = ($user?->hasAnyRole(['mahasiswa', 'Mahasiswa']) || $this->canActAsStudent())
             ? $this->currentMahasiswa()
             : null;
-        $dosen = ($user?->hasAnyRole(['dosen_pembimbing', 'dosen_penguji', 'Dosen']) || $this->canActAsLecturer())
+        $dosen = ($user?->hasAnyRole(['dosen_pembimbing', 'dosen_penguji', 'dosen', 'Dosen', 'DosenLB', 'Guru Besar']) || $this->canActAsLecturer())
             ? $this->actingDosenProfile()
             : null;
         $isMahasiswaPemilik = $student?->id_registrasi_mahasiswa === $pengajuan->mahasiswa_registrasi_id;
         $isDosenPembimbing = $dosen && $pengajuan->dosen_pembimbing_id === $dosen->id_dosen;
-        abort_unless($isMahasiswaPemilik || $isDosenPembimbing, 403);
+        $isAdmin = $this->canSelectActingProfile();
+        abort_unless($isMahasiswaPemilik || $isDosenPembimbing || $isAdmin, 403, 'Anda tidak memiliki hak untuk menyelesaikan kegiatan PKL ini.');
         abort_unless($pengajuan->status === self::STATUS_PELAKSANAAN, 409, 'Pengajuan tidak sedang dalam tahap pelaksanaan.');
 
         $pengajuan->update(['status' => self::STATUS_VERIFIKASI]);
-        $aktor = $isMahasiswaPemilik ? 'Mahasiswa' : 'Dosen pembimbing';
-        $this->logPklActivity($pengajuan, 'Pelaksanaan PKL Selesai', $aktor . ' ' . (auth()->user()->name ?? '') . ' menyatakan kegiatan PKL di instansi selesai.');
+        $this->ensurePembimbingIsPenguji($pengajuan);
+
+        $aktor = $isMahasiswaPemilik ? 'Mahasiswa' : ($isDosenPembimbing ? 'Dosen pembimbing' : 'Administrator');
+        $this->logPklActivity($pengajuan, 'Pelaksanaan PKL Selesai', $aktor . ' ' . (auth()->user()->name ?? '') . ' menyatakan kegiatan PKL di instansi selesai. Status berpindah ke ' . self::STATUS_VERIFIKASI . '.');
         $this->advanceAfterExamDocuments($pengajuan);
 
-        return response()->json(['message' => 'Pelaksanaan PKL ditandai selesai. Status sekarang: ' . $pengajuan->fresh()->status . '.']);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Pelaksanaan PKL berhasil ditandai selesai. Tahapan dilanjutkan ke Verifikasi Berkas Admin.',
+            'status_baru' => self::STATUS_VERIFIKASI
+        ]);
     }
 
     public function adminIndex(Request $request): View|JsonResponse
@@ -1676,8 +1703,12 @@ class PklController extends Controller
             });
         $this->applySemesterFilter($query, $request->input('id_semester'));
         $assignments = $query->latest()->get();
+        $assignments->each(function ($item) {
+            $this->ensurePembimbingIsPenguji($item);
+        });
+        $assignments->load('dosenPenguji');
         $bimbinganList = $assignments->where('dosen_pembimbing_id', $dosen->id_dosen)->values();
-        $pengujiList = $assignments->filter(fn($item) => $item->dosenPenguji->contains('id_dosen', $dosen->id_dosen))->values();
+        $pengujiList = $assignments->filter(fn($item) => $item->dosenPenguji->contains('id_dosen', $dosen->id_dosen) || $item->dosen_pembimbing_id === $dosen->id_dosen)->values();
         $totalBimbingan = $bimbinganList->count();
         $totalPenguji = $pengujiList->count();
 
@@ -1705,6 +1736,7 @@ class PklController extends Controller
         $isAdmin = $user?->hasAnyRole(['Super Admin', 'Admin', 'BAAK', 'Akademik', 'Kemahasiswaan', 'Kaprodi', 'Kajur'])
             || $user?->can('academic-edit');
         $dosen = $this->actingDosenProfile();
+        $this->ensurePembimbingIsPenguji($pengajuan);
         $isAssignedDosen = $dosen && $this->isAssignedDosen($pengajuan, $dosen);
         abort_unless($isAdmin || $isAssignedDosen, 403);
         $isAssignedPembimbing = $dosen && $pengajuan->dosen_pembimbing_id === $dosen->id_dosen;
@@ -1727,22 +1759,124 @@ class PklController extends Controller
         return $this->routeMapComplete($pengajuan);
     }
 
+    public function getNilaiBimbingan(PengajuanPkl $pengajuan): JsonResponse
+    {
+        $this->authorizeLecturerAction();
+        $dosen = $this->currentDosen();
+        abort_unless($this->isAssignedDosen($pengajuan, $dosen), 403);
+
+        $this->ensurePembimbingIsPenguji($pengajuan);
+
+        $komponen = $this->componentsForSubmission($pengajuan)
+            ->whereIn('penilai', ['Pembimbing', 'pembimbing'])
+            ->orderBy('id')
+            ->get();
+
+        if ($komponen->isEmpty()) {
+            $komponen = KomponenPenilaianPkl::query()
+                ->whereIn('penilai', ['Pembimbing', 'pembimbing'])
+                ->orderBy('id')
+                ->get();
+        }
+
+        $existingNilai = $pengajuan->detailNilai()
+            ->where('dosen_id', $dosen->id_dosen)
+            ->get()
+            ->keyBy('komponen_penilaian_pkl_id');
+
+        $komponenList = $komponen->map(function ($item) use ($existingNilai) {
+            return [
+                'komponen_penilaian_pkl_id' => $item->id,
+                'nama_komponen' => $item->nama_komponen ?? $item->komponen ?? 'Komponen Bimbingan',
+                'bobot' => $item->bobot ?? 0,
+                'nilai_angka' => $existingNilai->get($item->id)?->nilai_angka,
+            ];
+        });
+
+        $catatan = LogAktivitasPkl::query()
+            ->where('pengajuan_pkl_id', $pengajuan->id)
+            ->where('aksi', 'Penilaian Bimbingan')
+            ->latest()
+            ->value('deskripsi');
+
+        return response()->json([
+            'success' => true,
+            'komponen_nilai' => $komponenList,
+            'nilai_bimbingan' => $pengajuan->nilai_akhir,
+            'catatan_pembimbing' => $catatan ?? '',
+        ]);
+    }
+
+    public function simpanNilaiBimbingan(Request $request, PengajuanPkl $pengajuan): JsonResponse
+    {
+        $this->authorizeLecturerAction();
+        $dosen = $this->currentDosen();
+        abort_unless($this->isAssignedDosen($pengajuan, $dosen), 403);
+
+        $validated = $request->validate([
+            'nilai_komponen' => ['nullable', 'array'],
+            'nilai_komponen.*' => ['nullable', 'numeric', 'between:0,100'],
+            'nilai_bimbingan' => ['nullable', 'numeric', 'between:0,100'],
+            'catatan' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        DB::transaction(function () use ($validated, $dosen, $pengajuan) {
+            if (!empty($validated['nilai_komponen'])) {
+                foreach ($validated['nilai_komponen'] as $komponenId => $score) {
+                    if ($score !== null && $score !== '') {
+                        DetailNilaiPkl::updateOrCreate(
+                            [
+                                'pengajuan_pkl_id' => $pengajuan->id,
+                                'dosen_id' => $dosen->id_dosen,
+                                'komponen_penilaian_pkl_id' => $komponenId,
+                            ],
+                            ['nilai_angka' => $score]
+                        );
+                    }
+                }
+            }
+
+            if (isset($validated['nilai_bimbingan']) && $validated['nilai_bimbingan'] !== null && $validated['nilai_bimbingan'] !== '') {
+                $pengajuan->update(['nilai_akhir' => $validated['nilai_bimbingan']]);
+            }
+
+            if (filled($validated['catatan'] ?? null)) {
+                LogAktivitasPkl::create([
+                    'pengajuan_pkl_id' => $pengajuan->id,
+                    'aktor_id' => auth()->id(),
+                    'aksi' => 'Penilaian Bimbingan',
+                    'deskripsi' => $validated['catatan'],
+                ]);
+            }
+        });
+
+        $this->refreshFinalGrade($pengajuan);
+        $this->logPklActivity($pengajuan, 'Penilaian Bimbingan', 'Dosen ' . (auth()->user()->name ?? '') . ' menyimpan penilaian bimbingan PKL.');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Nilai proses bimbingan berhasil disimpan.',
+        ]);
+    }
+
     public function dosenComponents(PengajuanPkl $pengajuan): JsonResponse
     {
         $this->authorizeLecturerAction();
         $dosen = $this->currentDosen();
         abort_unless($this->isAssignedDosen($pengajuan, $dosen), 403);
-        $categories = collect();
-        if ($pengajuan->dosen_pembimbing_id === $dosen->id_dosen) {
-            $categories->push('Pembimbing');
-        }
-        if ($pengajuan->dosenPenguji()->where('dosens.id_dosen', $dosen->id_dosen)->exists()) {
-            $categories->push('Penguji');
-        }
+
+        $this->ensurePembimbingIsPenguji($pengajuan);
+
+        $categories = collect(['Penguji', 'Pembimbing', 'penguji', 'pembimbing']);
         $komponen = $this->componentsForSubmission($pengajuan)
-            ->whereIn('penilai', $categories->unique())
+            ->whereIn('penilai', $categories)
             ->orderBy('id')
             ->get();
+
+        if ($komponen->isEmpty()) {
+            $komponen = KomponenPenilaianPkl::query()->orderBy('id')->get();
+        }
+
         $existing = $pengajuan->detailNilai()->where('dosen_id', $dosen->id_dosen)->get()->keyBy('komponen_penilaian_pkl_id');
         $catatan = $pengajuan->logAktivitas()
             ->where('aksi', 'Penilaian Seminar')
@@ -1901,7 +2035,7 @@ class PklController extends Controller
 
     private function componentsForSubmission(PengajuanPkl $pengajuan)
     {
-        return KomponenPenilaianPkl::query()
+        $query = KomponenPenilaianPkl::query()
             ->when($pengajuan->semester_master_id, function ($query) use ($pengajuan) {
                 $query->where(function ($query) use ($pengajuan) {
                     $query->where('semester_master_id', $pengajuan->semester_master_id);
@@ -1914,7 +2048,153 @@ class PklController extends Controller
                 });
             }, fn($query) => $pengajuan->id_semester
                 ? $query->whereNull('semester_master_id')->where('id_semester', $pengajuan->id_semester)
-                : $query->whereRaw('1 = 0'));
+                : $query);
+
+        if (! (clone $query)->exists()) {
+            $fallback = KomponenPenilaianPkl::query()->whereNull('semester_master_id');
+            if ($fallback->exists()) {
+                return $fallback;
+            }
+            return KomponenPenilaianPkl::query();
+        }
+
+        return $query;
+    }
+
+    public function exportBerkasByDosen(Request $request): StreamedResponse
+    {
+        $this->authorizeAdmin();
+        return $this->downloadBerkasZip($request);
+    }
+
+    public function exportBerkasDosenMahasiswa(Request $request): StreamedResponse
+    {
+        $this->authorizeLecturerAction();
+        $dosen = $this->currentDosen();
+        return $this->downloadBerkasZip($request, $dosen->id_dosen);
+    }
+
+    private function downloadBerkasZip(Request $request, ?string $onlyDosenId = null): StreamedResponse
+    {
+        $query = PengajuanPkl::query()
+            ->with(['mahasiswaRegistrasi', 'dosenPembimbing', 'berkasSeminar'])
+            ->whereNotNull('dosen_pembimbing_id');
+
+        if ($onlyDosenId) {
+            $query->where('dosen_pembimbing_id', $onlyDosenId);
+        } elseif ($request->filled('dosen_id')) {
+            $query->where('dosen_pembimbing_id', $request->input('dosen_id'));
+        }
+        $this->applySemesterFilter($query, $request->input('id_semester'));
+
+        $submissions = $query->get();
+
+        $zipFileName = 'Berkas_PKL_Berdasarkan_Dosen_' . date('Ymd_His') . '.zip';
+        $tempZipPath = storage_path('app/' . $zipFileName);
+
+        $zip = new \ZipArchive();
+        if ($zip->open($tempZipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            abort(500, 'Tidak dapat membuat berkas ZIP.');
+        }
+
+        foreach ($submissions as $item) {
+            $namaDosen = $this->sanitizeFolderName($item->dosenPembimbing?->nama_dosen ?? 'Tanpa_Dosen');
+            $namaMhs = $this->sanitizeFolderName($item->mahasiswaRegistrasi?->nama_mahasiswa ?? 'Mahasiswa_' . $item->id);
+            $statusText = $item->status === self::STATUS_SELESAI ? 'Selesai' : 'Belum Selesai';
+
+            // Format nama folder sesuai instruksi user:
+            // contoh: "Folder Sa’dillah (ainur rahim setiawan) - Selesai"
+            $folderName = "Folder {$namaDosen} ({$namaMhs}) - {$statusText}";
+
+            $filesToAdd = [];
+
+            $directColumns = [
+                'berkas_proposal' => '01_Proposal',
+                'berkas_bukti_survei' => '02_Bukti_Survei',
+                'berkas_surat_balasan' => '03_Surat_Balasan_Instansi',
+                'berkas_logbook' => '04_Logbook',
+                'berkas_kartu_bimbingan' => '05_Kartu_Bimbingan',
+                'berkas_draft_laporan' => '06_Draft_Laporan',
+                'berkas_nilai_pamong' => '07_Nilai_Pamong',
+                'berkas_persetujuan_pamong' => '08_Persetujuan_Pamong',
+                'berkas_laporan_revisi' => '13_Laporan_Revisi',
+                'berkas_lembar_pengesahan' => '14_Lembar_Pengesahan',
+            ];
+
+            foreach ($directColumns as $col => $prefix) {
+                if (!empty($item->{$col}) && is_string($item->{$col})) {
+                    $filesToAdd[$prefix] = $item->{$col};
+                }
+            }
+
+            $seminarDocLabels = [
+                'proposal' => '01_Proposal',
+                'surat_jalan_pkl' => '02_Surat_Jalan_PKL',
+                'surat_balasan_instansi' => '03_Surat_Balasan_Instansi',
+                'kartu_konsultasi' => '05_Kartu_Konsultasi',
+                'draft_laporan' => '06_Draft_Laporan',
+                'transkrip_sementara' => '07_Transkrip_Sementara',
+                'krs' => '08_KRS',
+                'lampiran_gambar_kerja' => '09_Lampiran_Gambar_Kerja',
+                'lampiran_rab' => '10_Lampiran_RAB',
+                'formulir_pendaftaran_ujian' => '11_Formulir_Pendaftaran_Ujian',
+                'berita_acara_ujian' => '12_Berita_Acara_Ujian',
+                'formulir_nilai' => '13_Formulir_Nilai',
+                'permohonan_revisi' => '14_Permohonan_Revisi',
+                'laporan_final' => '15_Laporan_Final',
+                'lampiran_teknis' => '16_Lampiran_Teknis',
+                'rekap_nilai' => '17_Rekap_Nilai',
+            ];
+
+            foreach ($item->berkasSeminar as $doc) {
+                if (!empty($doc->path_berkas)) {
+                    $prefix = $seminarDocLabels[$doc->jenis_berkas] ?? ('Dokumen_' . $doc->jenis_berkas);
+                    $filesToAdd[$prefix] = $doc->path_berkas;
+                }
+            }
+
+            foreach ($filesToAdd as $label => $relPath) {
+                $absolutePath = $this->resolveLocalFilePath($relPath);
+                if ($absolutePath && file_exists($absolutePath)) {
+                    $ext = pathinfo($absolutePath, PATHINFO_EXTENSION);
+                    $entryName = "{$folderName}/{$label}." . ($ext ?: 'pdf');
+                    $zip->addFile($absolutePath, $entryName);
+                }
+            }
+        }
+
+        $zip->close();
+
+        return response()->streamDownload(function () use ($tempZipPath) {
+            $stream = fopen($tempZipPath, 'rb');
+            fpassthru($stream);
+            fclose($stream);
+            @unlink($tempZipPath);
+        }, $zipFileName, [
+            'Content-Type' => 'application/zip',
+        ]);
+    }
+
+    private function sanitizeFolderName(string $name): string
+    {
+        return preg_replace('/[\\/\\\\:*?"<>|]/u', '_', trim($name));
+    }
+
+    private function resolveLocalFilePath(string $path): ?string
+    {
+        $normalized = str_replace('\\', '/', $path);
+        $candidates = [
+            storage_path('app/' . $normalized),
+            storage_path('app/public/' . $normalized),
+            public_path('storage/' . $normalized),
+            storage_path('app/private/' . $normalized),
+        ];
+        foreach ($candidates as $cand) {
+            if (file_exists($cand) && is_file($cand)) {
+                return $cand;
+            }
+        }
+        return null;
     }
 
     private function weightedFinalScore(PengajuanPkl $pengajuan): ?float

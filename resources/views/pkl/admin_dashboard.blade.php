@@ -203,6 +203,9 @@
             <a href="{{ route('pkl.admin.rekap-nilai') }}" class="btn btn-outline-success fw-semibold m-1">
                 <i class="ti ti-file-spreadsheet me-1"></i> Rekap Nilai
             </a>
+            <a href="{{ route('pkl.admin.export-berkas-dosen') }}" class="btn btn-outline-primary fw-semibold m-1" title="Unduh seluruh berkas mahasiswa bimbingan dikelompokkan per dosen dalam format ZIP">
+                <i class="ti ti-folder-down me-1"></i> Ekspor Berkas per Dosen (ZIP)
+            </a>
             <button type="button" class="btn btn-primary fw-semibold shadow-sm m-1" data-bs-toggle="modal" data-bs-target="#modalTambahPkl">
                 <i class="ti ti-plus me-2"></i> Pengajuan PKL Baru
             </button>

@@ -140,11 +140,14 @@
                     $('#listPengujiContainer').empty();
                     pengujiIndex = 0;
 
-                    const assignedExaminers = data.dosen_penguji || [];
+                    let assignedExaminers = data.dosen_penguji || [];
                     if (assignedExaminers.length === 0 && data.usulan_dosen_penguji) {
                         data.usulan_dosen_penguji.forEach(function(p) {
                             assignedExaminers.push({ id_dosen: p.dosen_id, pivot: { peran: p.peran } });
                         });
+                    }
+                    if (assignedExaminers.length === 0 && data.dosen_pembimbing_id) {
+                        assignedExaminers.push({ id_dosen: data.dosen_pembimbing_id, pivot: { peran: 'Ketua Penguji' } });
                     }
                     if (assignedExaminers.length > 0) {
                         assignedExaminers.forEach(function(p) {

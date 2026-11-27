@@ -49,10 +49,15 @@
     <div class="row mb-4">
         <div class="col-md-12">
             <div class="card border-0 shadow-sm rounded-4 bg-gradient text-white p-4 pkl-hero">
-                <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
                         <h2 class="fw-bold mb-1 text-white"><i class="ti ti-chalkboard text-info me-2"></i>Portal Dosen Pembimbing & Penguji PKL</h2>
                         <p class="text-white-50 mb-0">Pantau bimbingan mahasiswa bimbingan Anda serta jadwalkan/berikan penilaian ujian seminar PKL.</p>
+                    </div>
+                    <div>
+                        <a href="{{ route('pkl.dosen.export-berkas-mahasiswa') }}" class="btn btn-outline-light fw-semibold shadow-sm" title="Unduh berkas mahasiswa yang dibimbing dalam bentuk ZIP">
+                            <i class="ti ti-folder-down me-1"></i> Ekspor Berkas Bimbingan (ZIP)
+                        </a>
                     </div>
                 </div>
             </div>

@@ -775,6 +775,9 @@
             'draft_laporan' => 'Draft Laporan PKL',
             'kartu_konsultasi' => 'Kartu Konsultasi',
             'transkrip_sementara' => 'Transkrip Sementara',
+            'krs' => 'Kartu Rencana Studi (KRS)',
+            'lampiran_gambar_kerja' => 'Lampiran Gambar Kerja',
+            'lampiran_rab' => 'Lampiran RAB',
             'berkas_nilai_pamong' => 'Lembar Penilaian Pamong',
             'berkas_persetujuan_pamong' => 'Surat Persetujuan Pamong',
             'formulir_pendaftaran_ujian' => 'Formulir Pendaftaran Ujian',
@@ -1053,6 +1056,9 @@
                 'berkas_draft_laporan' => ['label' => 'Draft Laporan PKL', 'value' => $pengajuan->berkas_draft_laporan],
                 'berkas_kartu_bimbingan' => ['label' => 'Kartu Konsultasi / Bimbingan', 'value' => $pengajuan->berkas_kartu_bimbingan],
                 'transkrip_sementara' => ['label' => 'Transkrip Sementara', 'value' => $genericDocuments->get('transkrip_sementara')?->path_berkas],
+                'krs' => ['label' => 'Kartu Rencana Studi (KRS)', 'value' => $genericDocuments->get('krs')?->path_berkas],
+                'lampiran_gambar_kerja' => ['label' => 'Lampiran Gambar Kerja', 'value' => $genericDocuments->get('lampiran_gambar_kerja')?->path_berkas],
+                'lampiran_rab' => ['label' => 'Lampiran RAB', 'value' => $genericDocuments->get('lampiran_rab')?->path_berkas],
                 ];
                 @endphp
 

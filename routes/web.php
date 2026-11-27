@@ -308,9 +308,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dosen', [PklController::class, 'dosenIndex'])->name('dosen.index');
         Route::get('/dosen/bimbingan/{pengajuan}', [PklController::class, 'dosenDetail'])->name('dosen.bimbingan.detail');
         Route::get('/dosen/komponen-penilaian/{pengajuan}', [PklController::class, 'dosenComponents'])->name('dosen.komponen-penilaian');
+        Route::get('/dosen/get-nilai-bimbingan/{pengajuan}', [PklController::class, 'getNilaiBimbingan'])->name('dosen.get-nilai-bimbingan');
+        Route::post('/dosen/simpan-nilai-bimbingan/{pengajuan}', [PklController::class, 'simpanNilaiBimbingan'])->name('dosen.simpan-nilai-bimbingan');
+        Route::post('/dosen/selesai-pelaksanaan/{pengajuan}', [PklController::class, 'selesaiPelaksanaan'])->name('dosen.selesai-pelaksanaan');
         Route::post('/dosen/penilaian/{pengajuan}', [PklController::class, 'dosenSaveGrades'])->name('dosen.penilaian');
         Route::post('/dosen/{pengajuan}/acc-pembimbing', [PklController::class, 'routeMapAcc'])->name('dosen.acc-pembimbing');
         Route::post('/dosen/{pengajuan}/final-approval', [PklController::class, 'dosenFinalApproval'])->name('dosen.final-approval');
+        Route::get('/dosen/export-berkas-mahasiswa', [PklController::class, 'exportBerkasDosenMahasiswa'])->name('dosen.export-berkas-mahasiswa');
 
         Route::get('/admin', [PklController::class, 'adminIndex'])->name('admin.index');
         Route::post('/admin/pengajuan', [PklController::class, 'adminStore'])->name('admin.pengajuan.store');
@@ -327,6 +331,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/admin/penilaian-seminar/{pengajuan}', [PklController::class, 'saveAdminGrades'])->name('admin.penilaian.store');
         Route::get('/admin/rekap-nilai', [PklController::class, 'gradeRecap'])->name('admin.rekap-nilai');
         Route::get('/admin/rekap-nilai/export', [PklController::class, 'exportGradeRecap'])->name('admin.rekap-nilai.export');
+        Route::get('/admin/export-berkas-dosen', [PklController::class, 'exportBerkasByDosen'])->name('admin.export-berkas-dosen');
 
         Route::get('/admin/komponen-penilaian', [PklController::class, 'componentsIndex'])->name('admin.komponen.index');
         Route::post('/admin/komponen-penilaian', [PklController::class, 'componentStore'])->name('admin.komponen.store');

@@ -196,6 +196,46 @@
     </div>
 </div>
 
+<!-- Berkas Dokumen PKL Mahasiswa -->
+@php
+    $genericDocuments = $pengajuan->berkasSeminar->keyBy('jenis_berkas');
+    $allDocs = [
+        ['label' => 'Proposal ke Tempat PKL', 'path' => $pengajuan->berkas_proposal ?: $genericDocuments->get('proposal')?->path_berkas],
+        ['label' => 'Surat Jalan PKL', 'path' => $genericDocuments->get('surat_jalan_pkl')?->path_berkas],
+        ['label' => 'Surat Balasan Instansi', 'path' => $genericDocuments->get('surat_balasan_instansi')?->path_berkas],
+        ['label' => 'Draft Laporan PKL', 'path' => $pengajuan->berkas_draft_laporan ?: $genericDocuments->get('draft_laporan')?->path_berkas],
+        ['label' => 'Kartu Konsultasi / Bimbingan', 'path' => $pengajuan->berkas_kartu_bimbingan ?: $genericDocuments->get('kartu_konsultasi')?->path_berkas],
+        ['label' => 'Transkrip Sementara', 'path' => $genericDocuments->get('transkrip_sementara')?->path_berkas],
+        ['label' => 'Kartu Rencana Studi (KRS)', 'path' => $genericDocuments->get('krs')?->path_berkas],
+        ['label' => 'Lampiran Gambar Kerja', 'path' => $genericDocuments->get('lampiran_gambar_kerja')?->path_berkas],
+        ['label' => 'Lampiran RAB', 'path' => $genericDocuments->get('lampiran_rab')?->path_berkas],
+        ['label' => 'Laporan Revisi Final', 'path' => $pengajuan->berkas_laporan_revisi ?: $genericDocuments->get('laporan_final')?->path_berkas],
+        ['label' => 'Lembar Pengesahan', 'path' => $pengajuan->berkas_lembar_pengesahan ?: $genericDocuments->get('berkas_lembar_pengesahan')?->path_berkas],
+    ];
+@endphp
+<div class="card border-0 shadow-sm rounded-4 bg-white mb-4 p-4">
+    <h5 class="fw-bold text-slate-800 mb-3"><i class="ti ti-folders text-primary me-2"></i>Berkas & Dokumen PKL Mahasiswa</h5>
+    <div class="row g-2">
+        @php $hasDoc = false; @endphp
+        @foreach($allDocs as $doc)
+            @if($doc['path'])
+            @php $hasDoc = true; @endphp
+            <div class="col-md-4 col-sm-6">
+                <div class="p-2 border rounded-3 bg-light d-flex justify-content-between align-items-center">
+                    <span class="small fw-semibold text-truncate me-2" title="{{ $doc['label'] }}">{{ $doc['label'] }}</span>
+                    <a href="{{ url('pkl/view-file/' . $doc['path']) }}" target="_blank" class="btn btn-sm btn-outline-primary px-2 py-1 flex-shrink-0" style="font-size: 11px;">
+                        <i class="ti ti-eye me-1"></i> Lihat
+                    </a>
+                </div>
+            </div>
+            @endif
+        @endforeach
+        @if(!$hasDoc)
+            <div class="col-12 text-muted small fst-italic">Belum ada berkas yang diunggah oleh mahasiswa.</div>
+        @endif
+    </div>
+</div>
+
 <!-- Tabel Daftar Logbook / Aktivitas Bimbingan -->
 <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
     <div class="card-body p-4">
