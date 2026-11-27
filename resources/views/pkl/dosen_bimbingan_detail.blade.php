@@ -241,9 +241,9 @@
     <div class="card-body p-4">
         <h5 class="fw-bold text-slate-800 mb-3"><i class="ti ti-file-text text-info me-2"></i>Riwayat Logbook & Catatan Bimbingan</h5>
 
-        <div class="table-responsive">
+        <div class="table-responsive border rounded-3" style="max-height: 420px; overflow-y: auto;">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light text-uppercase text-secondary small">
+                <thead class="table-light text-uppercase text-secondary small" style="position: sticky; top: 0; z-index: 1;">
                     <tr>
                         <th>No</th>
                         <th>Tanggal</th>

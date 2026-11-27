@@ -373,13 +373,13 @@
                         @if (!empty($dokumenFormulir[$file]))<a class="mb-2 flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm font-semibold text-indigo-700" href="{{ route('pkl.route-map.document', ['dokumen' => $file]) }}"><span>{{ $label }}</span><span>↓</span></a>@else<div class="mb-2 flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-500"><span>{{ $label }}</span><span>Belum tersedia</span></div>@endif
                     @endforeach
             </div>
-            @if (!$showMahasiswa || in_array($pkl?->status, ['Revisi Laporan', 'Selesai'], true))
+            @if (!$showMahasiswa || in_array($pkl?->status, ['Ujian Seminar & Penilaian', 'Revisi Laporan', 'Selesai'], true))
             <div class="rounded-xl border border-slate-200 p-4"><h3 class="mb-3 text-sm font-bold">Dokumen Akhir PKL</h3>
-                @if ($showMahasiswa && $pkl?->status === 'Revisi Laporan')
-                    @foreach ([['formulir_pendaftaran_ujian','Formulir Pendaftaran Ujian'],['berita_acara_ujian','Berita Acara Ujian'],['formulir_nilai','Formulir Nilai'],['permohonan_revisi','Formulir Permohonan Revisi'],['laporan_final','Laporan Final'],['lampiran_teknis','Lampiran Teknis (AutoCAD / RAB)'],['rekap_nilai','Rekap Nilai']] as [$key,$label])
+                @if ($showMahasiswa && in_array($pkl?->status, ['Ujian Seminar & Penilaian', 'Revisi Laporan'], true))
+                    @foreach ([['formulir_pendaftaran_ujian','Formulir Pendaftaran Ujian'],['berita_acara_ujian','Berita Acara Ujian'],['formulir_nilai','Formulir Nilai'],['permohonan_revisi','Formulir Permohonan Revisi'],['laporan_final','Laporan Final'],['lampiran_gambar_kerja','Lampiran Gambar Kerja'],['lampiran_rab','Lampiran RAB']] as [$key,$label])
                         @php $doc = $pkl?->berkasSeminar?->firstWhere('jenis_berkas', $key); @endphp
                         <form action="{{ $routeMapUpload3 }}" method="POST" enctype="multipart/form-data" class="mb-3 rounded-lg border border-slate-200 p-3">@csrf<input type="hidden" name="jenis_dokumen" value="{{ $key }}">
-                            <label class="mb-2 block text-xs font-semibold text-slate-600">{{ $label }}<input class="rmap-input mt-1" type="file" name="file" accept="{{ $key === 'lampiran_teknis' ? '.pdf,.jpg,.jpeg,.png,.dwg,.dxf,.xls,.xlsx,.csv,.zip' : '.pdf,.jpg,.jpeg,.png' }}" required></label>
+                            <label class="mb-2 block text-xs font-semibold text-slate-600">{{ $label }}<input class="rmap-input mt-1" type="file" name="file" accept="{{ in_array($key, ['lampiran_teknis', 'lampiran_gambar_kerja', 'lampiran_rab'], true) ? '.pdf,.jpg,.jpeg,.png,.dwg,.dxf,.xls,.xlsx,.csv,.zip' : '.pdf,.jpg,.jpeg,.png' }}" required></label>
                             <div class="flex items-center justify-between gap-2"><span class="text-xs text-slate-500">{{ $doc?->status_verifikasi ?? 'Belum diunggah' }}</span><div class="flex gap-2">@if($doc)<a class="rmap-btn rmap-btn-secondary py-2" href="{{ route('pkl.file', ['path' => $doc->path_berkas]) }}" target="_blank">Lihat</a>@endif<button class="rmap-btn rmap-btn-primary py-2" type="submit">Unggah</button></div></div>
                         </form>
                     @endforeach

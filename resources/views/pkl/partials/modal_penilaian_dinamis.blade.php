@@ -54,17 +54,37 @@
                     // Kumpulkan semua dosen penilai (Pembimbing + Penguji)
                     let listPenilai = [];
                     
-                    if (pkl.dosen_pembimbing) {
-                        listPenilai.push({
-                            id: pkl.dosen_pembimbing.id_dosen,
-                            nama: pkl.dosen_pembimbing.nama_dosen + ' (Dosen Pembimbing)',
-                            badge: 'bg-primary-subtle text-primary',
-                            kategori: 'Pembimbing'
+                    let isPembimbingAlsoPenguji = false;
+                    if (pkl.dosen_pembimbing && pkl.dosen_penguji && pkl.dosen_penguji.length > 0) {
+                        isPembimbingAlsoPenguji = pkl.dosen_penguji.some(function(penguji) {
+                            return String(penguji.id_dosen) === String(pkl.dosen_pembimbing.id_dosen);
                         });
+                    }
+
+                    if (pkl.dosen_pembimbing) {
+                        if (isPembimbingAlsoPenguji) {
+                            listPenilai.push({
+                                id: pkl.dosen_pembimbing.id_dosen,
+                                nama: pkl.dosen_pembimbing.nama_dosen + ' (Penguji & Pembimbing)',
+                                badge: 'bg-primary-subtle text-primary',
+                                kategori: 'Penguji & Pembimbing'
+                            });
+                        } else {
+                            listPenilai.push({
+                                id: pkl.dosen_pembimbing.id_dosen,
+                                nama: pkl.dosen_pembimbing.nama_dosen + ' (Dosen Pembimbing)',
+                                badge: 'bg-primary-subtle text-primary',
+                                kategori: 'Pembimbing'
+                            });
+                        }
                     }
 
                     if (pkl.dosen_penguji && pkl.dosen_penguji.length > 0) {
                         pkl.dosen_penguji.forEach(function(penguji, index) {
+                            // Jika dosen pembimbing sama dengan penguji, komponennya digabung menjadi satu kategori Penguji & Pembimbing
+                            if (pkl.dosen_pembimbing && String(penguji.id_dosen) === String(pkl.dosen_pembimbing.id_dosen)) {
+                                return;
+                            }
                             listPenilai.push({
                                 id: penguji.id_dosen,
                                 nama: penguji.nama_dosen + ' (Dosen Penguji ' + (index + 1) + ')',
@@ -103,7 +123,12 @@
                         `;
 
                         // Loop komponen penilaian untuk dosen tersebut
-                        komponens.filter(function(komp) { return komp.penilai === dosen.kategori; }).forEach(function(komp) {
+                        komponens.filter(function(komp) { 
+                            if (dosen.kategori === 'Penguji & Pembimbing') {
+                                return komp.penilai === 'Pembimbing' || komp.penilai === 'Penguji';
+                            }
+                            return komp.penilai === dosen.kategori; 
+                        }).forEach(function(komp) {
                             let val = '';
                             
                             // Cek apakah data nilai untuk dosen dan komponen ini benar-benar ada
@@ -118,7 +143,9 @@
                             html += `
                                 <div class="col-md-6 mb-2">
                                     <label class="form-label small fw-semibold text-secondary mb-1">
-                                        ${komp.nama_komponen} <span class="text-muted">(${komp.bobot}%)</span>
+                                        ${komp.nama_komponen} 
+                                        ${dosen.kategori === 'Penguji & Pembimbing' ? `<span class="badge ${komp.penilai === 'Pembimbing' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info'} ms-1" style="font-size: 10px;">${komp.penilai}</span>` : ''}
+                                        <span class="text-muted">(${komp.bobot}%)</span>
                                     </label>
                                     <input type="number" step="0.01" min="0" max="100" 
                                            name="nilai[${dosen.id}][${komp.id}]" 

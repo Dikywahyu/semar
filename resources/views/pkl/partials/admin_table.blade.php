@@ -146,12 +146,12 @@
                         <button type="button" class="btn btn-sm btn-success btn-terapkan-usulan mt-2" data-id="{{ $item->id }}" data-dosen="{{ $item->dosen_pembimbing_id }}" data-tanggal="{{ $item->usulan_tanggal_seminar ?: $item->tanggal_seminar?->format('Y-m-d\TH:i') }}" data-ruangan="{{ $item->usulan_ruangan_seminar ?: $item->ruangan_seminar }}" data-usulan-pembimbing="{{ $item->usulan_nama_pembimbing }}">Tinjau plotting / jadwal</button>
                     @endif
                     @php
-                        $aktivitasTerakhir = $item->logAktivitas->sortByDesc('created_at')->take(4);
+                        $aktivitasTerakhir = $item->logAktivitas->sortByDesc('created_at');
                     @endphp
                     @if($aktivitasTerakhir->isNotEmpty())
                         <details class="mt-2 small">
-                            <summary class="text-primary fw-semibold" style="cursor:pointer">Riwayat aktivitas</summary>
-                            <div class="mt-2 border-start border-2 ps-2">
+                            <summary class="text-primary fw-semibold" style="cursor:pointer">Riwayat aktivitas ({{ $aktivitasTerakhir->count() }})</summary>
+                            <div class="mt-2 border-start border-2 ps-2" style="max-height: 220px; overflow-y: auto;">
                                 @foreach($aktivitasTerakhir as $aktivitas)
                                     <div class="mb-2">
                                         <strong>{{ $aktivitas->aksi }}</strong><br>
@@ -200,6 +200,8 @@
                                 'formulir_nilai',
                                 'permohonan_revisi',
                                 'laporan_final',
+                                'lampiran_gambar_kerja',
+                                'lampiran_rab',
                                 'lampiran_teknis',
                                 'rekap_nilai',
                             ];

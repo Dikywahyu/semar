@@ -893,7 +893,7 @@
             @endif
         @endif
 
-        @if($pengajuan->status === 'Revisi Laporan')
+        @if(in_array($pengajuan->status, ['Ujian Seminar & Penilaian', 'Revisi Laporan'], true))
         <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-warning">
             <h5 class="fw-bold mb-1"><i class="ti ti-file-check text-warning me-2"></i>Dokumen Akhir PKL</h5>
             <p class="text-muted small">Unggah semua dokumen ujian dan hasil revisi. Kelulusan diterbitkan setelah ACC akhir pembimbing dan nilai pembimbing tersimpan.</p>
@@ -904,8 +904,8 @@
                 'formulir_nilai' => 'Formulir Nilai',
                 'permohonan_revisi' => 'Formulir Permohonan Revisi (Setelah Ujian)',
                 'laporan_final' => 'Laporan Final',
-                'lampiran_teknis' => 'Lampiran Teknis (Gambar AutoCAD / RAB)',
-                'rekap_nilai' => 'Rekap Nilai',
+                'lampiran_gambar_kerja' => 'Lampiran Gambar Kerja',
+                'lampiran_rab' => 'Lampiran RAB',
                 ] as $kind => $label)
                 @php $doc = $genericDocuments->get($kind); @endphp
                 <div class="col-md-6">
@@ -913,7 +913,7 @@
                         @csrf
                         <input type="hidden" name="field" value="{{ $kind }}">
                         <label class="form-label fw-semibold small">{{ $label }}</label>
-                        <input type="file" name="file" class="form-control form-control-sm" accept="{{ $kind === 'lampiran_teknis' ? '.pdf,.jpg,.jpeg,.png,.dwg,.dxf,.xls,.xlsx,.csv,.zip' : '.pdf,.jpg,.jpeg,.png' }}" required>
+                        <input type="file" name="file" class="form-control form-control-sm" accept="{{ in_array($kind, ['lampiran_teknis', 'lampiran_gambar_kerja', 'lampiran_rab'], true) ? '.pdf,.jpg,.jpeg,.png,.dwg,.dxf,.xls,.xlsx,.csv,.zip' : '.pdf,.jpg,.jpeg,.png' }}" required>
                         <div class="d-flex justify-content-between align-items-center mt-2">
                             <span class="small {{ $doc ? ($doc->status_verifikasi === 'Valid' ? 'text-success' : ($doc->status_verifikasi === 'Ditolak' ? 'text-danger' : 'text-warning')) : 'text-muted' }}">
                                 {{ $doc ? $doc->status_verifikasi : 'Belum diunggah' }}
@@ -935,8 +935,9 @@
                     'formulir_nilai',
                     'permohonan_revisi',
                     'laporan_final',
+                    'lampiran_gambar_kerja',
+                    'lampiran_rab',
                     'lampiran_teknis',
-                    'rekap_nilai',
                 ];
                 $berkasLama = $arsipDokumen->reject(fn ($document, $kind) => in_array($kind, $berkasTahapAkhir, true));
             @endphp
@@ -1066,21 +1067,12 @@
                 <div class="col-md-12 border-bottom pb-3">
                     <label class="form-label fw-semibold small text-dark">{{ $data['label'] }} <span class="text-danger">*</span></label>
                     <div class="input-group input-group-sm">
-                        @if($field === 'transkrip_sementara')
                         <form action="{{ route('pkl.mahasiswa.upload-berkas-satuan', $pengajuan->id) }}" method="POST" enctype="multipart/form-data" class="input-group input-group-sm document-upload-form">
                             @csrf
                             <input type="hidden" name="field" value="{{ $field }}">
-                            <input type="file" name="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                            <input type="file" name="file" class="form-control" accept="{{ in_array($field, ['lampiran_gambar_kerja', 'lampiran_rab'], true) ? '.pdf,.jpg,.jpeg,.png,.dwg,.dxf,.xls,.xlsx,.csv,.zip' : '.pdf,.jpg,.jpeg,.png' }}" required>
                             <button class="btn btn-primary px-3" type="submit"><i class="ti ti-upload me-1"></i> Upload</button>
                         </form>
-                        @else
-                        <form action="{{ route('pkl.mahasiswa.upload-berkas-satuan', $pengajuan->id) }}" method="POST" enctype="multipart/form-data" class="input-group input-group-sm document-upload-form">
-                            @csrf
-                            <input type="hidden" name="field" value="{{ $field }}">
-                            <input type="file" name="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                            <button class="btn btn-primary px-3" type="submit"><i class="ti ti-upload me-1"></i> Upload</button>
-                        </form>
-                        @endif
                     </div>
                     <div class="mt-1 status-file-{{ $field }}">
                         @if($data['value'])
@@ -1138,27 +1130,35 @@
             </div>
             @else
             <div class="alert alert-light border text-muted small py-2 px-3 mb-3">
-                <i class="ti ti-info-circle me-1"></i> Jadwal seminar belum ditetapkan. Isi tanggal, ruangan, dan dewan penguji di bawah.
+                <i class="ti ti-info-circle me-1"></i> Jadwal seminar belum ditetapkan. Isi tanggal dan ruangan di bawah.
             </div>
             @endif
 
             @if($pengajuan->status === 'Dijadwalkan Ujian')
             <form action="{{ route('pkl.mahasiswa.usulkan-jadwal', $pengajuan->id) }}" method="POST" class="border rounded-3 p-3 mb-4 bg-light">
                 @csrf
-                <h6 class="fw-bold small mb-3">{{ $pengajuan->tanggal_seminar ? 'Ubah Jadwal & Dewan Penguji' : 'Tetapkan Jadwal & Dewan Penguji' }}</h6>
+                <h6 class="fw-bold small mb-3">{{ $pengajuan->tanggal_seminar ? 'Ubah Waktu & Lokasi Ujian' : 'Tetapkan Waktu & Lokasi Ujian' }}</h6>
                 <label class="form-label small">Tanggal dan waktu ujian</label>
                 <input type="datetime-local" name="tanggal_seminar" value="{{ $pengajuan->tanggal_seminar?->format('Y-m-d\TH:i') ?? $pengajuan->usulan_tanggal_seminar?->format('Y-m-d\TH:i') }}" class="form-control form-control-sm mb-2" min="{{ now()->addHour()->format('Y-m-d\TH:i') }}" required>
                 <label class="form-label small">Ruang ujian</label>
                 <input type="text" name="ruangan_seminar" value="{{ $pengajuan->ruangan_seminar ?? $pengajuan->usulan_ruangan_seminar }}" class="form-control form-control-sm mb-2" maxlength="255" placeholder="Contoh: Ruang Sidang 2 / tautan konferensi" required>
-                <label class="form-label small">Dewan penguji</label>
-                <select name="penguji_ids[]" class="form-select form-select-sm mb-2 pkl-examiner-select" multiple data-placeholder="Pilih satu atau beberapa dosen penguji" required>
-                    @foreach($dosensPenguji as $dosenPilihan)
-                    <option value="{{ $dosenPilihan->id_dosen }}" @selected($pengajuan->dosenPenguji->contains('id_dosen', $dosenPilihan->id_dosen))>{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>
-                    @endforeach
-                </select>
+                
+                <div class="mb-2 p-2 bg-white rounded border">
+                    <label class="form-label small fw-semibold text-secondary d-block mb-1">Dewan Penguji (Ditetapkan Sistem/Admin):</label>
+                    <div class="d-flex flex-wrap gap-1">
+                        @forelse($pengajuan->dosenPenguji as $penguji)
+                        <span class="badge bg-light text-dark border">
+                            <i class="ti ti-user-check me-1 text-primary"></i>{{ $penguji->nama_dosen }} ({{ $penguji->pivot->peran ?? 'Penguji' }})
+                        </span>
+                        @empty
+                        <span class="text-muted small fst-italic">Penguji mengikuti dosen pembimbing atau ditetapkan admin.</span>
+                        @endforelse
+                    </div>
+                </div>
+
                 <label class="form-label small">Catatan (opsional)</label>
                 <textarea name="catatan_usulan_jadwal" class="form-control form-control-sm mb-2" rows="2" placeholder="Alasan atau waktu alternatif">{{ $pengajuan->catatan_usulan_jadwal }}</textarea>
-                <small class="text-muted d-block mb-2">Jadwal dan dewan penguji langsung ditetapkan setelah disimpan. Anda atau admin dapat mengubahnya sebelum ujian dimulai.</small>
+                <small class="text-muted d-block mb-2">Waktu dan lokasi ujian langsung diperbarui setelah disimpan.</small>
                 <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">{{ $pengajuan->tanggal_seminar ? 'Simpan Perubahan Jadwal' : 'Tetapkan Jadwal Ujian' }}</button>
             </form>
             @endif
@@ -1195,7 +1195,7 @@
                         <h5 class="fw-bold text-danger mb-0">Catatan & Penolakan </h5>
                     </div>
 
-                    <div class="p-3 bg-white rounded-3 border border-danger-subtle shadow-sm mb-3">
+                    <div class="p-3 bg-white rounded-3 border border-danger-subtle shadow-sm mb-3" style="max-height: 250px; overflow-y: auto;">
                         <p class="text-dark fw-medium mb-0" style="white-space: pre-line;">{{ $pengajuan->catatan_admin }}</p>
                     </div>
 

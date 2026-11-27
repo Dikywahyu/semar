@@ -155,7 +155,7 @@ class PklController extends Controller
         $allowedStageStatus = match ($tahap) {
             1 => [self::STATUS_PENGAJUAN, self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI],
             2 => [self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI],
-            3 => [self::STATUS_REVISI],
+            3 => [self::STATUS_SEMINAR, self::STATUS_REVISI],
             default => abort(404),
         };
         abort_unless(in_array($pengajuan->status, $allowedStageStatus, true), 409, 'Unggahan dokumen tidak tersedia pada status PKL saat ini.');
@@ -163,7 +163,7 @@ class PklController extends Controller
         $fields = match ($tahap) {
             1 => ['proposal', 'surat_jalan_pkl', 'surat_balasan_instansi'],
             2 => ['draft_laporan', 'kartu_bimbingan', 'transkrip_sementara'],
-            3 => ['formulir_pendaftaran_ujian', 'berita_acara_ujian', 'formulir_nilai', 'permohonan_revisi', 'laporan_final', 'lampiran_teknis', 'rekap_nilai'],
+            3 => ['formulir_pendaftaran_ujian', 'berita_acara_ujian', 'formulir_nilai', 'permohonan_revisi', 'laporan_final', 'lampiran_gambar_kerja', 'lampiran_rab', 'lampiran_teknis'],
             default => abort(404),
         };
         $jenis = (string) $request->input('jenis_dokumen');
@@ -390,21 +390,12 @@ class PklController extends Controller
             'tanggal_seminar' => ['required', 'date', 'after:now'],
             'ruangan_seminar' => ['required', 'string', 'max:255'],
             'catatan_usulan_jadwal' => ['nullable', 'string', 'max:2000'],
-            'penguji_ids' => ['required', 'array', 'min:1'],
-            'penguji_ids.*' => ['required', 'distinct', Rule::exists('dosens', 'id_dosen')->where('aktif', true)],
         ]);
+        $this->ensurePembimbingIsPenguji($pengajuan);
         $tanggalSebelumnya = $pengajuan->tanggal_seminar?->format('Y-m-d H:i:s');
         $ruanganSebelumnya = $pengajuan->ruangan_seminar;
-        $usulanPenguji = collect($validated['penguji_ids'])->values()->map(
-            fn($dosenId, $index) => [
-                'dosen_id' => (string) $dosenId,
-                'peran' => $index === 0 ? 'Ketua Penguji' : 'Anggota Penguji',
-            ]
-        )->all();
-        DB::transaction(function () use ($pengajuan, $validated, $usulanPenguji) {
-            $pengajuan->dosenPenguji()->sync(collect($usulanPenguji)->mapWithKeys(
-                fn($penguji) => [$penguji['dosen_id'] => ['peran' => $penguji['peran']]]
-            )->all());
+
+        DB::transaction(function () use ($pengajuan, $validated) {
             $pengajuan->update([
                 'tanggal_seminar' => $validated['tanggal_seminar'],
                 'ruangan_seminar' => $validated['ruangan_seminar'],
@@ -418,13 +409,13 @@ class PklController extends Controller
         });
 
         $isReschedule = $tanggalSebelumnya !== null || $ruanganSebelumnya !== null;
-        $namaPenguji = Dosen::query()->whereIn('id_dosen', $validated['penguji_ids'])->pluck('nama_dosen')->implode(', ');
+        $namaPenguji = $pengajuan->dosenPenguji()->pluck('nama_dosen')->implode(', ');
         $this->logPklActivity(
             $pengajuan,
             $isReschedule ? 'Jadwal Ujian Direvisi Mahasiswa' : 'Jadwal Ujian Ditetapkan Mahasiswa',
             'Mahasiswa ' . (auth()->user()->name ?? '') . ($isReschedule ? ' mengubah' : ' menetapkan')
                 . ' jadwal ujian menjadi ' . $validated['tanggal_seminar'] . ' di ' . $validated['ruangan_seminar']
-                . '. Dewan penguji: ' . $namaPenguji
+                . ($namaPenguji ? '. Dewan penguji: ' . $namaPenguji : '')
                 . (($validated['catatan_usulan_jadwal'] ?? '') !== '' ? '. Catatan: ' . $validated['catatan_usulan_jadwal'] : '')
                 . '. Jadwal resmi langsung diperbarui.'
         );
@@ -433,8 +424,8 @@ class PklController extends Controller
         return back()->with(
             $invitationSent ? 'success' : 'warning',
             $invitationSent
-                ? ($isReschedule ? 'Jadwal dan dewan penguji berhasil diperbarui. Undangan terbaru telah dikirim.' : 'Jadwal dan dewan penguji langsung ditetapkan. Undangan telah dikirim.')
-                : 'Jadwal dan dewan penguji berhasil ditetapkan, tetapi undangan belum terkirim karena email dosen belum tersedia.'
+                ? ($isReschedule ? 'Jadwal ujian berhasil diperbarui. Undangan terbaru telah dikirim.' : 'Jadwal ujian berhasil ditetapkan. Undangan telah dikirim.')
+                : 'Jadwal ujian berhasil ditetapkan, tetapi undangan belum terkirim karena email dosen belum tersedia.'
         );
     }
 
@@ -823,9 +814,9 @@ class PklController extends Controller
         ];
         $isFinalDocument = ! in_array($field, array_merge($earlyStageFields, $preExamFields), true);
         $allowedStatuses = $isFinalDocument
-            ? [self::STATUS_REVISI]
+            ? [self::STATUS_SEMINAR, self::STATUS_REVISI]
             : (in_array($field, $preExamFields, true)
-                ? [self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI]
+                ? [self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI, self::STATUS_UJIAN, self::STATUS_SEMINAR, self::STATUS_REVISI]
                 : [self::STATUS_PENGAJUAN, self::STATUS_PELAKSANAAN, self::STATUS_VERIFIKASI]);
         abort_unless(in_array($pengajuan->status, $allowedStatuses, true), 409, 'Berkas belum dapat diunggah pada tahap ini.');
         $technicalAttachment = in_array($field, ['lampiran_teknis', 'lampiran_gambar_kerja', 'lampiran_rab'], true);
@@ -1339,6 +1330,8 @@ class PklController extends Controller
             'formulir_nilai',
             'permohonan_revisi',
             'laporan_final',
+            'lampiran_gambar_kerja',
+            'lampiran_rab',
             'lampiran_teknis',
             'rekap_nilai',
         ];
@@ -1472,10 +1465,20 @@ class PklController extends Controller
         }
         abort_if($components->isEmpty(), 422, 'Belum ada komponen penilaian untuk semester ini.');
         foreach ($allowedDosenIds->keys() as $dosenId) {
-            $category = $dosenId === 'PENANGGUNG_LAPANGAN'
-                ? 'Instansi'
-                : ($dosenId === $pengajuan->dosen_pembimbing_id ? 'Pembimbing' : 'Penguji');
-            $expectedComponentIds = $components->filter(fn($component) => $component->penilai === $category)
+            $isPembimbing = (string) $dosenId === (string) $pengajuan->dosen_pembimbing_id;
+            $isPenguji = $pengajuan->dosenPenguji()->where('dosens.id_dosen', $dosenId)->exists();
+
+            if ($dosenId === 'PENANGGUNG_LAPANGAN') {
+                $categories = ['Instansi'];
+            } elseif ($isPembimbing && $isPenguji) {
+                $categories = ['Pembimbing', 'Penguji'];
+            } elseif ($isPembimbing) {
+                $categories = ['Pembimbing'];
+            } else {
+                $categories = ['Penguji'];
+            }
+
+            $expectedComponentIds = $components->filter(fn($component) => in_array($component->penilai, $categories, true))
                 ->keys()->map(fn($id) => (string) $id)->all();
             $submittedIds = array_map('strval', array_keys($validated['nilai'][$dosenId] ?? []));
             abort_if(array_diff($expectedComponentIds, $submittedIds), 422, 'Nilai seluruh komponen untuk setiap kategori penilai wajib diisi.');
@@ -1486,13 +1489,23 @@ class PklController extends Controller
             $weightedValues = [];
             foreach ($validated['nilai'] as $dosenId => $scores) {
                 abort_unless($allowedDosenIds->has((string) $dosenId), 422, 'Penilai tidak sesuai dengan pengajuan ini.');
+                $isPembimbing = (string) $dosenId === (string) $pengajuan->dosen_pembimbing_id;
+                $isPenguji = $pengajuan->dosenPenguji()->where('dosens.id_dosen', $dosenId)->exists();
+
+                if ((string) $dosenId === 'PENANGGUNG_LAPANGAN') {
+                    $allowedCategories = ['Instansi'];
+                } elseif ($isPembimbing && $isPenguji) {
+                    $allowedCategories = ['Pembimbing', 'Penguji'];
+                } elseif ($isPembimbing) {
+                    $allowedCategories = ['Pembimbing'];
+                } else {
+                    $allowedCategories = ['Penguji'];
+                }
+
                 foreach ($scores as $komponenId => $score) {
                     $komponen = $komponens->get($komponenId);
                     abort_unless($komponen, 422, 'Komponen penilaian tidak valid.');
-                    $expectedCategory = (string) $dosenId === 'PENANGGUNG_LAPANGAN'
-                        ? 'Instansi'
-                        : ((string) $dosenId === $pengajuan->dosen_pembimbing_id ? 'Pembimbing' : 'Penguji');
-                    abort_unless($komponen->penilai === $expectedCategory, 422, 'Komponen tidak sesuai kategori penilai.');
+                    abort_unless(in_array($komponen->penilai, $allowedCategories, true), 422, 'Komponen tidak sesuai kategori penilai.');
                     validator(['score' => $score], ['score' => ['required', 'numeric', 'between:0,100']])->validate();
 
                     DetailNilaiPkl::updateOrCreate(
@@ -2453,6 +2466,8 @@ class PklController extends Controller
             'formulir_nilai' => ['label' => 'Formulir Nilai', 'stage' => 3],
             'permohonan_revisi' => ['label' => 'Formulir Permohonan Revisi', 'stage' => 3],
             'laporan_final' => ['label' => 'Laporan Final', 'stage' => 3],
+            'lampiran_gambar_kerja' => ['label' => 'Lampiran Gambar Kerja', 'stage' => 3],
+            'lampiran_rab' => ['label' => 'Lampiran RAB', 'stage' => 3],
             'lampiran_teknis' => ['label' => 'Lampiran Teknis (Gambar AutoCAD / RAB)', 'stage' => 3],
             'rekap_nilai' => ['label' => 'Rekap Nilai', 'stage' => 3],
         ];
@@ -2492,16 +2507,22 @@ class PklController extends Controller
             'formulir_nilai',
             'permohonan_revisi',
             'laporan_final',
-            'lampiran_teknis',
-            'rekap_nilai',
         ];
-        $documents = $pengajuan->berkasSeminar()->whereIn('jenis_berkas', $requiredFinalDocuments)->get()->keyBy('jenis_berkas');
+        $documents = $pengajuan->berkasSeminar()->get()->keyBy('jenis_berkas');
         if (collect($requiredFinalDocuments)->contains(fn($jenis) => ! $documents->get($jenis)?->path_berkas)) {
             return false;
         }
         if (collect($requiredFinalDocuments)->contains(
             fn($jenis) => $documents->get($jenis)?->status_verifikasi !== 'Valid'
         )) {
+            return false;
+        }
+
+        $hasGambarKerja = $documents->get('lampiran_gambar_kerja')?->path_berkas && $documents->get('lampiran_gambar_kerja')?->status_verifikasi === 'Valid';
+        $hasRab = $documents->get('lampiran_rab')?->path_berkas && $documents->get('lampiran_rab')?->status_verifikasi === 'Valid';
+        $hasTeknisLegacy = $documents->get('lampiran_teknis')?->path_berkas && $documents->get('lampiran_teknis')?->status_verifikasi === 'Valid';
+
+        if (! (($hasGambarKerja && $hasRab) || $hasTeknisLegacy)) {
             return false;
         }
 
@@ -2524,12 +2545,23 @@ class PklController extends Controller
             'formulir_nilai',
             'permohonan_revisi',
             'laporan_final',
-            'lampiran_teknis',
-            'rekap_nilai',
         ];
         $documents = $pengajuan->berkasSeminar()
-            ->whereIn('jenis_berkas', $requiredFinalDocuments)
             ->pluck('path_berkas', 'jenis_berkas');
+
+        foreach ($requiredFinalDocuments as $jenis) {
+            if (empty($documents[$jenis])) {
+                return false;
+            }
+        }
+
+        $hasGambarKerja = !empty($documents['lampiran_gambar_kerja']);
+        $hasRab = !empty($documents['lampiran_rab']);
+        $hasTeknisLegacy = !empty($documents['lampiran_teknis']);
+
+        if (! (($hasGambarKerja && $hasRab) || $hasTeknisLegacy)) {
+            return false;
+        }
 
         $pembimbingComponents = $this->componentsForSubmission($pengajuan)
             ->where('penilai', 'Pembimbing')
