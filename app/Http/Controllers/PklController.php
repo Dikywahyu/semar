@@ -207,12 +207,31 @@ class PklController extends Controller
         return back()->with('success', 'Berkas berhasil diunggah.');
     }
 
+    private function isPengajuanApproved(PengajuanPkl $pengajuan): bool
+    {
+        if ($pengajuan->status_verifikasi_pengajuan === 'Disetujui') {
+            return true;
+        }
+        if ($pengajuan->status_verifikasi_pengajuan === 'Ditolak') {
+            return false;
+        }
+        if ($pengajuan->status === self::STATUS_PENGAJUAN && filled($pengajuan->catatan_admin)) {
+            return false;
+        }
+        if ($pengajuan->status !== self::STATUS_PENGAJUAN || filled($pengajuan->dosen_pembimbing_id)) {
+            return true;
+        }
+
+        return false;
+    }
+
     public function mahasiswaPlotPembimbing(Request $request, PengajuanPkl $pengajuan): RedirectResponse
     {
         $this->authorizeStudentAction();
         $this->assertOwnSubmission($pengajuan);
         abort_unless($pengajuan->status === self::STATUS_PENGAJUAN, 409, 'Pembimbing hanya dapat diusulkan sebelum pelaksanaan PKL dimulai.');
         abort_unless(! $pengajuan->dosen_pembimbing_id, 409, 'Dosen pembimbing sudah ditetapkan. Hubungi Super Admin atau Kaprodi jika perlu diubah.');
+        abort_unless($this->isPengajuanApproved($pengajuan), 409, 'Pengajuan tempat PKL harus diverifikasi dan disetujui terlebih dahulu oleh Admin atau Kaprodi sebelum memilih dosen pembimbing.');
         abort_unless($this->hasInitialRegistrationDocuments($pengajuan), 409, 'Lengkapi formulir dan unggah Proposal, Surat Jalan PKL, dan Surat Balasan Instansi sebelum memilih dosen pembimbing.');
         $validated = $request->validate([
             'dosen_pembimbing_id' => ['required', Rule::exists('dosens', 'id_dosen')->where('aktif', true)],
@@ -621,6 +640,7 @@ class PklController extends Controller
             $validated['berkas_proposal'] = $this->storeFile($request->file('berkas_proposal'));
         }
         $validated['status'] = self::STATUS_PENGAJUAN;
+        $validated['status_verifikasi_pengajuan'] = 'Menunggu Verifikasi';
         $pengajuan = PengajuanPkl::create($validated);
         $this->logPklActivity($pengajuan, 'Pengajuan PKL', 'Mahasiswa mendaftarkan PKL pada ' . now()->format('d-m-Y H:i') . '.');
         foreach ($dokumenAwal as $field => $file) {
@@ -666,6 +686,78 @@ class PklController extends Controller
         $pengajuan->update($validated);
 
         return $this->successResponse($request, 'Pengajuan PKL berhasil diperbarui.', $pengajuan);
+    }
+
+    public function mahasiswaGantiInstansi(Request $request, PengajuanPkl $pengajuan): JsonResponse|RedirectResponse
+    {
+        $this->authorizeStudentAction();
+        $this->assertOwnSubmission($pengajuan);
+        abort_unless($pengajuan->status === self::STATUS_PENGAJUAN, 409, 'Perubahan instansi hanya dapat dilakukan pada tahap pengajuan.');
+
+        $validated = $request->validate([
+            'nama_instansi' => ['required', 'string', 'max:255'],
+            'unit_kerja' => ['required', 'string', 'max:255'],
+            'alamat_instansi' => ['required', 'string', 'max:5000'],
+            'tanggal_mulai' => ['required', 'date'],
+            'tanggal_selesai' => ['required', 'date', 'after:tanggal_mulai'],
+            'berkas_proposal' => ['nullable', 'file', 'mimes:pdf', 'max:2048'],
+            'surat_jalan_pkl' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'surat_balasan_instansi' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+        ]);
+
+        foreach (['berkas_proposal', 'surat_jalan_pkl', 'surat_balasan_instansi'] as $field) {
+            abort_if($request->hasFile($field) && $request->file($field)->getSize() > 2 * 1024 * 1024, 422, 'Setiap berkas pendaftaran maksimal 2MB.');
+        }
+
+        $fileFields = ['berkas_proposal', 'surat_jalan_pkl', 'surat_balasan_instansi'];
+        $dokumenAwal = collect(array_diff($fileFields, ['berkas_proposal']))
+            ->filter(fn($field) => $request->hasFile($field))
+            ->mapWithKeys(fn($field) => [$field => $request->file($field)])
+            ->all();
+
+        foreach ($fileFields as $field) {
+            unset($validated[$field]);
+        }
+
+        if ($request->hasFile('berkas_proposal')) {
+            $validated['berkas_proposal'] = $this->storeFile($request->file('berkas_proposal'));
+        }
+
+        $validated['status_verifikasi_pengajuan'] = 'Menunggu Verifikasi';
+        $validated['catatan_admin'] = null;
+        $validated['alasan_penolakan'] = null;
+        $validated['verified_pengajuan_by'] = null;
+        $validated['verified_pengajuan_at'] = null;
+
+        $namaInstansiLama = $pengajuan->nama_instansi;
+        $pengajuan->update($validated);
+
+        foreach ($dokumenAwal as $field => $file) {
+            $this->storePklDocument($pengajuan, $field, $file);
+        }
+
+        if ($request->hasFile('berkas_proposal')) {
+            $pengajuan->berkasSeminar()->updateOrCreate(
+                ['jenis_berkas' => 'proposal'],
+                [
+                    'path_berkas' => $pengajuan->berkas_proposal,
+                    'status_verifikasi' => 'Pending',
+                    'catatan_verifikator' => null,
+                    'verified_by' => null,
+                    'verified_at' => null,
+                    'approved_by' => null,
+                    'approved_at' => null,
+                ]
+            );
+        }
+
+        $this->logPklActivity(
+            $pengajuan,
+            'Pengajuan Instansi Baru',
+            'Mahasiswa mengajukan instansi baru: "' . $pengajuan->nama_instansi . '" (sebelumnya "' . $namaInstansiLama . '"). Menunggu verifikasi oleh Admin / Kaprodi.'
+        );
+
+        return $this->successResponse($request, 'Pengajuan instansi baru berhasil dikirim dan menunggu verifikasi Admin / Kaprodi.', $pengajuan);
     }
 
     public function uploadRevisi(Request $request, PengajuanPkl $pengajuan): JsonResponse|RedirectResponse
@@ -874,8 +966,17 @@ class PklController extends Controller
             'semester_master_id' => ['required', 'exists:semesters,id'],
             'sk_tugas' => ['nullable', 'string', 'max:255'],
             'status' => ['required', Rule::in($this->statuses())],
+            'status_verifikasi_pengajuan' => ['nullable', Rule::in(['Menunggu Verifikasi', 'Disetujui', 'Ditolak'])],
             'catatan_admin' => ['nullable', 'string', 'max:5000'],
+            'alasan_penolakan' => ['nullable', 'string', 'max:5000'],
         ]);
+        if (!empty($validated['status_verifikasi_pengajuan'])) {
+            $validated['verified_pengajuan_by'] = auth()->id();
+            $validated['verified_pengajuan_at'] = now();
+            if ($validated['status_verifikasi_pengajuan'] === 'Ditolak') {
+                $validated['catatan_admin'] = $validated['alasan_penolakan'] ?? $validated['catatan_admin'] ?? null;
+            }
+        }
         $statusSebelumnya = $pengajuan->status;
         $pembimbingSebelumnya = $pengajuan->dosen_pembimbing_id;
         $tanggalSebelumnya = $pengajuan->tanggal_seminar?->format('Y-m-d H:i:s');
@@ -927,6 +1028,62 @@ class PklController extends Controller
         }
 
         return back()->with('success', 'Data pengajuan PKL berhasil diperbarui.');
+    }
+
+    public function adminVerifySubmission(Request $request, PengajuanPkl $pengajuan): JsonResponse|RedirectResponse
+    {
+        $this->authorizeAdmin();
+        abort_unless($pengajuan->status === self::STATUS_PENGAJUAN, 409, 'Hanya pengajuan pada tahap awal yang dapat diverifikasi instansinya.');
+
+        $validated = $request->validate([
+            'keputusan' => ['required', Rule::in(['disetujui', 'ditolak'])],
+            'catatan' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        if ($validated['keputusan'] === 'ditolak') {
+            abort_if(empty(trim((string) $validated['catatan'])), 422, 'Alasan penolakan wajib diisi agar mahasiswa mengetahui penyebab penolakan dan dapat mencari instansi lain.');
+        }
+
+        $statusVerifikasi = $validated['keputusan'] === 'disetujui' ? 'Disetujui' : 'Ditolak';
+        $user = auth()->user();
+
+        $updateData = [
+            'status_verifikasi_pengajuan' => $statusVerifikasi,
+            'verified_pengajuan_by' => $user->id,
+            'verified_pengajuan_at' => now(),
+        ];
+
+        if ($validated['keputusan'] === 'ditolak') {
+            $updateData['catatan_admin'] = $validated['catatan'];
+            $updateData['alasan_penolakan'] = $validated['catatan'];
+        } else {
+            $updateData['catatan_admin'] = null;
+            $updateData['alasan_penolakan'] = null;
+        }
+
+        $pengajuan->update($updateData);
+
+        $actionName = $validated['keputusan'] === 'disetujui' ? 'Verifikasi Pengajuan: Disetujui' : 'Verifikasi Pengajuan: Ditolak';
+        $deskripsi = $validated['keputusan'] === 'disetujui'
+            ? ($user->name ?? 'Admin / Kaprodi') . ' menyetujui pengajuan tempat PKL di ' . $pengajuan->nama_instansi . '. Mahasiswa sekarang dapat memilih dosen pembimbing.'
+            : ($user->name ?? 'Admin / Kaprodi') . ' menolak pengajuan tempat PKL di ' . $pengajuan->nama_instansi . ' dengan alasan: ' . $validated['catatan'] . '. Mahasiswa diwajibkan mencari instansi lain.';
+
+        $this->logPklActivity($pengajuan, $actionName, $deskripsi);
+
+        $message = $validated['keputusan'] === 'disetujui'
+            ? 'Pengajuan tempat PKL berhasil diverifikasi dan disetujui. Mahasiswa kini dapat memilih dosen pembimbing.'
+            : 'Pengajuan tempat PKL telah ditolak. Mahasiswa diwajibkan untuk mencari instansi lain beserta alasan penolakan.';
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => $message,
+                'data' => $pengajuan->fresh(['pengajuanVerifier', 'mahasiswaRegistrasi', 'dosenPembimbing']),
+                'stats' => $this->statusStats(),
+            ]);
+        }
+
+        return back()->with('success', $message);
     }
 
     public function adminDestroy(Request $request, PengajuanPkl $pengajuan): JsonResponse|RedirectResponse

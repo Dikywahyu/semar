@@ -25,6 +25,7 @@ class PengajuanPkl extends Model
         'schedule_approved_at' => 'datetime',
         'acc_seminar_at' => 'datetime',
         'final_approved_at' => 'datetime',
+        'verified_pengajuan_at' => 'datetime',
         'nilai_akhir' => 'decimal:2',
         'tanggal_mulai' => 'date',
         'tanggal_selesai' => 'date',
@@ -59,6 +60,33 @@ class PengajuanPkl extends Model
     public function scheduleApprover(): BelongsTo
     {
         return $this->belongsTo(User::class, 'schedule_approved_by');
+    }
+
+    public function pengajuanVerifier(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'verified_pengajuan_by');
+    }
+
+    public function isVerifiedApproved(): bool
+    {
+        if ($this->status_verifikasi_pengajuan === 'Disetujui') {
+            return true;
+        }
+        // Fallback untuk data yang sudah berjalan sebelum fitur ini
+        if ($this->status !== 'Pengajuan & Verifikasi Admin' || filled($this->dosen_pembimbing_id)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function isVerifiedRejected(): bool
+    {
+        if ($this->status_verifikasi_pengajuan === 'Ditolak') {
+            return true;
+        }
+
+        return $this->status === 'Pengajuan & Verifikasi Admin' && filled($this->catatan_admin);
     }
 
     public function mahasiswa(): BelongsTo

@@ -340,6 +340,95 @@
     </div>
 </div>
 
+<!-- MODAL VERIFIKASI PENGAJUAN TEMPAT PKL OLEH ADMIN / KAPRODI -->
+<div class="modal fade" id="modalVerifikasiPengajuan" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom px-4 bg-light">
+                <div>
+                    <h5 class="modal-title fw-bold text-slate-800"><i class="ti ti-checkup-list text-primary me-2"></i>Verifikasi Pengajuan Tempat PKL</h5>
+                    <small class="text-muted">Keputusan verifikasi oleh Admin atau Kaprodi menentukan apakah mahasiswa dapat memilih dosen pembimbing atau wajib mencari instansi lain.</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formVerifikasiPengajuan" method="POST">
+                @csrf
+                <input type="hidden" id="verif_pengajuan_id" name="id">
+                <div class="modal-body p-4">
+                    <!-- Info Mahasiswa & Instansi -->
+                    <div class="card border rounded-3 bg-light mb-3 p-3">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <span class="small text-muted d-block">Nama Mahasiswa</span>
+                                <span class="fw-bold text-dark" id="verif_mhs_nama">-</span>
+                                <small class="text-secondary d-block" id="verif_mhs_nim">-</small>
+                            </div>
+                            <div class="col-md-6">
+                                <span class="small text-muted d-block">Instansi Tujuan</span>
+                                <span class="fw-bold text-dark" id="verif_instansi_nama">-</span>
+                                <small class="text-secondary d-block" id="verif_instansi_unit">-</small>
+                            </div>
+                            <div class="col-12 mt-2 pt-2 border-top">
+                                <span class="small text-muted d-block">Alamat Instansi</span>
+                                <span class="text-dark small" id="verif_instansi_alamat">-</span>
+                            </div>
+                            <div class="col-12 mt-1">
+                                <span class="small text-muted d-block">Rencana Periode Pelaksanaan</span>
+                                <span class="badge bg-secondary-subtle text-secondary" id="verif_periode">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Berkas Awal Pendaftaran Mahasiswa -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-secondary">Berkas Pendaftaran PKL yang Diunggah Mahasiswa:</label>
+                        <div id="verif_berkas_list" class="list-group list-group-flush border rounded-3 p-2 bg-white">
+                            <!-- Diisi via Javascript -->
+                        </div>
+                    </div>
+
+                    <!-- Keputusan Verifikasi -->
+                    <div class="p-3 border rounded-3 bg-white mb-3 shadow-sm">
+                        <label class="form-label fw-bold text-dark mb-2">Keputusan Verifikasi Tempat PKL <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-3 mb-3">
+                            <div class="form-check form-check-inline p-2 border rounded-3 flex-fill text-center radio-box" style="cursor: pointer;">
+                                <input class="form-check-input ms-0 me-2" type="radio" name="keputusan" id="keputusan_setujui" value="disetujui" required>
+                                <label class="form-check-label fw-bold text-success" for="keputusan_setujui" style="cursor: pointer;">
+                                    <i class="ti ti-circle-check me-1"></i> SETUJUI AJUAN
+                                </label>
+                                <small class="d-block text-muted mt-1" style="font-size: 11px;">Mahasiswa diizinkan memilih dosen pembimbing & memulai pelaksanaan PKL.</small>
+                            </div>
+                            <div class="form-check form-check-inline p-2 border rounded-3 flex-fill text-center radio-box" style="cursor: pointer;">
+                                <input class="form-check-input ms-0 me-2" type="radio" name="keputusan" id="keputusan_tolak" value="ditolak" required>
+                                <label class="form-check-label fw-bold text-danger" for="keputusan_tolak" style="cursor: pointer;">
+                                    <i class="ti ti-circle-x me-1"></i> TOLAK AJUAN
+                                </label>
+                                <small class="d-block text-muted mt-1" style="font-size: 11px;">Mahasiswa diwajibkan mencari instansi / tempat PKL lain.</small>
+                            </div>
+                        </div>
+
+                        <!-- Kolom Catatan / Alasan Penolakan -->
+                        <div id="wrapperAlasanPenolakan" class="mt-2">
+                            <label class="form-label fw-semibold small" for="verif_catatan">
+                                <span id="labelCatatanVerif">Keterangan / Alasan Penolakan</span> <span class="text-danger" id="reqAlasan">*</span>
+                            </label>
+                            <textarea class="form-control" id="verif_catatan" name="catatan" rows="3" placeholder="Tuliskan keterangan / alasan penolakan secara jelas agar mahasiswa dapat mencari instansi lain yang sesuai..."></textarea>
+                            <small class="text-muted" id="helpCatatanVerif">Alasan ini akan ditampilkan langsung kepada mahasiswa di halaman dashboard.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-3 bg-light d-flex justify-content-between">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Tutup</button>
+                    <button type="submit" id="btnSubmitVerifPengajuan" class="btn btn-primary fw-semibold px-4">
+                        <span class="btn-text"><i class="ti ti-send me-1"></i> Simpan Keputusan</span>
+                        <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL CEK & VERIFIKASI BERKAS SEMINAR -->
 <div class="modal fade" id="modalVerifikasiBerkas" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -625,6 +714,160 @@
                 },
                 complete: function() {
                     button.prop('disabled', false);
+                }
+            });
+        });
+
+        // HANDLER BUKA MODAL VERIFIKASI PENGAJUAN
+        $(document).on('click', '.btn-verifikasi-pengajuan', function() {
+            let btn = $(this);
+            let id = btn.data('id');
+            let nama = btn.data('nama');
+            let nim = btn.data('nim');
+            let instansi = btn.data('instansi');
+            let unit = btn.data('unit');
+            let alamat = btn.data('alamat');
+            let mulai = btn.data('mulai');
+            let selesai = btn.data('selesai');
+            let statusVerif = btn.data('status-verifikasi');
+            let alasan = btn.data('alasan');
+            let rawDocs = btn.attr('data-documents');
+            let docs = [];
+            try {
+                docs = rawDocs ? JSON.parse(rawDocs) : [];
+            } catch (err) {
+                docs = [];
+            }
+
+            $('#verif_pengajuan_id').val(id);
+            $('#verif_mhs_nama').text(nama);
+            $('#verif_mhs_nim').text('NIM: ' + nim);
+            $('#verif_instansi_nama').text(instansi);
+            $('#verif_instansi_unit').text('Bidang: ' + unit);
+            $('#verif_instansi_alamat').text(alamat);
+            $('#verif_periode').text(mulai + ' s/d ' + selesai);
+
+            let berkasList = $('#verif_berkas_list');
+            berkasList.empty();
+
+            let earlyDocs = docs.filter(function(d) {
+                return ['proposal', 'surat_jalan_pkl', 'surat_balasan_instansi'].indexOf(d.kind) !== -1;
+            });
+
+            if (earlyDocs.length > 0) {
+                earlyDocs.forEach(function(doc) {
+                    let item = $('<div>', { class: 'd-flex justify-content-between align-items-center py-2 border-bottom' });
+                    item.append($('<div>').html('<span class="fw-semibold small text-dark d-block">' + doc.label + '</span><span class="badge bg-light text-secondary border" style="font-size:10px;">' + (doc.status || 'Tersimpan') + '</span>'));
+                    if (doc.url) {
+                        item.append($('<a>', {
+                            class: 'btn btn-xs btn-outline-primary px-2 py-1',
+                            style: 'font-size: 11px;',
+                            href: doc.url,
+                            target: '_blank',
+                            rel: 'noopener',
+                            html: '<i class="ti ti-eye me-1"></i> Buka Berkas'
+                        }));
+                    } else {
+                        item.append($('<span>', { class: 'text-muted small fst-italic', text: 'Belum diunggah' }));
+                    }
+                    berkasList.append(item);
+                });
+            } else {
+                berkasList.html('<span class="text-muted small fst-italic py-2 d-block">Tidak ada berkas awal yang terlampir.</span>');
+            }
+
+            if (statusVerif === 'Ditolak') {
+                $('#keputusan_tolak').prop('checked', true);
+                $('#reqAlasan').show();
+                $('#labelCatatanVerif').text('Keterangan / Alasan Penolakan (Wajib Diisi)');
+                $('#verif_catatan').prop('required', true);
+            } else if (statusVerif === 'Disetujui') {
+                $('#keputusan_setujui').prop('checked', true);
+                $('#reqAlasan').hide();
+                $('#labelCatatanVerif').text('Keterangan Tambahan (Opsional)');
+                $('#verif_catatan').prop('required', false);
+            } else {
+                $('input[name="keputusan"]').prop('checked', false);
+                $('#reqAlasan').hide();
+                $('#labelCatatanVerif').text('Keterangan / Alasan');
+                $('#verif_catatan').prop('required', false);
+            }
+
+            $('#verif_catatan').val(alasan || '');
+            $('#formVerifikasiPengajuan').attr('action', "{{ url('pkl/admin/verifikasi-pengajuan') }}/" + id);
+            $('#modalVerifikasiPengajuan').modal('show');
+        });
+
+        // Toggle required & label catatan verifikasi
+        $('input[name="keputusan"]').on('change', function() {
+            if ($(this).val() === 'ditolak') {
+                $('#reqAlasan').show();
+                $('#labelCatatanVerif').text('Keterangan / Alasan Penolakan (Wajib Diisi)');
+                $('#verif_catatan').prop('required', true).focus();
+            } else {
+                $('#reqAlasan').hide();
+                $('#labelCatatanVerif').text('Keterangan Tambahan (Opsional)');
+                $('#verif_catatan').prop('required', false);
+            }
+        });
+
+        // SUBMIT FORM VERIFIKASI PENGAJUAN VIA AJAX
+        $(document).on('submit', '#formVerifikasiPengajuan', function(e) {
+            e.preventDefault();
+
+            let form = $(this);
+            let actionUrl = form.attr('action');
+            let btnSubmit = $('#btnSubmitVerifPengajuan');
+            let keputusan = $('input[name="keputusan"]:checked').val();
+            let catatan = $('#verif_catatan').val();
+
+            if (!keputusan) {
+                Swal.fire('Perhatian', 'Pilih keputusan verifikasi terlebih dahulu (Setujui atau Tolak).', 'warning');
+                return;
+            }
+
+            if (keputusan === 'ditolak' && !catatan.trim()) {
+                Swal.fire('Alasan Diperlukan', 'Harap isi alasan penolakan secara jelas agar mahasiswa dapat mencari instansi lain yang sesuai.', 'warning');
+                return;
+            }
+
+            btnSubmit.prop('disabled', true);
+            btnSubmit.find('.btn-text').html('<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...');
+
+            $.ajax({
+                url: actionUrl,
+                type: 'POST',
+                data: form.serialize(),
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    $('#modalVerifikasiPengajuan').modal('hide');
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: response.message || 'Keputusan verifikasi berhasil disimpan.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+
+                    fetchTableData();
+                },
+                error: function(xhr) {
+                    let errorMsg = 'Terjadi kesalahan saat memverifikasi pengajuan.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: errorMsg
+                    });
+                },
+                complete: function() {
+                    btnSubmit.prop('disabled', false);
+                    btnSubmit.find('.btn-text').html('<i class="ti ti-send me-1"></i> Simpan Keputusan');
                 }
             });
         });

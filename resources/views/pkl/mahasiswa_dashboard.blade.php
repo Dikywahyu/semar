@@ -377,11 +377,17 @@
                     @if($pengajuan?->schedule_approved_at)
                     <p class="small text-muted">Terakhir diperbarui oleh {{ $pengajuan->scheduleApprover?->name ?? 'pengguna sistem' }} ({{ $pengajuan->scheduleApprover?->getRoleNames()->implode(', ') ?: 'aktor tidak tersedia' }}) pada {{ $pengajuan->schedule_approved_at->format('d M Y H:i') }}.</p>
                     @endif
-                    @if($pengajuan &&$pengajuan->status == 'Pengajuan & Verifikasi Admin')
+                    @if($pengajuan && $pengajuan->status == 'Pengajuan & Verifikasi Admin')
                     <div>
+                        @if($pengajuan->isVerifiedRejected())
+                        <button type="button" class="btn btn-danger btn-sm fw-semibold px-3 py-2 rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#modalGantiInstansi">
+                            <i class="ti ti-building-store me-1"></i> Cari & Ajukan Instansi Lain
+                        </button>
+                        @else
                         <button type="button" class="btn btn-outline-light btn-sm fw-semibold px-3 py-2 rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#modalEditPengajuan">
                             <i class="ti ti-edit me-1"></i> Edit Data Pengajuan
                         </button>
+                        @endif
                     </div>
                     @endif
                 </div>
@@ -541,6 +547,74 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal Ajukan Instansi Lain (Jika Pengajuan Ditolak) -->
+        <div class="modal fade" id="modalGantiInstansi" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content rounded-4 border-0 shadow">
+                    <div class="modal-header border-bottom px-4 bg-danger text-white">
+                        <div>
+                            <h5 class="modal-title fw-bold text-white"><i class="ti ti-building-store me-2"></i>Pengajuan Instansi / Tempat PKL Lain</h5>
+                            <small class="text-white-50">Pengajuan ke instansi sebelumnya ditolak. Harap isi data tempat PKL baru yang telah Anda dapatkan.</small>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="{{ route('pkl.mahasiswa.ganti-instansi', $pengajuan->id) }}" method="POST" enctype="multipart/form-data" id="formGantiInstansi">
+                        @csrf
+                        <div class="modal-body p-4 text-start">
+                            @if($pengajuan->alasan_penolakan || $pengajuan->catatan_admin)
+                            <div class="alert alert-danger border-danger-subtle d-flex align-items-start mb-4">
+                                <i class="ti ti-alert-circle fs-4 me-2 flex-shrink-0 mt-1"></i>
+                                <div>
+                                    <strong class="d-block">Alasan Penolakan dari Admin / Kaprodi:</strong>
+                                    <span style="white-space: pre-line;">{{ $pengajuan->alasan_penolakan ?? $pengajuan->catatan_admin }}</span>
+                                </div>
+                            </div>
+                            @endif
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold small">Nama Instansi / Perusahaan Baru <span class="text-danger">*</span></label>
+                                    <input type="text" name="nama_instansi" class="form-control" placeholder="Cth: PT. Baru Indonesia" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold small">Bidang / Unit Kerja Baru <span class="text-danger">*</span></label>
+                                    <input type="text" name="unit_kerja" class="form-control" placeholder="Cth: Divisi IT / Operasional" required>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label fw-semibold small">Alamat Lengkap Instansi Baru <span class="text-danger">*</span></label>
+                                    <textarea name="alamat_instansi" class="form-control" rows="2" placeholder="Alamat lengkap instansi baru..." required></textarea>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold small">Rencana Tanggal Mulai <span class="text-danger">*</span></label>
+                                    <input type="date" name="tanggal_mulai" class="form-control" value="{{ $pengajuan->tanggal_mulai?->format('Y-m-d') }}" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold small">Rencana Tanggal Selesai <span class="text-danger">*</span></label>
+                                    <input type="date" name="tanggal_selesai" class="form-control" value="{{ $pengajuan->tanggal_selesai?->format('Y-m-d') }}" required>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label fw-semibold small">Unggah Proposal PKL Baru (PDF max 2MB, Opsional)</label>
+                                    <input type="file" name="berkas_proposal" class="form-control" accept=".pdf">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold small">Unggah Surat Jalan PKL Baru (PDF/JPG, Opsional)</label>
+                                    <input type="file" name="surat_jalan_pkl" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold small">Unggah Surat Balasan Instansi Baru (PDF/JPG, Opsional)</label>
+                                    <input type="file" name="surat_balasan_instansi" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top px-4 py-3 bg-light">
+                            <button type="button" class="btn btn-light border text-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-danger fw-semibold px-4"><i class="ti ti-send me-1"></i> Kirim Pengajuan Instansi Baru</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
         @endif
 
         <!-- Roadmap Progres Visual Modern -->
@@ -575,6 +649,57 @@
         </div>
     </div>
 
+    @if($pengajuan->status === 'Pengajuan & Verifikasi Admin')
+        @if($pengajuan->isVerifiedRejected())
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-danger text-white mb-4">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div class="d-flex align-items-center">
+                    <div class="bg-white text-danger p-3 rounded-circle me-3 fs-3">
+                        <i class="ti ti-alert-triangle"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold text-white mb-1">Pengajuan Tempat PKL Ditolak oleh Admin / Kaprodi</h5>
+                        <p class="text-white-50 mb-0">Pengajuan tempat PKL di <strong>{{ $pengajuan->nama_instansi }}</strong> tidak disetujui. Anda <strong>diwajibkan untuk mencari dan mengajukan instansi lain</strong>.</p>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-light text-danger fw-bold px-4 py-2 rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#modalGantiInstansi">
+                    <i class="ti ti-building-store me-1"></i> Cari & Ajukan Instansi Lain
+                </button>
+            </div>
+            @if($pengajuan->alasan_penolakan || $pengajuan->catatan_admin)
+            <div class="mt-3 p-3 bg-white text-dark rounded-3 border-start border-4 border-warning shadow-sm">
+                <span class="small fw-bold text-danger d-block mb-1"><i class="ti ti-message-dots me-1"></i> Alasan Penolakan dari Admin / Kaprodi:</span>
+                <p class="mb-0 fw-medium" style="white-space: pre-line;">{{ $pengajuan->alasan_penolakan ?? $pengajuan->catatan_admin }}</p>
+            </div>
+            @endif
+        </div>
+        @elseif($pengajuan->isVerifiedApproved())
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-success-subtle border-start border-4 border-success mb-4">
+            <div class="d-flex align-items-center">
+                <div class="text-success p-2 rounded-circle me-3 fs-3">
+                    <i class="ti ti-circle-check"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold text-success mb-1">Pengajuan Tempat PKL Telah Disetujui!</h5>
+                    <p class="text-muted small mb-0">Instansi <strong>{{ $pengajuan->nama_instansi }}</strong> telah diverifikasi dan disetujui oleh Admin / Kaprodi. Silakan lanjutkan dengan <strong>memilih Dosen Pembimbing PKL</strong> di bawah ini.</p>
+                </div>
+            </div>
+        </div>
+        @else
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-warning-subtle border-start border-4 border-warning mb-4">
+            <div class="d-flex align-items-center">
+                <div class="text-warning-emphasis p-2 rounded-circle me-3 fs-3">
+                    <i class="ti ti-clock-pause"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold text-warning-emphasis mb-1">Menunggu Verifikasi Tempat PKL oleh Admin / Kaprodi</h5>
+                    <p class="text-muted small mb-0">Pengajuan tempat PKL di <strong>{{ $pengajuan->nama_instansi }}</strong> sedang ditinjau oleh Admin atau Koordinator Program Studi (Kaprodi). Anda baru dapat memilih dosen pembimbing setelah pengajuan ini disetujui.</p>
+                </div>
+            </div>
+        </div>
+        @endif
+    @endif
+
     <!-- Informasi Instansi Card -->
     <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
         <h5 class="fw-bold mb-3 text-slate-800"><i class="ti ti-info-circle text-info me-2"></i>Informasi Instansi & Status</h5>
@@ -596,7 +721,23 @@
                 <td class="fw-semibold text-dark">: <span class="badge bg-info-subtle text-info px-2 py-1">{{ $pengajuan->dosenPembimbing->nama_dosen ?? 'Belum Diploting' }}</span></td>
             </tr>
             <tr>
-                <td class="text-muted">Status Saat Ini</td>
+                <td class="text-muted">Status Verifikasi Ajuan</td>
+                <td>: 
+                    @if($pengajuan->status === 'Pengajuan & Verifikasi Admin')
+                        @if($pengajuan->isVerifiedRejected())
+                            <span class="badge bg-danger text-white px-3 py-2 fw-bold"><i class="ti ti-x me-1"></i> Ditolak (Wajib Cari Instansi Lain)</span>
+                        @elseif($pengajuan->isVerifiedApproved())
+                            <span class="badge bg-success text-white px-3 py-2 fw-bold"><i class="ti ti-check me-1"></i> Disetujui Admin / Kaprodi</span>
+                        @else
+                            <span class="badge bg-warning text-dark px-3 py-2 fw-bold"><i class="ti ti-clock me-1"></i> Menunggu Verifikasi Admin / Kaprodi</span>
+                        @endif
+                    @else
+                        <span class="badge bg-success-subtle text-success px-3 py-2 fw-bold"><i class="ti ti-check me-1"></i> Terverifikasi</span>
+                    @endif
+                </td>
+            </tr>
+            <tr>
+                <td class="text-muted">Tahapan Alur PKL</td>
                 <td>: <span class="badge bg-primary-subtle text-primary px-3 py-2 fw-bold">{{ $pengajuan->status }}</span></td>
             </tr>
             @if($pengajuan->status === 'Selesai' && $pengajuan->nilai_akhir !== null)
@@ -707,28 +848,46 @@
         @endif
 
         @if($pengajuan->status === 'Pengajuan & Verifikasi Admin' && !$pengajuan->dosen_pembimbing_id)
-        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-primary">
-            <h5 class="fw-bold mb-2"><i class="ti ti-user-check text-primary me-2"></i>Pilih Dosen Pembimbing PKL</h5>
-            @if($dokumenPendaftaranLengkap)
-            <p class="text-muted small">Berkas pendaftaran lengkap. Pilih dosen pembimbing untuk memulai pelaksanaan PKL.</p>
-            <form action="{{ route('pkl.mahasiswa.plot-pembimbing', $pengajuan->id) }}" method="POST" class="row g-2 align-items-end">
-                @csrf
-                <div class="col-md-8">
-                    <label class="form-label small fw-semibold">Dosen Pembimbing</label>
-                    <select class="form-select" name="dosen_pembimbing_id" required>
-                        <option value="">Pilih dosen pembimbing</option>
-                        @foreach($dosensPembimbing as $dosenPilihan)
-                        <option value="{{ $dosenPilihan->id_dosen }}">{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>
-                        @endforeach
-                    </select>
+            @if($pengajuan->isVerifiedRejected())
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-danger">
+                <h5 class="fw-bold mb-2 text-danger"><i class="ti ti-lock text-danger me-2"></i>Pilihan Dosen Pembimbing Dinonaktifkan</h5>
+                <p class="text-danger fw-semibold small mb-2">Pengajuan ke instansi sebelumnya ditolak oleh Admin / Kaprodi.</p>
+                <p class="text-muted small mb-3">Anda <strong>diwajibkan untuk mencari dan mengajukan instansi lain</strong> terlebih dahulu. Pemilihan dosen pembimbing baru dapat dilakukan setelah pengajuan instansi baru Anda diverifikasi dan disetujui.</p>
+                <div>
+                    <button type="button" class="btn btn-danger btn-sm fw-bold px-3 py-2 rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#modalGantiInstansi">
+                        <i class="ti ti-building-store me-1"></i> Cari & Ajukan Instansi Lain Sekarang
+                    </button>
                 </div>
-                <div class="col-md-4"><button class="btn btn-primary w-100 fw-semibold" type="submit">Pilih Pembimbing & Mulai PKL</button></div>
-            </form>
+            </div>
+            @elseif(!$pengajuan->isVerifiedApproved())
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-secondary">
+                <h5 class="fw-bold mb-2 text-secondary"><i class="ti ti-lock text-secondary me-2"></i>Pilih Dosen Pembimbing PKL (Terkunci)</h5>
+                <p class="text-muted small mb-0">Pemilihan dosen pembimbing saat ini masih terkunci. Tempat PKL Anda di <strong>{{ $pengajuan->nama_instansi }}</strong> harus <strong>diverifikasi & disetujui terlebih dahulu oleh Admin atau Kaprodi</strong> sebelum Anda dapat memilih dosen pembimbing.</p>
+            </div>
             @else
-            <p class="text-muted small mb-2">Lengkapi formulir dan unggah seluruh berkas pendaftaran sebelum memilih pembimbing.</p>
-            <div class="small text-muted">Syarat: Proposal ke Tempat PKL, Surat Jalan PKL, dan Surat Balasan Instansi.</div>
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-success">
+                <h5 class="fw-bold mb-2 text-success"><i class="ti ti-user-check text-success me-2"></i>Pilih Dosen Pembimbing PKL</h5>
+                @if($dokumenPendaftaranLengkap)
+                <p class="text-muted small">Tempat PKL telah diverifikasi & disetujui! Berkas pendaftaran lengkap. Pilih dosen pembimbing untuk memulai pelaksanaan PKL.</p>
+                <form action="{{ route('pkl.mahasiswa.plot-pembimbing', $pengajuan->id) }}" method="POST" class="row g-2 align-items-end">
+                    @csrf
+                    <div class="col-md-8">
+                        <label class="form-label small fw-semibold">Dosen Pembimbing</label>
+                        <select class="form-select" name="dosen_pembimbing_id" required>
+                            <option value="">Pilih dosen pembimbing</option>
+                            @foreach($dosensPembimbing as $dosenPilihan)
+                            <option value="{{ $dosenPilihan->id_dosen }}">{{ $dosenPilihan->nama_dosen }}{{ $dosenPilihan->nidn ? ' · ' . $dosenPilihan->nidn : '' }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4"><button class="btn btn-success w-100 fw-semibold" type="submit"><i class="ti ti-check me-1"></i> Pilih Pembimbing & Mulai PKL</button></div>
+                </form>
+                @else
+                <p class="text-muted small mb-2">Tempat PKL telah disetujui! Lengkapi formulir dan unggah seluruh berkas pendaftaran sebelum memilih pembimbing.</p>
+                <div class="small text-muted">Syarat: Proposal ke Tempat PKL, Surat Jalan PKL, dan Surat Balasan Instansi.</div>
+                @endif
+            </div>
             @endif
-        </div>
         @endif
 
         @if($pengajuan->status === 'Revisi Laporan')
@@ -1034,11 +1193,19 @@
                         <p class="text-dark fw-medium mb-0" style="white-space: pre-line;">{{ $pengajuan->catatan_admin }}</p>
                     </div>
 
+                    @if($pengajuan->status === 'Pengajuan & Verifikasi Admin')
+                    <div class="text-end">
+                        <button type="button" class="btn btn-danger fw-semibold px-4 py-2 rounded-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalGantiInstansi">
+                            <i class="ti ti-building-store me-1"></i> Cari & Ajukan Instansi Lain Sekarang
+                        </button>
+                    </div>
+                    @else
                     <div class="text-end">
                         <button type="button" class="btn btn-danger fw-semibold px-4 py-2 rounded-3 shadow-sm btn-ajukan-ulang" data-id="{{ $pengajuan->id }}">
                             <i class="ti ti-send me-1"></i> Saya Sudah Memperbaiki & Ajukan Ulang
                         </button>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>

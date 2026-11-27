@@ -59,17 +59,33 @@
                         </div>
                     </div>
 
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Status Tahapan <span class="text-danger">*</span></label>
+                            <select class="form-select" id="edit_status" name="status" required>
+                                <option value="Pengajuan & Verifikasi Admin">Pengajuan & Verifikasi Admin</option>
+                                <option value="Pelaksanaan PKL & Bimbingan">Pelaksanaan PKL & Bimbingan</option>
+                                <option value="Verifikasi Berkas Admin">Verifikasi Berkas Admin</option>
+                                <option value="Dijadwalkan Ujian">Dijadwalkan Ujian</option>
+                                <option value="Ujian Seminar & Penilaian">Ujian Seminar & Penilaian</option>
+                                <option value="Revisi Laporan">Revisi Laporan</option>
+                                <option value="Selesai">Selesai</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Status Verifikasi Ajuan</label>
+                            <select class="form-select" id="edit_status_verifikasi_pengajuan" name="status_verifikasi_pengajuan">
+                                <option value="Menunggu Verifikasi">Menunggu Verifikasi</option>
+                                <option value="Disetujui">Disetujui (Bisa Pilih Pembimbing)</option>
+                                <option value="Ditolak">Ditolak (Wajib Cari Instansi Lain)</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Status Tahapan <span class="text-danger">*</span></label>
-                        <select class="form-select" id="edit_status" name="status" required>
-                            <option value="Pengajuan & Verifikasi Admin">Pengajuan & Verifikasi Admin</option>
-                            <option value="Pelaksanaan PKL & Bimbingan">Pelaksanaan PKL & Bimbingan</option>
-                            <option value="Verifikasi Berkas Admin">Verifikasi Berkas Admin</option>
-                            <option value="Dijadwalkan Ujian">Dijadwalkan Ujian</option>
-                            <option value="Ujian Seminar & Penilaian">Ujian Seminar & Penilaian</option>
-                            <option value="Revisi Laporan">Revisi Laporan</option>
-                            <option value="Selesai">Selesai</option>
-                        </select>
+                        <label class="form-label fw-semibold">Catatan Admin / Alasan Penolakan</label>
+                        <textarea class="form-control" id="edit_catatan_admin" name="catatan_admin" rows="2" placeholder="Tuliskan catatan revisi atau alasan penolakan untuk mahasiswa..."></textarea>
+                        <small class="text-muted">Jika pengajuan ditolak, alasan ini wajib disampaikan kepada mahasiswa.</small>
                     </div>
                     
                     <!-- Bagian di dalam Modal Kelola / Detail Admin -->
@@ -162,6 +178,8 @@
                     $('#edit_id_semester').val(data.semester_master_id);
                     $('#edit_sk_tugas').val(data.sk_tugas);
                     $('#edit_status').val(data.status);
+                    $('#edit_status_verifikasi_pengajuan').val(data.status_verifikasi_pengajuan || 'Menunggu Verifikasi');
+                    $('#edit_catatan_admin').val(data.alasan_penolakan || data.catatan_admin || '');
 
                     $('#edit_dosen_pembimbing_id').val(data.dosen_pembimbing_id).trigger('change');
 

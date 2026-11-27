@@ -27,6 +27,14 @@
                 <td>
                     @if($item->dosenPembimbing)
                         <span class="badge bg-success-subtle text-success">{{ $item->dosenPembimbing->nama_dosen }}</span>
+                    @elseif($item->status === 'Pengajuan & Verifikasi Admin')
+                        @if($item->isVerifiedRejected())
+                            <span class="badge bg-danger-subtle text-danger">Ajuan Ditolak</span>
+                        @elseif($item->isVerifiedApproved())
+                            <span class="badge bg-warning-subtle text-warning">Menunggu Mahasiswa Memilih</span>
+                        @else
+                            <span class="badge bg-secondary-subtle text-secondary">Terkunci (Menunggu Verifikasi)</span>
+                        @endif
                     @else
                         <span class="badge bg-warning-subtle text-warning">Belum Ditentukan</span>
                     @endif
@@ -48,7 +56,21 @@
                             default => 'manage',
                         };
 
-                        if (!empty($item->catatan_admin)) {
+                        if ($status === 'Pengajuan & Verifikasi Admin') {
+                            if ($item->isVerifiedRejected()) {
+                                $badgeClass = 'bg-danger-subtle text-danger border border-danger-subtle fw-bold';
+                                $iconClass = 'ti ti-x';
+                                $label = 'Ajuan Ditolak';
+                            } elseif ($item->isVerifiedApproved()) {
+                                $badgeClass = 'bg-success-subtle text-success border border-success-subtle fw-bold';
+                                $iconClass = 'ti ti-check';
+                                $label = 'Ajuan Disetujui (Pilih Dosen)';
+                            } else {
+                                $badgeClass = 'bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-bold';
+                                $iconClass = 'ti ti-clock';
+                                $label = 'Menunggu Verifikasi Admin';
+                            }
+                        } elseif (!empty($item->catatan_admin)) {
                             $badgeClass = 'bg-danger-subtle text-danger border border-danger-subtle fw-bold';
                             $iconClass = 'ti ti-alert-circle';
                             $label = 'Ditolak / Revisi';
@@ -227,6 +249,23 @@
                         <a href="{{ route('pkl.dosen.bimbingan.detail', $item->id) }}" class="btn btn-sm btn-light border text-secondary" title="Detail Bimbingan">
                             <i class="ti ti-eye"></i>
                         </a>
+                        @if($item->status === 'Pengajuan & Verifikasi Admin')
+                        <button type="button" class="btn btn-sm btn-primary fw-semibold btn-verifikasi-pengajuan shadow-sm" 
+                                data-id="{{ $item->id }}" 
+                                data-nama="{{ $item->mahasiswaRegistrasi->nama_mahasiswa ?? '-' }}"
+                                data-nim="{{ $item->mahasiswaRegistrasi->nim ?? '-' }}"
+                                data-instansi="{{ $item->nama_instansi }}"
+                                data-unit="{{ $item->unit_kerja ?? '-' }}"
+                                data-alamat="{{ $item->alamat_instansi }}"
+                                data-mulai="{{ $item->tanggal_mulai ? $item->tanggal_mulai->format('d/m/Y') : '-' }}"
+                                data-selesai="{{ $item->tanggal_selesai ? $item->tanggal_selesai->format('d/m/Y') : '-' }}"
+                                data-status-verifikasi="{{ $item->status_verifikasi_pengajuan ?? 'Menunggu Verifikasi' }}"
+                                data-alasan="{{ $item->alasan_penolakan ?? $item->catatan_admin ?? '' }}"
+                                data-documents="{{ json_encode($documents, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) }}"
+                                title="Verifikasi Ajuan PKL">
+                            <i class="ti ti-checkup-list me-1"></i> Verifikasi Ajuan
+                        </button>
+                        @endif
                         <button type="button" class="btn btn-sm btn-light border text-primary btn-kelola" data-id="{{ $item->id }}" title="Edit pengajuan / tentukan dosen pembimbing">
                             <i class="ti ti-edit"></i>
                         </button>
