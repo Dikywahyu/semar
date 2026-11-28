@@ -108,13 +108,19 @@
                             </div>
                         </td>
 
-                        <!-- Kolom Plotting Dosen (Read-only, dikelola oleh Super Admin & Kaprodi) -->
+                        <!-- Kolom Plotting Dosen & Lokasi Proyek -->
                         <td>
                             <div class="small">
-                                <div class="mb-2">
-                                    <span class="text-muted d-block" style="font-size: 0.75rem;">Tempat / Lokasi Proyek:</span>
-                                    <strong class="text-dark">{{ $group->project_location ?: '-' }}</strong>
-                                </div>
+                                <form class="form-project-location mb-3" data-id="{{ $group->id }}">
+                                    @csrf
+                                    <label class="form-label text-muted d-block mb-1 fw-semibold" style="font-size: 0.75rem;">Tempat / Lokasi Proyek:</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" name="project_location" value="{{ $group->project_location }}" maxlength="255" class="form-control form-control-sm" placeholder="Isi tempat/lokasi proyek...">
+                                        <button type="submit" class="btn btn-primary btn-sm px-2" title="Simpan Lokasi Proyek">
+                                            <i class="ti ti-device-floppy"></i>
+                                        </button>
+                                    </div>
+                                </form>
                                 <div class="mb-2">
                                     <span class="text-muted d-block" style="font-size: 0.75rem;">Dosen Pembimbing:</span>
                                     <strong class="text-dark">{{ $group->supervisor?->nama_dosen ?? 'Belum diplot' }}</strong>
@@ -123,8 +129,8 @@
                                     <span class="text-muted d-block" style="font-size: 0.75rem;">Dosen Penguji:</span>
                                     <strong class="text-dark">{{ $group->examiner?->nama_dosen ?? 'Belum diplot' }}</strong>
                                 </div>
-                                <div class="mt-2 text-muted" style="font-size: 0.72rem;">
-                                    <i class="ti ti-info-circle me-1"></i>Plotting ditetapkan oleh Super Admin / Kaprodi
+                                <div class="mt-1 text-muted" style="font-size: 0.7rem;">
+                                    <i class="ti ti-info-circle me-1"></i>Plotting dosen oleh Super Admin / Kaprodi
                                 </div>
                             </div>
                         </td>
@@ -325,6 +331,35 @@
 
             $('#coordFilesTableBody').html(rows);
             $('#modalCoordStudentFiles').modal('show');
+        });
+
+        // Submit Update Tempat / Lokasi Proyek oleh Koordinator
+        $('.form-project-location').on('submit', function(e) {
+            e.preventDefault();
+            let groupId = $(this).data('id');
+            let formData = $(this).serialize();
+            let btn = $(this).find('button[type="submit"]');
+            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+
+            $.ajax({
+                url: "{{ url('capstone/koordinator/project-location') }}/" + groupId,
+                type: 'POST',
+                data: formData,
+                success: function(res) {
+                    btn.prop('disabled', false).html('<i class="ti ti-device-floppy"></i>');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Tersimpan!',
+                        text: res.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                },
+                error: function(err) {
+                    btn.prop('disabled', false).html('<i class="ti ti-device-floppy"></i>');
+                    Swal.fire('Gagal', err.responseJSON?.message || 'Terjadi kesalahan saat menyimpan lokasi proyek.', 'error');
+                }
+            });
         });
 
         // 2. Submit Update KPI

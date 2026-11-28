@@ -95,6 +95,7 @@ Route::middleware(['auth'])->prefix('capstone')->name('capstone.')->group(functi
         Route::get('/', [CapstoneCoordinatorController::class, 'index'])->name('index');
 
         Route::post('/plot-lecturers/{groupId}', [CapstoneCoordinatorController::class, 'plotLecturers'])->name('plot-lecturers');
+        Route::post('/project-location/{groupId}', [CapstoneCoordinatorController::class, 'updateProjectLocation'])->name('project-location');
         Route::post('/kpi-approval/{groupId}', [CapstoneCoordinatorController::class, 'updateKpiApproval'])->name('kpi-approval');
         Route::post('/toggle-acc/{groupId}', [CapstoneCoordinatorController::class, 'toggleAccCoordinator'])->name('toggle-acc');
     });

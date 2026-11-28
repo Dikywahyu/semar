@@ -141,6 +141,27 @@ class CapstoneCoordinatorController extends Controller
         ]);
     }
 
+    // Update Tempat / Lokasi Proyek oleh Koordinator
+    public function updateProjectLocation(Request $request, $groupId)
+    {
+        $validated = $request->validate([
+            'project_location' => 'nullable|string|max:255',
+        ]);
+
+        $group = CapstoneGroup::findOrFail($groupId);
+        $this->authorizeGroupCoordinator($group);
+
+        $group->update([
+            'project_location' => $validated['project_location'] ?? null,
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Tempat / Lokasi Proyek berhasil diperbarui.',
+            'project_location' => $group->project_location,
+        ]);
+    }
+
     // Menu KPI: Setujui / Belum untuk Ujian
     public function updateKpiApproval(Request $request, $groupId)
     {
