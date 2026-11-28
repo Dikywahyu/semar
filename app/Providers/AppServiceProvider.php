@@ -107,7 +107,15 @@ class AppServiceProvider extends ServiceProvider
                     'category' => 'Capstone Design',
                     'apps_menu' => true,
                     'active' => request()->is('capstone/koordinator*'),
-                    'roles' => ['Super Admin', 'dosen', 'Dosen', 'Kaprodi', 'Kajur'],
+                    'condition' => function ($user) {
+                        if (! $user) return false;
+                        if ($user->hasAnyRole(['Super Admin', 'Kaprodi', 'KPS'])) {
+                            return true;
+                        }
+                        $dosenId = $user->id_dosen;
+                        if (! $dosenId) return false;
+                        return \App\Models\Capstone\CapstoneExpertise::where('coordinator_id', $dosenId)->exists();
+                    },
                 ],
                 [
                     'title' => 'Penilaian Dosen Capstone',
@@ -313,6 +321,12 @@ class AppServiceProvider extends ServiceProvider
             $user = request()->user(); // Bisa juga menggunakan \Illuminate\Support\Facades\Auth::user()
 
             $menus = array_filter($rawMenus, function ($menu) use ($user) {
+                if (isset($menu['condition']) && is_callable($menu['condition'])) {
+                    if (! $menu['condition']($user)) {
+                        return false;
+                    }
+                }
+
                 if (isset($menu['roles_or_permission'])) {
                     $access = $menu['roles_or_permission'];
                     return $user && (

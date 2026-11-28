@@ -86,6 +86,7 @@
                             <th class="py-3">No</th>
                             <th class="py-3">Nama Komponen</th>
                             <th class="py-3">Bobot (%)</th>
+                            <th class="py-3 text-end">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="tableBodyPembimbing">
@@ -109,6 +110,7 @@
                             <th class="py-3">No</th>
                             <th class="py-3">Nama Komponen</th>
                             <th class="py-3">Bobot (%)</th>
+                            <th class="py-3 text-end">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="tableBodyPenguji">
@@ -199,17 +201,27 @@
 
         loadKomponenData();
 
-        $('#modalKomponen').on('show.bs.modal', function() {
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'}[char]));
+        }
+
+        $('#btnTambahKomponen').on('click', function() {
             $('#formKomponen')[0].reset();
+            $('#komponenId').val('');
+            $('#modalTitle').text('Tambah Komponen Nilai');
+            $('#btnSimpan').text('Simpan Komponen');
         });
 
-        // Komponen yang sudah ada hanya dapat dilihat; form ini khusus untuk penambahan.
+        // Submit Tambah / Edit Komponen
         $('#formKomponen').on('submit', function(e) {
             e.preventDefault();
+            let id = $('#komponenId').val();
+            let url = id ? "{{ url('capstone/admin/komponen') }}/" + id : "{{ route('capstone.admin.komponen.store') }}";
+            let type = id ? 'PUT' : 'POST';
 
             $.ajax({
-                url: "{{ route('capstone.admin.komponen.store') }}",
-                type: 'POST',
+                url: url,
+                type: type,
                 data: $(this).serialize(),
                 success: function(res) {
                     $('#modalKomponen').modal('hide');
@@ -219,6 +231,51 @@
                 error: function(err) {
                     Swal.fire('Gagal', err.responseJSON?.message || 'Terjadi kesalahan validasi.', 'error');
                 }
+            });
+        });
+
+        // Event Edit Komponen
+        $(document).on('click', '.btn-edit-komponen', function() {
+            let id = $(this).data('id');
+            let name = $(this).data('name');
+            let category = $(this).data('category');
+            let percentage = $(this).data('percentage');
+
+            $('#komponenId').val(id);
+            $('#inputName').val(name);
+            $('#inputCategory').val(category);
+            $('#inputPercentage').val(percentage);
+
+            $('#modalTitle').text('Edit Komponen Nilai');
+            $('#btnSimpan').text('Perbarui Komponen');
+            $('#modalKomponen').modal('show');
+        });
+
+        // Event Hapus Komponen
+        $(document).on('click', '.btn-delete-komponen', function() {
+            let id = $(this).data('id');
+            Swal.fire({
+                title: 'Hapus Komponen Ini?',
+                text: 'Pastikan komponen belum digunakan pada penilaian mahasiswa.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                confirmButtonText: 'Ya, Hapus',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+                $.ajax({
+                    url: "{{ url('capstone/admin/komponen') }}/" + id,
+                    type: 'DELETE',
+                    data: { _token: '{{ csrf_token() }}' },
+                    success: function(res) {
+                        Swal.fire('Terhapus!', res.message, 'success');
+                        loadKomponenData();
+                    },
+                    error: function(err) {
+                        Swal.fire('Gagal', err.responseJSON?.message || 'Komponen gagal dihapus.', 'error');
+                    }
+                });
             });
         });
     });
@@ -243,17 +300,35 @@
 
                 if (response.data && response.data.length > 0) {
                     response.data.forEach(function(item) {
+                        const safeName = item.name ? String(item.name).replace(/"/g, '&quot;') : '';
+                        const actionButtons = `
+                            <td class="text-end">
+                                <button type="button" class="btn btn-sm btn-outline-warning rounded-pill px-2 py-1 btn-edit-komponen"
+                                    data-id="${item.id}"
+                                    data-name="${safeName}"
+                                    data-category="${item.category}"
+                                    data-percentage="${item.percentage}">
+                                    <i class="ti ti-edit me-1"></i>Edit
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1 btn-delete-komponen"
+                                    data-id="${item.id}">
+                                    <i class="ti ti-trash"></i>
+                                </button>
+                            </td>`;
+
                         if (item.category === 'pembimbing') {
                             rowsPembimbing += `<tr>
                                 <td>${noPembimbing++}</td>
                                 <td><strong>${item.name}</strong></td>
                                 <td>${item.percentage}%</td>
+                                ${actionButtons}
                             </tr>`;
                         } else if (item.category === 'penguji') {
                             rowsPenguji += `<tr>
                                 <td>${noPenguji++}</td>
                                 <td><strong>${item.name}</strong></td>
                                 <td>${item.percentage}%</td>
+                                ${actionButtons}
                             </tr>`;
                         }
                     });

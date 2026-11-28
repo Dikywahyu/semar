@@ -90,4 +90,41 @@ class User extends Authenticatable
     {
         return $this->hasMany(Attendance::class, 'user_id');
     }
+
+    public function getDosenProfile(): ?\App\Models\Dosen\Dosen
+    {
+        return \App\Models\Dosen\Dosen::query()
+            ->where('aktif', true)
+            ->where(function ($query) {
+                $hasIdentity = false;
+                if (filled($this->email)) {
+                    $query->where('email', $this->email);
+                    $hasIdentity = true;
+                }
+                if (filled($this->identifier_number)) {
+                    $hasIdentity
+                        ? $query->orWhere('nidn', $this->identifier_number)
+                        : $query->where('nidn', $this->identifier_number);
+                    $hasIdentity = true;
+                }
+                if (! $hasIdentity) {
+                    $query->whereRaw('1 = 0');
+                }
+            })
+            ->first();
+    }
+
+    public function getDosenAttribute(): ?\App\Models\Dosen\Dosen
+    {
+        return $this->getDosenProfile();
+    }
+
+    public function getIdDosenAttribute(): ?string
+    {
+        if (isset($this->attributes['id_dosen']) && filled($this->attributes['id_dosen'])) {
+            return $this->attributes['id_dosen'];
+        }
+
+        return $this->getDosenProfile()?->id_dosen;
+    }
 }

@@ -72,9 +72,6 @@ default => 'bg-secondary-subtle text-secondary',
             <i class="ti ti-user me-1"></i>{{ $group->leader?->name ?? 'Ketua Kelompok' }}
         </div>
         <div class="d-flex gap-2 flex-shrink-0">
-            <a class="btn btn-light btn-sm border" href="{{ route('capstone.dosen.scores.show', $group->id) }}" target="_blank" rel="noopener" title="Cetak Nilai">
-                <i class="ti ti-printer"></i>
-            </a>
             <button type="button" class="btn {{ $isSupervisor ? 'btn-primary' : 'btn-warning text-dark fw-semibold' }} btn-sm px-3" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}">
                 <i class="ti ti-edit me-1"></i>Nilai & Detail
             </button>
@@ -117,6 +114,46 @@ default => 'bg-secondary-subtle text-secondary',
                             <div class="small"><strong>Pembimbing:</strong> {{ $group->supervisor?->nama_dosen ?? 'Belum diplot' }}</div>
                             <div class="small"><strong>Penguji:</strong> {{ $group->examiner?->nama_dosen ?? 'Belum diplot' }}</div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Berkas Mahasiswa (Proposal & Sidang Akhir) -->
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-2"><i class="ti ti-folders text-primary me-2"></i>Berkas Mahasiswa (Proposal & Sidang Akhir)</h6>
+                    @php
+                    $dosenViewFiles = [
+                        ['label' => 'Kartu Konsultasi', 'file' => $group->consultation_card_file, 'stage' => 'Proposal / Bimbingan'],
+                        ['label' => 'Draft Proposal', 'file' => $group->draft_report_file, 'stage' => 'Proposal / Bimbingan'],
+                        ['label' => 'Gambar Kerja / Desain', 'file' => $group->drawings_file, 'stage' => 'Proposal / Pelaksanaan'],
+                        ['label' => 'Rencana Anggaran (RAB)', 'file' => $group->rab_file, 'stage' => 'Proposal / Pelaksanaan'],
+                        ['label' => 'Perhitungan Struktural', 'file' => $group->structural_calculation_file, 'stage' => 'Proposal / Pelaksanaan'],
+                        ['label' => 'Laporan Final Capstone', 'file' => $group->final_report_file, 'stage' => 'Sidang Akhir'],
+                        ['label' => 'Berita Acara Ujian', 'file' => $group->berita_acara_file, 'stage' => 'Sidang Akhir'],
+                        ['label' => 'Kesepakatan Bersama', 'file' => $group->agreement_file, 'stage' => 'Sidang Akhir'],
+                    ];
+                    @endphp
+                    <div class="row g-2">
+                        @foreach($dosenViewFiles as $dvf)
+                        <div class="col-md-6 col-lg-3">
+                            <div class="p-2 rounded-3 border bg-light h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="fw-semibold text-dark small">{{ $dvf['label'] }}</div>
+                                    <span class="text-muted" style="font-size: 0.7rem;">{{ $dvf['stage'] }}</span>
+                                </div>
+                                <div class="mt-2 pt-1 border-top d-flex justify-content-between align-items-center">
+                                    @if($dvf['file'])
+                                    <span class="badge bg-success-subtle text-success" style="font-size: 0.68rem;">Ada</span>
+                                    <a href="{{ route('capstone.file.view', ['path' => $dvf['file']]) }}" target="_blank" class="btn btn-sm btn-info text-white rounded-pill px-2 py-0" style="font-size: 0.72rem;">
+                                        <i class="ti ti-eye me-1"></i>Buka
+                                    </a>
+                                    @else
+                                    <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.68rem;">Belum ada</span>
+                                    <span class="text-muted small">-</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
                     </div>
                 </div>
 

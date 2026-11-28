@@ -327,6 +327,42 @@
     </div>
 </div>
 
+<!-- Modal Lihat Berkas Mahasiswa (Admin) -->
+<div class="modal fade" id="modalStudentFiles" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom">
+                <div>
+                    <h5 class="modal-title fw-bold" id="modalStudentFilesTitle">Berkas Mahasiswa</h5>
+                    <div class="small text-muted" id="modalStudentFilesSubtitle">Daftar berkas Capstone Design yang telah diunggah mahasiswa</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>No</th>
+                                <th>Jenis Dokumen</th>
+                                <th>Tahapan</th>
+                                <th>Status</th>
+                                <th class="text-end">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentFilesTableBody">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-top">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -532,6 +568,22 @@
                                         <li><hr class="dropdown-divider"></li>
                                         <li><h6 class="dropdown-header small text-uppercase">Dokumen & Undangan</h6></li>
                                         <li>
+                                            <button class="dropdown-item btn-view-files" data-files="${escapeHtml(JSON.stringify({
+                                                title: group.title,
+                                                leader: group.leader?.name,
+                                                consultation_card: group.consultation_card_file,
+                                                draft_report: group.draft_report_file,
+                                                drawings: group.drawings_file,
+                                                rab: group.rab_file,
+                                                structural_calculation: group.structural_calculation_file,
+                                                final_report: group.final_report_file,
+                                                berita_acara: group.berita_acara_file,
+                                                agreement: group.agreement_file
+                                            }))}">
+                                                <i class="ti ti-folders text-warning me-2"></i>Lihat Berkas Mahasiswa
+                                            </button>
+                                        </li>
+                                        <li>
                                             <a class="dropdown-item" target="_blank" href="{{ url('capstone/admin/invitation') }}/${group.id}">
                                                 <i class="ti ti-file-text text-secondary me-2"></i>Lihat Undangan
                                             </a>
@@ -722,6 +774,51 @@
 
     $(document).on('click', '.btn-print-document', function() {
         window.open("{{ url('capstone/admin/print') }}/" + $(this).data('id') + "/" + $(this).data('type'), '_blank', 'noopener');
+    });
+
+    $(document).on('click', '.btn-view-files', function() {
+        const raw = $(this).attr('data-files');
+        const data = JSON.parse(raw);
+        $('#modalStudentFilesTitle').text(data.title || 'Berkas Kelompok');
+        $('#modalStudentFilesSubtitle').text('Ketua Kelompok: ' + (data.leader || '-'));
+
+        const fileConfigs = [
+            { key: 'consultation_card', label: 'Kartu Konsultasi', stage: 'Proposal / Bimbingan' },
+            { key: 'draft_report', label: 'Draft Proposal', stage: 'Proposal / Bimbingan' },
+            { key: 'drawings', label: 'Gambar Kerja / Desain', stage: 'Proposal / Pelaksanaan' },
+            { key: 'rab', label: 'Rencana Anggaran Biaya (RAB)', stage: 'Proposal / Pelaksanaan' },
+            { key: 'structural_calculation', label: 'Perhitungan Struktural', stage: 'Proposal / Pelaksanaan' },
+            { key: 'final_report', label: 'Laporan Final Capstone', stage: 'Sidang Akhir' },
+            { key: 'berita_acara', label: 'Berita Acara Ujian', stage: 'Sidang Akhir' },
+            { key: 'agreement', label: 'Kesepakatan Bersama', stage: 'Sidang Akhir' },
+        ];
+
+        const fileViewBaseUrl = "{{ route('capstone.file.view') }}";
+        let rows = '';
+        fileConfigs.forEach((cfg, idx) => {
+            const filePath = data[cfg.key];
+            const isUploaded = !!filePath;
+            rows += `<tr>
+                <td>${idx + 1}</td>
+                <td><strong class="text-dark">${cfg.label}</strong></td>
+                <td><span class="badge bg-light text-secondary border">${cfg.stage}</span></td>
+                <td>
+                    ${isUploaded
+                        ? '<span class="badge bg-success-subtle text-success"><i class="ti ti-check me-1"></i>Sudah Diunggah</span>'
+                        : '<span class="badge bg-secondary-subtle text-secondary">Belum Ada</span>'}
+                </td>
+                <td class="text-end">
+                    ${isUploaded
+                        ? `<a href="${fileViewBaseUrl}?path=${encodeURIComponent(filePath)}" target="_blank" class="btn btn-sm btn-info text-white rounded-pill px-3 py-1">
+                                <i class="ti ti-eye me-1"></i>Buka File
+                           </a>`
+                        : '<span class="text-muted small">-</span>'}
+                </td>
+            </tr>`;
+        });
+
+        $('#studentFilesTableBody').html(rows);
+        $('#modalStudentFiles').modal('show');
     });
 
     $(document).on('click', '.btn-delete-group', function() {

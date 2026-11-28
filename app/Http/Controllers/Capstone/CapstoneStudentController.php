@@ -37,11 +37,63 @@ class CapstoneStudentController extends Controller
 
         abort_unless($student, 403, 'Profil mahasiswa aktif untuk akun ini belum tersedia.');
         $userId = $student->id;
-        $group = CapstoneGroup::with(['expertise', 'supervisor', 'examiner', 'members.student', 'approver', 'coordinatorApprover', 'supervisorApprover', 'kpsApprover', 'kpiApprover'])
+        $group = CapstoneGroup::with([
+            'expertise',
+            'supervisor',
+            'examiner',
+            'members.student',
+            'approver',
+            'coordinatorApprover',
+            'supervisorApprover',
+            'kpsApprover',
+            'kpiApprover',
+            'studentScores.component',
+            'studentScores.evaluator',
+        ])
             ->where(function ($query) use ($userId) {
                 $query->where('leader_id', $userId)
                     ->orWhereHas('members', fn ($memberQuery) => $memberQuery->where('student_id', $userId)->where('status', 'accepted'));
             })->first();
+
+        // Ambil dan hitung nilai untuk mahasiswa yang sedang login
+        $myScores = $group ? $group->studentScores->where('student_id', $userId) : collect();
+        $totalWeight = $myScores->sum(fn ($s) => (float) ($s->component?->percentage ?? 0));
+
+        $finalScoreNumber = null;
+        $finalScoreGrade = null;
+        $finalScoreStatus = null;
+
+        if ($myScores->isNotEmpty()) {
+            if ($totalWeight > 0) {
+                $weightedSum = $myScores->sum(fn ($s) => ((float) $s->score * (float) ($s->component?->percentage ?? 0)) / 100);
+                $finalScoreNumber = $totalWeight == 100 ? round($weightedSum, 2) : round(($weightedSum / $totalWeight) * 100, 2);
+            } else {
+                $finalScoreNumber = round($myScores->avg('score'), 2);
+            }
+
+            if ($finalScoreNumber >= 80) {
+                $finalScoreGrade = 'A';
+                $finalScoreStatus = 'LULUS';
+            } elseif ($finalScoreNumber >= 75) {
+                $finalScoreGrade = 'B+';
+                $finalScoreStatus = 'LULUS';
+            } elseif ($finalScoreNumber >= 70) {
+                $finalScoreGrade = 'B';
+                $finalScoreStatus = 'LULUS';
+            } elseif ($finalScoreNumber >= 65) {
+                $finalScoreGrade = 'C+';
+                $finalScoreStatus = 'LULUS';
+            } elseif ($finalScoreNumber >= 55) {
+                $finalScoreGrade = 'C';
+                $finalScoreStatus = 'LULUS';
+            } elseif ($finalScoreNumber >= 40) {
+                $finalScoreGrade = 'D';
+                $finalScoreStatus = 'TIDAK LULUS';
+            } else {
+                $finalScoreGrade = 'E';
+                $finalScoreStatus = 'TIDAK LULUS';
+            }
+        }
 
         $invitations = CapstoneGroupMember::with(['group.leader', 'group.expertise'])
             ->where('student_id', $userId)
@@ -58,11 +110,24 @@ class CapstoneStudentController extends Controller
             return response()->json([
                 'status' => 'success',
                 'my_group' => $group,
-                'invitations' => $invitations
+                'invitations' => $invitations,
+                'scores' => $myScores,
+                'final_score' => $finalScoreNumber,
+                'grade' => $finalScoreGrade,
             ]);
         }
 
-        return view('capstone.mahasiswa.index', compact('group', 'invitations', 'expertises', 'availableStudents', 'student'));
+        return view('capstone.mahasiswa.index', compact(
+            'group',
+            'invitations',
+            'expertises',
+            'availableStudents',
+            'student',
+            'myScores',
+            'finalScoreNumber',
+            'finalScoreGrade',
+            'finalScoreStatus'
+        ));
     }
 
     // 1. Pendaftaran & Update Kelompok & Keahlian
@@ -270,7 +335,7 @@ class CapstoneStudentController extends Controller
 
         // Validasi format file_type dari dropdown yang ada di blade
         $request->validate([
-            'file_type' => 'required|in:consultation_card,draft_report,berita_acara,lembar_revisi,final_report,recap_score,agreement,drawings,rab,structural_calculation',
+            'file_type' => 'required|in:consultation_card,draft_report,berita_acara,final_report,agreement,drawings,rab,structural_calculation',
             'document_file' => 'required|file|mimes:pdf,jpg,jpeg,png,dwg,dxf,xlsx,xls,csv,zip|max:20480',
         ]);
 
@@ -282,12 +347,10 @@ class CapstoneStudentController extends Controller
             'consultation_card' => 'consultation_card_file',
             'draft_report'      => 'draft_report_file',
             'berita_acara'      => 'berita_acara_file',
-            'lembar_revisi'     => 'lembar_revisi_file',
             'final_report'      => 'final_report_file',
-            'recap_score'       => 'recap_score_file',
-            'agreement' => 'agreement_file',
-            'drawings' => 'drawings_file',
-            'rab' => 'rab_file',
+            'agreement'         => 'agreement_file',
+            'drawings'          => 'drawings_file',
+            'rab'               => 'rab_file',
             'structural_calculation' => 'structural_calculation_file',
         ];
 
@@ -295,12 +358,10 @@ class CapstoneStudentController extends Controller
             'consultation_card' => 'capstone/consultation',
             'draft_report'      => 'capstone/drafts',
             'berita_acara'      => 'capstone/berita_acara',
-            'lembar_revisi'     => 'capstone/revisi',
             'final_report'      => 'capstone/final',
-            'recap_score'       => 'capstone/recap',
-            'agreement' => 'capstone/agreement',
-            'drawings' => 'capstone/drawings',
-            'rab' => 'capstone/rab',
+            'agreement'         => 'capstone/agreement',
+            'drawings'          => 'capstone/drawings',
+            'rab'               => 'capstone/rab',
             'structural_calculation' => 'capstone/structural-calculation',
         ];
 
@@ -407,12 +468,10 @@ class CapstoneStudentController extends Controller
             'consultation_card' => 'consultation_card_file',
             'draft_report'      => 'draft_report_file',
             'berita_acara'      => 'berita_acara_file',
-            'lembar_revisi'     => 'lembar_revisi_file',
             'final_report'      => 'final_report_file',
-            'recap_score'       => 'recap_score_file',
-            'agreement' => 'agreement_file',
-            'drawings' => 'drawings_file',
-            'rab' => 'rab_file',
+            'agreement'         => 'agreement_file',
+            'drawings'          => 'drawings_file',
+            'rab'               => 'rab_file',
             'structural_calculation' => 'structural_calculation_file',
         ];
 

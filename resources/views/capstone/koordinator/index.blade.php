@@ -23,7 +23,7 @@
 <div class="container-fluid py-4 px-3 px-md-4">
     <div class="mb-4">
         <h3 class="fw-bold text-slate-800 mb-1">Panel Koordinator Keahlian</h3>
-        <p class="text-secondary mb-0">Plotting dosen, menu KPI Setujui untuk Ujian, dan ACC kelulusan Capstone sesuai bidang keahlian.</p>
+        <p class="text-secondary mb-0">Menu KPI Setujui untuk Ujian, ACC kelulusan Capstone, dan monitoring berkas sesuai bidang keahlian.</p>
     </div>
 
     <!-- Grafik Beban Bimbingan -->
@@ -58,14 +58,30 @@
                         <!-- Kolom Judul & Keahlian -->
                         <td>
                             <strong class="text-dark d-block mb-1">{{ $group->title }}</strong>
-                            <span class="badge bg-info-subtle text-info border border-info-subtle">
+                            <span class="badge bg-info-subtle text-info border border-info-subtle mb-1">
                                 {{ optional($group->expertise)->name ?? 'Tanpa Keahlian' }}
                             </span>
                             @if($group->draft_report_file)
-                            <a class="d-block small mt-2" href="{{ route('capstone.file.view', ['path' => $group->draft_report_file]) }}" target="_blank" rel="noopener">Lihat Draft Laporan</a>
+                            <a class="d-block small text-primary mb-1" href="{{ route('capstone.file.view', ['path' => $group->draft_report_file]) }}" target="_blank" rel="noopener">
+                                <i class="ti ti-file-text me-1"></i>Draft Proposal
+                            </a>
                             @else
-                            <span class="d-block text-muted small mt-2">Draft belum diunggah</span>
+                            <span class="d-block text-muted small mb-1">Draft belum diunggah</span>
                             @endif
+                            <button type="button" class="btn btn-sm btn-outline-info rounded-pill px-2 py-0 mt-1 btn-coord-view-files" style="font-size: 0.75rem;" data-files="{{ json_encode([
+                                'title' => $group->title,
+                                'leader' => $group->leader?->name,
+                                'consultation_card' => $group->consultation_card_file,
+                                'draft_report' => $group->draft_report_file,
+                                'drawings' => $group->drawings_file,
+                                'rab' => $group->rab_file,
+                                'structural_calculation' => $group->structural_calculation_file,
+                                'final_report' => $group->final_report_file,
+                                'berita_acara' => $group->berita_acara_file,
+                                'agreement' => $group->agreement_file,
+                            ]) }}">
+                                <i class="ti ti-folders me-1"></i>Semua Berkas
+                            </button>
                         </td>
 
                         <!-- Kolom Mahasiswa -->
@@ -92,49 +108,25 @@
                             </div>
                         </td>
 
-                        <!-- Kolom Plotting Dosen -->
+                        <!-- Kolom Plotting Dosen (Read-only, dikelola oleh Super Admin & Kaprodi) -->
                         <td>
-                            <form class="form-plotting-dosen" data-id="{{ $group->id }}">
-                                @csrf
+                            <div class="small">
                                 <div class="mb-2">
-                                    <label class="form-label small mb-0 text-muted">Tempat / Lokasi Proyek:</label>
-                                    <input type="text" name="project_location" value="{{ $group->project_location }}" maxlength="255" class="form-control form-control-sm" placeholder="Tempat pelaksanaan CD">
+                                    <span class="text-muted d-block" style="font-size: 0.75rem;">Tempat / Lokasi Proyek:</span>
+                                    <strong class="text-dark">{{ $group->project_location ?: '-' }}</strong>
                                 </div>
                                 <div class="mb-2">
-                                    <label class="form-label small mb-0 text-muted">Pembimbing:</label>
-                                    <select name="supervisor_id" class="form-select select2-dosen" style="width: 100%;">
-                                        <option value="">-- Pilih Pembimbing --</option>
-                                        <!-- Cek apakah kelompok sudah punya keahlian dan keahlian tersebut punya data dosen -->
-                                        @if($group->expertise && $group->expertise->dosens)
-                                        @foreach($group->expertise->dosens as $dosen)
-                                        <option value="{{ $dosen->id_dosen }}" {{ $group->supervisor_id == $dosen->id_dosen ? 'selected' : '' }}>
-                                            {{ $dosen->nama_dosen }}
-                                        </option>
-                                        @endforeach
-                                        @else
-                                        <option value="" disabled>Belum ada dosen di keahlian ini</option>
-                                        @endif
-                                    </select>
+                                    <span class="text-muted d-block" style="font-size: 0.75rem;">Dosen Pembimbing:</span>
+                                    <strong class="text-dark">{{ $group->supervisor?->nama_dosen ?? 'Belum diplot' }}</strong>
                                 </div>
-                                <div>
-                                    <label class="form-label small mb-0 text-muted">Penguji:</label>
-                                    <select name="examiner_id" class="form-select select2-dosen" style="width: 100%;">
-                                        <option value="">-- Pilih Penguji --</option>
-                                        @if($group->expertise && $group->expertise->dosens)
-                                        @foreach($group->expertise->dosens as $dosen)
-                                        <option value="{{ $dosen->id_dosen }}" {{ $group->examiner_id == $dosen->id_dosen ? 'selected' : '' }}>
-                                            {{ $dosen->nama_dosen }}
-                                        </option>
-                                        @endforeach
-                                        @else
-                                        <option value="" disabled>Belum ada dosen di keahlian ini</option>
-                                        @endif
-                                    </select>
+                                <div class="mb-2">
+                                    <span class="text-muted d-block" style="font-size: 0.75rem;">Dosen Penguji:</span>
+                                    <strong class="text-dark">{{ $group->examiner?->nama_dosen ?? 'Belum diplot' }}</strong>
                                 </div>
-                                <button type="submit" class="btn btn-primary btn-sm w-100 mt-2 py-1">
-                                    <i class="ti ti-device-floppy"></i> Simpan Plotting
-                                </button>
-                            </form>
+                                <div class="mt-2 text-muted" style="font-size: 0.72rem;">
+                                    <i class="ti ti-info-circle me-1"></i>Plotting ditetapkan oleh Super Admin / Kaprodi
+                                </div>
+                            </div>
                         </td>
 
                         <!-- Kolom KPI Ujian -->
@@ -179,6 +171,42 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Lihat Berkas Mahasiswa (Koordinator) -->
+<div class="modal fade" id="modalCoordStudentFiles" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom">
+                <div>
+                    <h5 class="modal-title fw-bold" id="modalCoordFilesTitle">Berkas Mahasiswa</h5>
+                    <div class="small text-muted" id="modalCoordFilesSubtitle">Daftar berkas Capstone Design yang telah diunggah mahasiswa</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>No</th>
+                                <th>Jenis Dokumen</th>
+                                <th>Tahapan</th>
+                                <th>Status</th>
+                                <th class="text-end">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="coordFilesTableBody">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-top">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
+            </div>
         </div>
     </div>
 </div>
@@ -254,31 +282,49 @@
         });
         @endif
 
-        // 1. Submit Plotting Dosen
-        $('.form-plotting-dosen').on('submit', function(e) {
-            e.preventDefault();
-            let groupId = $(this).data('id');
-            let formData = $(this).serialize();
+        // 1. Modal Lihat Semua Berkas Mahasiswa
+        $(document).on('click', '.btn-coord-view-files', function() {
+            const data = $(this).data('files');
+            $('#modalCoordFilesTitle').text(data.title || 'Berkas Kelompok');
+            $('#modalCoordFilesSubtitle').text('Ketua Kelompok: ' + (data.leader || '-'));
 
-            $.ajax({
-                url: "{{ url('capstone/koordinator/plot-lecturers') }}/" + groupId,
-                type: 'POST',
-                data: formData,
-                success: function(res) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil!',
-                        text: res.message,
-                        timer: 1500,
-                        showConfirmButton: false
-                    }).then(() => {
-                        location.reload(); // Reload halaman untuk update grafik
-                    });
-                },
-                error: function(err) {
-                    Swal.fire('Gagal', err.responseJSON?.message || 'Terjadi kesalahan saat menyimpan plotting.', 'error');
-                }
+            const fileConfigs = [
+                { key: 'consultation_card', label: 'Kartu Konsultasi', stage: 'Proposal / Bimbingan' },
+                { key: 'draft_report', label: 'Draft Proposal', stage: 'Proposal / Bimbingan' },
+                { key: 'drawings', label: 'Gambar Kerja / Desain', stage: 'Proposal / Pelaksanaan' },
+                { key: 'rab', label: 'Rencana Anggaran Biaya (RAB)', stage: 'Proposal / Pelaksanaan' },
+                { key: 'structural_calculation', label: 'Perhitungan Struktural', stage: 'Proposal / Pelaksanaan' },
+                { key: 'final_report', label: 'Laporan Final Capstone', stage: 'Sidang Akhir' },
+                { key: 'berita_acara', label: 'Berita Acara Ujian', stage: 'Sidang Akhir' },
+                { key: 'agreement', label: 'Kesepakatan Bersama', stage: 'Sidang Akhir' },
+            ];
+
+            const fileViewBaseUrl = "{{ route('capstone.file.view') }}";
+            let rows = '';
+            fileConfigs.forEach((cfg, idx) => {
+                const filePath = data[cfg.key];
+                const isUploaded = !!filePath;
+                rows += `<tr>
+                    <td>${idx + 1}</td>
+                    <td><strong class="text-dark">${cfg.label}</strong></td>
+                    <td><span class="badge bg-light text-secondary border">${cfg.stage}</span></td>
+                    <td>
+                        ${isUploaded
+                            ? '<span class="badge bg-success-subtle text-success"><i class="ti ti-check me-1"></i>Sudah Diunggah</span>'
+                            : '<span class="badge bg-secondary-subtle text-secondary">Belum Ada</span>'}
+                    </td>
+                    <td class="text-end">
+                        ${isUploaded
+                            ? `<a href="${fileViewBaseUrl}?path=${encodeURIComponent(filePath)}" target="_blank" class="btn btn-sm btn-info text-white rounded-pill px-3 py-1">
+                                    <i class="ti ti-eye me-1"></i>Buka File
+                               </a>`
+                            : '<span class="text-muted small">-</span>'}
+                    </td>
+                </tr>`;
             });
+
+            $('#coordFilesTableBody').html(rows);
+            $('#modalCoordStudentFiles').modal('show');
         });
 
         // 2. Submit Update KPI

@@ -291,16 +291,34 @@ class CapstoneAdminController extends Controller
     public function updateKomponen(Request $request, $id)
     {
         $this->authorizeCapstoneAdmin();
-        CapstoneScoreComponent::findOrFail($id);
-        abort(409, 'Komponen nilai yang sudah dibuat tidak dapat diubah.');
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'category' => 'required|in:pembimbing,penguji',
+            'percentage' => 'required|numeric|min:0|max:100',
+        ]);
+
+        $component = CapstoneScoreComponent::findOrFail($id);
+        $component->update($validated);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Komponen nilai berhasil diperbarui.',
+            'data' => $component,
+        ]);
     }
 
     // 6. Hapus Komponen Nilai
     public function destroyKomponen($id)
     {
         $this->authorizeCapstoneAdmin();
-        CapstoneScoreComponent::findOrFail($id);
-        abort(409, 'Komponen nilai tidak dapat dihapus.');
+        $component = CapstoneScoreComponent::findOrFail($id);
+        abort_if($component->studentScores()->exists(), 409, 'Komponen sudah digunakan pada penilaian mahasiswa dan tidak dapat dihapus.');
+        $component->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Komponen nilai berhasil dihapus.',
+        ]);
     }
 
     // --- MASTER KEAHLIAN (EXPERTISES) ---

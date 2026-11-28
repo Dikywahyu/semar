@@ -8,24 +8,33 @@ use App\Models\Capstone\CapstoneExpertise;
 use App\Models\Dosen\Dosen;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Capstone\Concerns\ResolvesCapstoneProfiles;
 
 class CapstoneCoordinatorController extends Controller
 {
+    use ResolvesCapstoneProfiles;
 
     // Index halaman koordinator (mengarah ke view & mendukung AJAX)
     public function index(Request $request)
     {
         $user = Auth::user();
-        $dosenId = $user?->id_dosen ?? null;
-        $isGlobalAdmin = $user?->hasAnyRole(['Super Admin', 'KPS', 'Kaprodi', 'Admin', 'BAAK', 'Akademik']);
-        abort_unless($isGlobalAdmin || $dosenId, 403);
+        $isGlobalAdmin = $user?->hasAnyRole(['Super Admin', 'KPS', 'Kaprodi']);
+        $dosen = $this->capstoneDosen($request);
+        $dosenId = $dosen?->id_dosen ?? $user?->id_dosen;
 
         // Ambil keahlian yang dikoordinatori oleh dosen yang sedang login
-        $expertises = CapstoneExpertise::where('coordinator_id', $dosenId)->get();
+        $expertises = $dosenId ? CapstoneExpertise::where('coordinator_id', $dosenId)->get() : collect();
+
+        // Menu koordinator hanya dapat diakses oleh Dosen Koordinator Keahlian, Super Admin, dan Kaprodi
+        abort_unless($isGlobalAdmin || ($dosenId && $expertises->isNotEmpty()), 403, 'Akses terbatas untuk Dosen Koordinator Keahlian Capstone, Super Admin, dan Kaprodi.');
+
+        if ($isGlobalAdmin && $expertises->isEmpty()) {
+            $expertises = CapstoneExpertise::all();
+        }
 
         $query = CapstoneGroup::with(['leader', 'members.student', 'supervisor', 'examiner', 'expertise.dosens', 'kpiApprover', 'coordinatorApprover']);
 
-        // Jika bukan Super Admin / role global, filter berdasarkan keahlian koordinator
+        // Jika bukan Super Admin / Kaprodi, filter berdasarkan keahlian koordinator
         if (! $isGlobalAdmin) {
             $query->whereHas('expertise', function ($q) use ($dosenId) {
                 $q->where('coordinator_id', $dosenId);
@@ -193,12 +202,13 @@ class CapstoneCoordinatorController extends Controller
     private function authorizeGroupCoordinator(CapstoneGroup $group): void
     {
         $user = Auth::user();
-        if ($user?->hasRole('Super Admin')) {
+        if ($user?->hasAnyRole(['Super Admin', 'KPS', 'Kaprodi'])) {
             return;
         }
 
         $expertise = $group->expertise()->first();
-        $dosenId = $user?->id_dosen;
+        $dosen = $this->capstoneDosen(request());
+        $dosenId = $dosen?->id_dosen ?? $user?->id_dosen;
         abort_unless(
             $dosenId && $expertise && (
                 $expertise->coordinator_id === $dosenId
@@ -211,11 +221,7 @@ class CapstoneCoordinatorController extends Controller
 
     private function authorizeGroupPlotting(CapstoneGroup $group): void
     {
-        if (Auth::user()?->hasAnyRole(['Super Admin', 'KPS', 'Kaprodi'])) {
-            return;
-        }
-
-        $this->authorizeGroupCoordinator($group);
+        abort_unless(Auth::user()?->hasAnyRole(['Super Admin', 'KPS', 'Kaprodi']), 403, 'Plotting dosen pembimbing dialihkan khusus untuk Super Admin dan Kaprodi.');
     }
 
     private function refreshFinalStatus(CapstoneGroup $group): void

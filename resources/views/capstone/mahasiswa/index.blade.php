@@ -304,6 +304,72 @@
         </div>
     </div>
 
+    <!-- Panel Hasil Penilaian Capstone Design (Tahap Akhir) -->
+    @if($hasGroup && (isset($myScores) && $myScores->isNotEmpty() || $hasExamDate || $isFinished))
+    <div class="modern-card p-4 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+                <h5 class="fw-bold mb-0 text-dark">
+                    <i class="ti ti-award me-2 text-warning"></i>Hasil Penilaian Akhir Capstone Design
+                </h5>
+                <span class="small text-muted">Rekapitulasi komponen nilai resmi dari Dosen Pembimbing dan Dosen Penguji.</span>
+            </div>
+            @if(isset($finalScoreNumber) && $finalScoreNumber !== null)
+            <div class="d-flex align-items-center gap-3">
+                <div class="text-end">
+                    <span class="small text-muted d-block" style="font-size: 0.75rem;">Nilai Akhir:</span>
+                    <strong class="fs-4 text-primary">{{ number_format($finalScoreNumber, 2) }}</strong>
+                </div>
+                <span class="badge {{ $finalScoreGrade === 'A' ? 'bg-success' : (in_array($finalScoreGrade, ['B+', 'B']) ? 'bg-primary' : 'bg-warning text-dark') }} fs-5 px-3 py-2 rounded-pill">
+                    {{ $finalScoreGrade }} ({{ $finalScoreStatus }})
+                </span>
+            </div>
+            @else
+            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-3 py-2">
+                <i class="ti ti-clock me-1"></i>Dalam Proses Penilaian
+            </span>
+            @endif
+        </div>
+
+        @if(isset($myScores) && $myScores->isNotEmpty())
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="py-2">No</th>
+                        <th class="py-2">Komponen Penilaian</th>
+                        <th class="py-2">Kategori</th>
+                        <th class="py-2">Bobot (%)</th>
+                        <th class="py-2">Dosen Penilai</th>
+                        <th class="py-2 text-end">Nilai</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($myScores as $score)
+                    <tr>
+                        <td>{{ $loop->iteration }}</td>
+                        <td><strong class="text-dark">{{ $score->component?->name }}</strong></td>
+                        <td>
+                            <span class="badge {{ strtolower($score->component?->category ?? '') === 'pembimbing' ? 'bg-primary-subtle text-primary' : 'bg-warning-subtle text-warning-emphasis' }} rounded-pill">
+                                {{ ucfirst($score->component?->category ?? '-') }}
+                            </span>
+                        </td>
+                        <td>{{ $score->component?->percentage ?? '-' }}%</td>
+                        <td>{{ $score->evaluator?->nama_dosen ?? '-' }}</td>
+                        <td class="text-end fw-bold text-dark fs-6">{{ number_format((float) $score->score, 2) }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @else
+        <div class="alert alert-light border rounded-3 text-muted mb-0 small">
+            <i class="ti ti-info-circle me-1 text-primary"></i> Nilai sedang dalam proses penilaian oleh Dosen Pembimbing dan Penguji. Nilai akan otomatis ditampilkan di sini setelah dosen menyimpan penilaian.
+        </div>
+        @endif
+    </div>
+    @endif
+
     <div class="row g-4">
         <!-- KOLOM KIRI: Informasi Kelompok, ACC, & Jadwal -->
         <div class="col-lg-5">
@@ -457,104 +523,90 @@
             @endif
         </div>
 
-        <!-- KOLOM KANAN: Grid Berkas Capstone (2 Kolom Modern + Auto Upload) -->
+        <!-- KOLOM KANAN: Grid Berkas Capstone (Tahap Bimbingan/Proposal & Tahap Sidang Akhir) -->
         <div class="col-lg-7">
             <div class="modern-card p-4 h-100">
                 @php
-                $documentChecklist = [
-                'consultation_card' => [
-                'label' => 'Kartu Konsultasi',
-                'format' => 'PDF / JPG / PNG',
-                'accept' => '.pdf,.jpg,.jpeg,.png',
-                'icon' => 'ti-notes',
-                'color' => 'primary',
-                'optional' => false,
-                'file' => $group->consultation_card_file ?? null,
-                ],
-                'draft_report' => [
-                'label' => 'Draft Proposal',
-                'format' => 'PDF',
-                'accept' => '.pdf',
-                'icon' => 'ti-file-text',
-                'color' => 'indigo',
-                'optional' => false,
-                'file' => $group->draft_report_file ?? null,
-                ],
-                'berita_acara' => [
-                'label' => 'Berita Acara Ujian',
-                'format' => 'PDF / JPG / PNG',
-                'accept' => '.pdf,.jpg,.jpeg,.png',
-                'icon' => 'ti-file-certificate',
-                'color' => 'warning',
-                'optional' => false,
-                'file' => $group->berita_acara_file ?? null,
-                ],
-                'lembar_revisi' => [
-                'label' => 'Lembar Revisi',
-                'format' => 'PDF',
-                'accept' => '.pdf',
-                'icon' => 'ti-edit-circle',
-                'color' => 'danger',
-                'optional' => false,
-                'file' => $group->lembar_revisi_file ?? null,
-                ],
-                'final_report' => [
-                'label' => 'Laporan Final Capstone',
-                'format' => 'PDF',
-                'accept' => '.pdf',
-                'icon' => 'ti-book',
-                'color' => 'success',
-                'optional' => false,
-                'file' => $group->final_report_file ?? null,
-                ],
-                'agreement' => [
-                'label' => 'Kesepakatan Bersama',
-                'format' => 'PDF',
-                'accept' => '.pdf',
-                'icon' => 'ti-writing-sign',
-                'color' => 'primary',
-                'optional' => false,
-                'file' => $group->agreement_file ?? null,
-                ],
-                'drawings' => [
-                'label' => 'Gambar Kerja / Desain',
-                'format' => 'PDF / DWG / DXF / ZIP',
-                'accept' => '.pdf,.dwg,.dxf,.zip',
-                'icon' => 'ti-ruler-measure',
-                'color' => 'info',
-                'optional' => false,
-                'file' => $group->drawings_file ?? null,
-                ],
-                'rab' => [
-                'label' => 'Rencana Anggaran (RAB)',
-                'format' => 'PDF / XLSX / CSV',
-                'accept' => '.pdf,.xlsx,.xls,.csv',
-                'icon' => 'ti-calculator',
-                'color' => 'success',
-                'optional' => false,
-                'file' => $group->rab_file ?? null,
-                ],
-                'recap_score' => [
-                'label' => 'Rekapitulasi Nilai',
-                'format' => 'PDF',
-                'accept' => '.pdf',
-                'icon' => 'ti-award',
-                'color' => 'warning',
-                'optional' => false,
-                'file' => $group->recap_score_file ?? null,
-                ],
-                'structural_calculation' => [
-                'label' => 'Perhitungan Struktural',
-                'format' => 'PDF / XLSX / ZIP',
-                'accept' => '.pdf,.xlsx,.xls,.csv,.zip',
-                'icon' => 'ti-building-bridge',
-                'color' => 'info',
-                'optional' => true,
-                'file' => $group->structural_calculation_file ?? null,
-                ],
+                $proposalDocs = [
+                    'consultation_card' => [
+                        'label' => 'Kartu Konsultasi',
+                        'format' => 'PDF / JPG / PNG',
+                        'accept' => '.pdf,.jpg,.jpeg,.png',
+                        'icon' => 'ti-notes',
+                        'color' => 'primary',
+                        'optional' => false,
+                        'file' => $group->consultation_card_file ?? null,
+                    ],
+                    'draft_report' => [
+                        'label' => 'Draft Proposal',
+                        'format' => 'PDF',
+                        'accept' => '.pdf',
+                        'icon' => 'ti-file-text',
+                        'color' => 'indigo',
+                        'optional' => false,
+                        'file' => $group->draft_report_file ?? null,
+                    ],
+                    'drawings' => [
+                        'label' => 'Gambar Kerja / Desain',
+                        'format' => 'PDF / DWG / DXF / ZIP',
+                        'accept' => '.pdf,.dwg,.dxf,.zip',
+                        'icon' => 'ti-ruler-measure',
+                        'color' => 'info',
+                        'optional' => false,
+                        'file' => $group->drawings_file ?? null,
+                    ],
+                    'rab' => [
+                        'label' => 'Rencana Anggaran (RAB)',
+                        'format' => 'PDF / XLSX / CSV',
+                        'accept' => '.pdf,.xlsx,.xls,.csv',
+                        'icon' => 'ti-calculator',
+                        'color' => 'success',
+                        'optional' => false,
+                        'file' => $group->rab_file ?? null,
+                    ],
+                    'structural_calculation' => [
+                        'label' => 'Perhitungan Struktural',
+                        'format' => 'PDF / XLSX / ZIP',
+                        'accept' => '.pdf,.xlsx,.xls,.csv,.zip',
+                        'icon' => 'ti-building-bridge',
+                        'color' => 'info',
+                        'optional' => true,
+                        'file' => $group->structural_calculation_file ?? null,
+                    ],
                 ];
 
-                $mandatoryDocs = collect($documentChecklist)->where('optional', false);
+                $sidangDocs = [
+                    'final_report' => [
+                        'label' => 'Laporan Final Capstone',
+                        'format' => 'PDF',
+                        'accept' => '.pdf',
+                        'icon' => 'ti-book',
+                        'color' => 'success',
+                        'optional' => false,
+                        'file' => $group->final_report_file ?? null,
+                    ],
+                    'berita_acara' => [
+                        'label' => 'Berita Acara Ujian',
+                        'format' => 'PDF / JPG / PNG',
+                        'accept' => '.pdf,.jpg,.jpeg,.png',
+                        'icon' => 'ti-file-certificate',
+                        'color' => 'warning',
+                        'optional' => false,
+                        'file' => $group->berita_acara_file ?? null,
+                    ],
+                    'agreement' => [
+                        'label' => 'Kesepakatan Bersama',
+                        'format' => 'PDF',
+                        'accept' => '.pdf',
+                        'icon' => 'ti-writing-sign',
+                        'color' => 'primary',
+                        'optional' => false,
+                        'file' => $group->agreement_file ?? null,
+                    ],
+                ];
+
+                $allDocs = array_merge($proposalDocs, $sidangDocs);
+                $mandatoryDocs = collect($allDocs)->where('optional', false);
                 $uploadedMandatoryCount = $mandatoryDocs->where('file', '!=', null)->count();
                 $totalMandatoryCount = $mandatoryDocs->count();
                 $progressPercent = $totalMandatoryCount > 0 ? round(($uploadedMandatoryCount / $totalMandatoryCount) * 100) : 0;
@@ -584,63 +636,133 @@
                     <i class="ti ti-alert-triangle me-1"></i> Daftarkan kelompok terlebih dahulu di sebelah kiri untuk membuka slot unggah berkas.
                 </div>
                 @else
-                <div class="row g-3">
-                    @foreach($documentChecklist as $type => $doc)
-                    @php
-                    $isUploaded = !empty($doc['file']);
-                    $tileClass = $isUploaded ? 'uploaded' : ($doc['optional'] ? 'optional' : 'missing');
-                    @endphp
-                    <div class="col-md-6">
-                        <div class="doc-tile {{ $tileClass }}">
-                            <div>
-                                <!-- Atas: Ikon + Judul + Status Pill -->
-                                <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div class="doc-icon-box {{ $isUploaded ? 'bg-success text-white' : 'bg-'.$doc['color'].'-subtle text-'.$doc['color'] }}">
-                                            <i class="ti {{ $isUploaded ? 'ti-check' : $doc['icon'] }}"></i>
+                <!-- BAGIAN 1: TAHAP PROPOSAL & PELAKSANAAN -->
+                <div class="mb-4">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h6 class="fw-bold mb-0 text-dark"><i class="ti ti-file-text text-primary me-2"></i>Berkas Tahap Proposal & Pelaksanaan</h6>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill">Tahap 2</span>
+                    </div>
+                    <div class="row g-3">
+                        @foreach($proposalDocs as $type => $doc)
+                        @php
+                        $isUploaded = !empty($doc['file']);
+                        $tileClass = $isUploaded ? 'uploaded' : ($doc['optional'] ? 'optional' : 'missing');
+                        @endphp
+                        <div class="col-md-6">
+                            <div class="doc-tile {{ $tileClass }}">
+                                <div>
+                                    <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="doc-icon-box {{ $isUploaded ? 'bg-success text-white' : 'bg-'.$doc['color'].'-subtle text-'.$doc['color'] }}">
+                                                <i class="ti {{ $isUploaded ? 'ti-check' : $doc['icon'] }}"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-dark small" style="line-height: 1.25;">{{ $doc['label'] }}</div>
+                                                <span class="text-muted" style="font-size: 0.7rem;">{{ $doc['format'] }}</span>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <div class="fw-bold text-dark small" style="line-height: 1.25;">{{ $doc['label'] }}</div>
-                                            <span class="text-muted" style="font-size: 0.7rem;">{{ $doc['format'] }}</span>
-                                        </div>
+
+                                        @if($isUploaded)
+                                        <span class="badge bg-success-subtle text-success rounded-pill" style="font-size: 0.68rem;">Sudah</span>
+                                        @elseif($doc['optional'])
+                                        <span class="badge bg-info-subtle text-info rounded-pill" style="font-size: 0.68rem;">Opsional</span>
+                                        @else
+                                        <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size: 0.68rem;">Belum</span>
+                                        @endif
                                     </div>
+                                </div>
+
+                                <div class="pt-2 mt-2 border-top border-secondary border-opacity-10 d-flex align-items-center justify-content-between gap-1">
+                                    <input type="file" id="fileInput-{{ $type }}" class="d-none auto-upload-input" data-type="{{ $type }}" accept="{{ $doc['accept'] }}">
 
                                     @if($isUploaded)
-                                    <span class="badge bg-success-subtle text-success rounded-pill" style="font-size: 0.68rem;">Sudah</span>
-                                    @elseif($doc['optional'])
-                                    <span class="badge bg-info-subtle text-info rounded-pill" style="font-size: 0.68rem;">Opsional</span>
+                                    <div class="d-flex gap-1">
+                                        <a href="{{ route('capstone.file.view', ['path' => $doc['file']]) }}" target="_blank" class="btn btn-sm btn-info text-white rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+                                            <i class="ti ti-eye me-1"></i>Lihat
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1 btn-delete-file" data-type="{{ $type }}" title="Hapus Berkas" style="font-size: 0.75rem;">
+                                            <i class="ti ti-trash"></i>
+                                        </button>
+                                    </div>
+                                    <label for="fileInput-{{ $type }}" class="btn btn-sm btn-outline-success rounded-pill px-2 py-1 mb-0 cursor-pointer fw-semibold" style="font-size: 0.75rem;">
+                                        <i class="ti ti-refresh me-1"></i>Ganti
+                                    </label>
                                     @else
-                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size: 0.68rem;">Belum</span>
+                                    <span class="text-muted" style="font-size: 0.72rem;">Belum ada file</span>
+                                    <label for="fileInput-{{ $type }}" class="btn btn-sm btn-primary rounded-pill px-3 py-1 mb-0 cursor-pointer fw-semibold" style="font-size: 0.75rem;">
+                                        <i class="ti ti-upload me-1"></i>Unggah
+                                    </label>
                                     @endif
                                 </div>
                             </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
 
-                            <!-- Bawah: Tombol Aksi Bersih (Auto Upload saat file dipilih) -->
-                            <div class="pt-2 mt-2 border-top border-secondary border-opacity-10 d-flex align-items-center justify-content-between gap-1">
-                                <input type="file" id="fileInput-{{ $type }}" class="d-none auto-upload-input" data-type="{{ $type }}" accept="{{ $doc['accept'] }}">
+                <!-- BAGIAN 2: TAHAP SIDANG AKHIR -->
+                <div class="mt-4 pt-3 border-top">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <h6 class="fw-bold mb-0 text-dark"><i class="ti ti-certificate text-warning me-2"></i>Berkas Tahap Sidang Akhir</h6>
+                        <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">Tahap 3 · Sidang Akhir</span>
+                    </div>
+                    <p class="small text-muted mb-3">Laporan final, berita acara ujian, dan kesepakatan bersama untuk kelulusan Capstone.</p>
+                    <div class="row g-3">
+                        @foreach($sidangDocs as $type => $doc)
+                        @php
+                        $isUploaded = !empty($doc['file']);
+                        $tileClass = $isUploaded ? 'uploaded' : ($doc['optional'] ? 'optional' : 'missing');
+                        @endphp
+                        <div class="col-md-6">
+                            <div class="doc-tile {{ $tileClass }}">
+                                <div>
+                                    <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="doc-icon-box {{ $isUploaded ? 'bg-success text-white' : 'bg-'.$doc['color'].'-subtle text-'.$doc['color'] }}">
+                                                <i class="ti {{ $isUploaded ? 'ti-check' : $doc['icon'] }}"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-dark small" style="line-height: 1.25;">{{ $doc['label'] }}</div>
+                                                <span class="text-muted" style="font-size: 0.7rem;">{{ $doc['format'] }}</span>
+                                            </div>
+                                        </div>
 
-                                @if($isUploaded)
-                                <div class="d-flex gap-1">
-                                    <a href="{{ route('capstone.file.view', ['path' => $doc['file']]) }}" target="_blank" class="btn btn-sm btn-info text-white rounded-pill px-2 py-1" style="font-size: 0.75rem;">
-                                        <i class="ti ti-eye me-1"></i>Lihat
-                                    </a>
-                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1 btn-delete-file" data-type="{{ $type }}" title="Hapus Berkas" style="font-size: 0.75rem;">
-                                        <i class="ti ti-trash"></i>
-                                    </button>
+                                        @if($isUploaded)
+                                        <span class="badge bg-success-subtle text-success rounded-pill" style="font-size: 0.68rem;">Sudah</span>
+                                        @elseif($doc['optional'])
+                                        <span class="badge bg-info-subtle text-info rounded-pill" style="font-size: 0.68rem;">Opsional</span>
+                                        @else
+                                        <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size: 0.68rem;">Belum</span>
+                                        @endif
+                                    </div>
                                 </div>
-                                <label for="fileInput-{{ $type }}" class="btn btn-sm btn-outline-success rounded-pill px-2 py-1 mb-0 cursor-pointer fw-semibold" style="font-size: 0.75rem;">
-                                    <i class="ti ti-refresh me-1"></i>Ganti
-                                </label>
-                                @else
-                                <span class="text-muted" style="font-size: 0.72rem;">Belum ada file</span>
-                                <label for="fileInput-{{ $type }}" class="btn btn-sm btn-primary rounded-pill px-3 py-1 mb-0 cursor-pointer fw-semibold" style="font-size: 0.75rem;">
-                                    <i class="ti ti-upload me-1"></i>Unggah
-                                </label>
-                                @endif
+
+                                <div class="pt-2 mt-2 border-top border-secondary border-opacity-10 d-flex align-items-center justify-content-between gap-1">
+                                    <input type="file" id="fileInput-{{ $type }}" class="d-none auto-upload-input" data-type="{{ $type }}" accept="{{ $doc['accept'] }}">
+
+                                    @if($isUploaded)
+                                    <div class="d-flex gap-1">
+                                        <a href="{{ route('capstone.file.view', ['path' => $doc['file']]) }}" target="_blank" class="btn btn-sm btn-info text-white rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+                                            <i class="ti ti-eye me-1"></i>Lihat
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1 btn-delete-file" data-type="{{ $type }}" title="Hapus Berkas" style="font-size: 0.75rem;">
+                                            <i class="ti ti-trash"></i>
+                                        </button>
+                                    </div>
+                                    <label for="fileInput-{{ $type }}" class="btn btn-sm btn-outline-success rounded-pill px-2 py-1 mb-0 cursor-pointer fw-semibold" style="font-size: 0.75rem;">
+                                        <i class="ti ti-refresh me-1"></i>Ganti
+                                    </label>
+                                    @else
+                                    <span class="text-muted" style="font-size: 0.72rem;">Belum ada file</span>
+                                    <label for="fileInput-{{ $type }}" class="btn btn-sm btn-primary rounded-pill px-3 py-1 mb-0 cursor-pointer fw-semibold" style="font-size: 0.75rem;">
+                                        <i class="ti ti-upload me-1"></i>Unggah
+                                    </label>
+                                    @endif
+                                </div>
                             </div>
                         </div>
+                        @endforeach
                     </div>
-                    @endforeach
                 </div>
                 @endif
             </div>
